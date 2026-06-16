@@ -1,36 +1,41 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
-const connectDB = require('./config/db');
-
-// Initialize database connection
-connectDB();
 
 const app = express();
 
-// Standard Express Middlewares
+// Security Middlewares
+app.use(helmet()); // Sets secure HTTP headers
 app.use(cors());
+
+// Rate Limiting (100 requests per 15 minutes per IP)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 100, 
+  standardHeaders: true, 
+  legacyHeaders: false, 
+});
+app.use('/api', limiter);
+
+// Body Parser
 app.use(express.json());
 
-// Base status route
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'LMS Backend Server running smoothly.' });
-});
+// Routes
+const memberRoutes = require('./routes/member.routes');
+const reservationRoutes = require('./routes/reservation.routes');
 
-// Mount routes for Member 3 Modules
-app.use('/api/members', require('./routes/member.routes'));
-app.use('/api/reservations', require('./routes/reservation.routes'));
+app.use('/api/members', memberRoutes);
+app.use('/api/reservations', reservationRoutes);
 
-// Global error handler middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: err.message || 'An internal server error occurred.'
-  });
+// Base route for health check
+app.get('/', (req, res) => {
+  res.send('LMS Server is running (PostgreSQL + Prisma)');
 });
 
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`Server running in development mode on port ${PORT}`);
 });

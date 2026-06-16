@@ -1,44 +1,48 @@
 # 📚 Library Management System (LMS)
+
 ## CBA Internship Capstone Project | Team of 5
 
----
+\---
 
 ## 📌 Table of Contents
 
 1. Project Overview
-2. Team & Module Distribution
+2. Team \& Module Distribution
 3. System Architecture
 4. Tech Stack
 5. Database Design
 6. Module Details
 7. API Structure
 8. AI Feature
-9. Data Engineering & ETL
-10. Cloud & Deployment
-11. DevOps & Git Workflow
+9. Data Engineering \& ETL
+10. Cloud \& Deployment
+11. DevOps \& Git Workflow
 12. Security
-13. User Roles & Access Control
+13. User Roles \& Access Control
 14. Notifications
-15. Edge Cases & Handling
-16. Project Planning & Methodology
+15. Edge Cases \& Handling
+16. Project Planning \& Methodology
 17. Daily Progress Tracking
 18. Definition of Done
 19. How to Run Locally
 
----
+\---
 
-## 1. PROJECT OVERVIEW
+## 1\. PROJECT OVERVIEW
 
 ### What Are We Building?
+
 A full-stack **Library Management System** web application that digitalizes all library operations including book management, member management, borrowing, returns, fine calculation, reservations, search, staff management, e-book management, AI-based recommendations, and analytics reporting.
 
 ### Why Are We Building It?
+
 Traditional libraries rely on manual paperwork which leads to:
-- Lost book records
-- No real-time availability tracking
-- Manual fine calculations with errors
-- No analytics for library growth
-- Poor member experience
+
+* Lost book records
+* No real-time availability tracking
+* Manual fine calculations with errors
+* No analytics for library growth
+* Poor member experience
 
 Our system solves all of these problems digitally.
 
@@ -58,37 +62,39 @@ Our system solves all of these problems digitally.
 ```
 
 ### Project Goals
-- 100% book catalog digitization
-- Real-time book availability tracking
-- Automated fine calculation
-- AI-powered book recommendations
-- Cloud-hosted with AWS free tier
-- Analytics dashboard for library insights
 
----
+* 100% book catalog digitization
+* Real-time book availability tracking
+* Automated fine calculation
+* AI-powered book recommendations
+* Cloud-hosted with AWS free tier
+* Analytics dashboard for library insights
 
-## 2. TEAM & MODULE DISTRIBUTION
+\---
 
-| Member | Role | Modules Owned |
-|--------|------|---------------|
-| Member 1 | Samarth(M1) | Authentication + Staff Management |
-| Member 2 | Madhusudhan(M2)| Book Management + Search & Catalog |
-| Member 3 | Samrudhi(M3) | Member Management + Reservation System |
-| Member 4 | Spoorthy(M4)| Borrowing & Returns + Fine Management |
-| Member 5 | Rajendra(M5) | Integration + AI + Data Engineering + Cloud + DevOps + Reporting |
+## 2\. TEAM \& MODULE DISTRIBUTION
+
+|Member|Role|Modules Owned|
+|-|-|-|
+|Member 1|Samarth(M1)|Authentication + Staff Management|
+|Member 2|Madhusudhan(M2)|Book Management + Search \& Catalog|
+|Member 3|Samrudhi(M3)|Member Management + Reservation System|
+|Member 4|Spoorthy(M4)|Borrowing \& Returns + Fine Management|
+|Member 5|Rajendra(M5)|Integration + AI + Data Engineering + Cloud + DevOps + Reporting|
 
 ### Lead Responsibilities
-- Frontend to Backend API integration
-- AWS deployment and configuration
-- GitHub branch reviews and merges
-- AI recommendation service connection
-- ETL pipeline and reports dashboard
-- Daily standup coordination
-- Final demo and documentation
 
----
+* Frontend to Backend API integration
+* AWS deployment and configuration
+* GitHub branch reviews and merges
+* AI recommendation service connection
+* ETL pipeline and reports dashboard
+* Daily standup coordination
+* Final demo and documentation
 
-## 3. SYSTEM ARCHITECTURE
+\---
+
+## 3\. SYSTEM ARCHITECTURE
 
 ### High-Level Architecture
 
@@ -109,7 +115,7 @@ Our system solves all of these problems digitally.
            ▼              ▼              ▼
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
 │   MongoDB    │  │  Python AI   │  │   AWS S3     │
-│  (Primary    │  │  Flask API   │  │  (Files &    │
+│  (Primary    │  │  Flask API   │  │  (Files \\\&    │
 │   Database)  │  │  (Recommend) │  │   Images)    │
 └──────────────┘  └──────────────┘  └──────────────┘
            │
@@ -177,9 +183,9 @@ JSON Response to Frontend
 React State Update → UI Re-render
 ```
 
----
+\---
 
-## 4. TECH STACK
+## 4\. TECH STACK
 
 ### Complete Technology Map
 
@@ -236,9 +242,9 @@ React State Update → UI Re-render
 └─────────────────────────────────────────────────────────────────┘
 ```
 
----
+\---
 
-## 5. DATABASE DESIGN
+## 5\. DATABASE DESIGN
 
 ### Entity Relationship Diagram
 
@@ -246,7 +252,7 @@ React State Update → UI Re-render
 ┌──────────────┐         ┌──────────────────┐         ┌──────────────┐
 │    USER      │         │      BORROW       │         │    BOOK      │
 │──────────────│         │──────────────────│         │──────────────│
-│ _id          │◄────────│ memberId         │────────►│ _id          │
+│ \\\_id          │◄────────│ memberId         │────────►│ \\\_id          │
 │ name         │         │ bookId           │         │ title        │
 │ email        │         │ issueDate        │         │ author       │
 │ password     │         │ dueDate          │         │ isbn         │
@@ -260,19 +266,19 @@ React State Update → UI Re-render
        │                  ┌──────────────┐            │ publishYear  │
        │                  │    FINE      │            │ description  │
        │                  │──────────────│            │ createdAt    │
-       │                  │ _id          │            └──────────────┘
+       │                  │ \\\_id          │            └──────────────┘
        │                  │ memberId     │                   │
        │                  │ borrowId     │                   │
        │                  │ amount       │            ┌──────────────┐
        │                  │ daysOverdue  │            │ RESERVATION  │
        │                  │ status       │            │──────────────│
-       │                  │ paidAt       │            │ _id          │
+       │                  │ paidAt       │            │ \\\_id          │
        │                  └──────────────┘            │ memberId     │
        │                                              │ bookId       │
        │                  ┌──────────────┐            │ reservedAt   │
        └─────────────────►│    STAFF     │            │ expiresAt    │
                           │──────────────│            │ status       │
-                          │ _id          │            └──────────────┘
+                          │ \\\_id          │            └──────────────┘
                           │ name         │
                           │ email        │
                           │ password     │
@@ -297,10 +303,11 @@ Collections:
 ### Data Models Detail
 
 **User Collection**
+
 ```
 Field           Type        Description
 ─────────────────────────────────────────────
-_id             ObjectId    Auto generated
+\\\_id             ObjectId    Auto generated
 name            String      Full name
 email           String      Unique, required
 password        String      Bcrypt hashed
@@ -314,14 +321,15 @@ updatedAt       Date        Auto timestamp
 ```
 
 **Book Collection**
+
 ```
 Field           Type        Description
 ─────────────────────────────────────────────
-_id             ObjectId    Auto generated
+\\\_id             ObjectId    Auto generated
 title           String      Book title
 author          String      Author name
 isbn            String      Unique ISBN number
-genre           [String]    Array of genres
+genre           \\\[String]    Array of genres
 totalCopies     Number      Total copies in library
 availableCopies Number      Currently available
 coverImage      String      S3 URL
@@ -336,10 +344,11 @@ createdAt       Date        Auto timestamp
 ```
 
 **Borrow Collection**
+
 ```
 Field           Type        Description
 ─────────────────────────────────────────────
-_id             ObjectId    Auto generated
+\\\_id             ObjectId    Auto generated
 memberId        ObjectId    Reference to User
 bookId          ObjectId    Reference to Book
 issueDate       Date        Date book was issued
@@ -353,10 +362,11 @@ createdAt       Date        Auto timestamp
 ```
 
 **Fine Collection**
+
 ```
 Field           Type        Description
 ─────────────────────────────────────────────
-_id             ObjectId    Auto generated
+\\\_id             ObjectId    Auto generated
 memberId        ObjectId    Reference to User
 borrowId        ObjectId    Reference to Borrow
 amount          Number      Total fine amount (Rs per day)
@@ -368,10 +378,11 @@ createdAt       Date        Auto timestamp
 ```
 
 **Reservation Collection**
+
 ```
 Field           Type        Description
 ─────────────────────────────────────────────
-_id             ObjectId    Auto generated
+\\\_id             ObjectId    Auto generated
 memberId        ObjectId    Reference to User
 bookId          ObjectId    Reference to Book
 reservedAt      Date        Reservation created
@@ -381,20 +392,22 @@ notified        Boolean     Email sent when book available
 createdAt       Date        Auto timestamp
 ```
 
----
+\---
 
-## 6. MODULE DETAILS
+## 6\. MODULE DETAILS
 
-### Module 1 — Authentication & Staff Management (Member 1)
+### Module 1 — Authentication \& Staff Management (Member 1)
 
 **What it does:**
-- Handles all login, registration, logout
-- JWT token generation and verification
-- Role-based middleware to protect routes
-- Staff creation, update, delete by admin
-- Staff login with separate dashboard access
+
+* Handles all login, registration, logout
+* JWT token generation and verification
+* Role-based middleware to protect routes
+* Staff creation, update, delete by admin
+* Staff login with separate dashboard access
 
 **Pages to build:**
+
 ```
 ├── /login                  Login page
 ├── /register               Member self-registration
@@ -404,27 +417,30 @@ createdAt       Date        Auto timestamp
 ```
 
 **Business Logic:**
-- Password minimum 8 characters with complexity check
-- JWT expires in 7 days, refresh on activity
-- Member registration auto-assigns membership ID (LMS-YYYY-XXXX)
-- Admin can suspend/activate member accounts
-- Librarian cannot manage other staff
-- Maximum 3 failed login attempts → account temporarily locked for 15 minutes
 
----
+* Password minimum 8 characters with complexity check
+* JWT expires in 7 days, refresh on activity
+* Member registration auto-assigns membership ID (LMS-YYYY-XXXX)
+* Admin can suspend/activate member accounts
+* Librarian cannot manage other staff
+* Maximum 3 failed login attempts → account temporarily locked for 15 minutes
 
-### Module 2 — Book Management & Search (Member 2)
+\---
+
+### Module 2 — Book Management \& Search (Member 2)
 
 **What it does:**
-- Full CRUD for book catalog
-- Book cover image upload to AWS S3
-- E-book PDF upload to AWS S3
-- Barcode generation per book
-- Search by title, author, genre, ISBN
-- Filter by availability, genre, language, year
-- Sort by title, year, popularity
+
+* Full CRUD for book catalog
+* Book cover image upload to AWS S3
+* E-book PDF upload to AWS S3
+* Barcode generation per book
+* Search by title, author, genre, ISBN
+* Filter by availability, genre, language, year
+* Sort by title, year, popularity
 
 **Pages to build:**
+
 ```
 ├── /books                  Book catalog list
 ├── /books/:id              Book detail page
@@ -434,25 +450,28 @@ createdAt       Date        Auto timestamp
 ```
 
 **Business Logic:**
-- ISBN must be unique, validate format (ISBN-10 / ISBN-13)
-- When book is added, barcode auto-generated from ISBN
-- availableCopies cannot exceed totalCopies
-- Deleting a book only allowed if no active borrows
-- Search should work with partial text, case insensitive
-- E-book access only allowed to active members
 
----
+* ISBN must be unique, validate format (ISBN-10 / ISBN-13)
+* When book is added, barcode auto-generated from ISBN
+* availableCopies cannot exceed totalCopies
+* Deleting a book only allowed if no active borrows
+* Search should work with partial text, case insensitive
+* E-book access only allowed to active members
 
-### Module 3 — Member Management & Reservations (Member 3)
+\---
+
+### Module 3 — Member Management \& Reservations (Member 3)
 
 **What it does:**
-- Member registration and profile management
-- Member borrowing history view
-- Book reservation system
-- Email notification when reserved book becomes available
-- Reservation queue management
+
+* Member registration and profile management
+* Member borrowing history view
+* Book reservation system
+* Email notification when reserved book becomes available
+* Reservation queue management
 
 **Pages to build:**
+
 ```
 ├── /members                Member list (librarian/admin view)
 ├── /members/:id            Member profile
@@ -463,27 +482,30 @@ createdAt       Date        Auto timestamp
 ```
 
 **Business Logic:**
-- Member can have maximum 5 active borrows at a time
-- Member with pending fines above Rs 100 cannot borrow new books
-- Reservation expires after 3 days once book becomes available
-- Email sent to member when reserved book is available
-- If reservation expires, next person in queue gets notified
-- Member can cancel reservation anytime
-- Suspended member cannot borrow or reserve
 
----
+* Member can have maximum 5 active borrows at a time
+* Member with pending fines above Rs 100 cannot borrow new books
+* Reservation expires after 3 days once book becomes available
+* Email sent to member when reserved book is available
+* If reservation expires, next person in queue gets notified
+* Member can cancel reservation anytime
+* Suspended member cannot borrow or reserve
 
-### Module 4 — Borrowing & Returns + Fine Management (Member 4)
+\---
+
+### Module 4 — Borrowing \& Returns + Fine Management (Member 4)
 
 **What it does:**
-- Book issue process (librarian scans barcode or searches)
-- Book return process
-- Renewal of borrowed book
-- Automatic fine calculation for overdue books
-- Fine payment tracking
-- Fine waiver by admin
+
+* Book issue process (librarian scans barcode or searches)
+* Book return process
+* Renewal of borrowed book
+* Automatic fine calculation for overdue books
+* Fine payment tracking
+* Fine waiver by admin
 
 **Pages to build:**
+
 ```
 ├── /borrow/issue           Issue book form
 ├── /borrow/return          Return book form
@@ -494,6 +516,7 @@ createdAt       Date        Auto timestamp
 ```
 
 **Business Logic:**
+
 ```
 Fine Calculation:
 - Standard loan period: 14 days
@@ -508,19 +531,21 @@ Fine Calculation:
 - Member cannot have more than Rs 500 in unpaid fines
 ```
 
----
+\---
 
 ### Module 5 — Integration + AI + Data Engineering + Cloud (Lead)
 
 **What it does:**
-- Connects all frontend modules to respective backend APIs
-- AI-based book recommendation system
-- ETL pipeline for analytics
-- Reports and dashboard
-- AWS cloud deployment
-- DevOps pipeline setup
+
+* Connects all frontend modules to respective backend APIs
+* AI-based book recommendation system
+* ETL pipeline for analytics
+* Reports and dashboard
+* AWS cloud deployment
+* DevOps pipeline setup
 
 **Pages to build:**
+
 ```
 ├── /dashboard              Admin/Librarian analytics dashboard
 ├── /reports                Detailed reports page
@@ -528,22 +553,24 @@ Fine Calculation:
 ```
 
 **AI Recommendation Logic:**
-- Analyzes member's borrowing history
-- Finds genres and authors member prefers
-- Returns top 5 book recommendations
-- Falls back to most popular books if no history
+
+* Analyzes member's borrowing history
+* Finds genres and authors member prefers
+* Returns top 5 book recommendations
+* Falls back to most popular books if no history
 
 **Reports to generate:**
-- Total books borrowed per month
-- Most popular books
-- Most active members
-- Fine collection summary
-- Genre-wise distribution
-- New members per month
 
----
+* Total books borrowed per month
+* Most popular books
+* Most active members
+* Fine collection summary
+* Genre-wise distribution
+* New members per month
 
-## 7. API STRUCTURE
+\---
+
+## 7\. API STRUCTURE
 
 ### Complete API Reference
 
@@ -552,6 +579,7 @@ BASE URL: http://localhost:5000/api
 ```
 
 #### Authentication Routes
+
 ```
 POST   /api/auth/register          Register new member
 POST   /api/auth/login             Login user
@@ -561,18 +589,20 @@ PUT    /api/auth/change-password   Change password
 ```
 
 #### Book Routes
+
 ```
 GET    /api/books                  Get all books (with pagination)
 GET    /api/books/:id              Get single book
 POST   /api/books                  Add new book (librarian/admin)
 PUT    /api/books/:id              Update book (librarian/admin)
 DELETE /api/books/:id              Delete book (admin only)
-GET    /api/books/search           Search books (?q=keyword&genre=&available=)
+GET    /api/books/search           Search books (?q=keyword\\\&genre=\\\&available=)
 POST   /api/books/:id/upload-cover Upload cover image to S3
 POST   /api/books/:id/upload-ebook Upload ebook PDF to S3
 ```
 
 #### Member Routes
+
 ```
 GET    /api/members                Get all members (librarian/admin)
 GET    /api/members/:id            Get member details
@@ -584,6 +614,7 @@ GET    /api/members/:id/history    Get borrowing history
 ```
 
 #### Borrow Routes
+
 ```
 POST   /api/borrow/issue           Issue book to member
 POST   /api/borrow/return/:id      Return a borrowed book
@@ -594,6 +625,7 @@ GET    /api/borrow/history/:memberId  Member borrow history
 ```
 
 #### Fine Routes
+
 ```
 GET    /api/fines                  Get all fines
 GET    /api/fines/:memberId        Get fines for a member
@@ -603,6 +635,7 @@ GET    /api/fines/summary          Fine collection summary
 ```
 
 #### Reservation Routes
+
 ```
 POST   /api/reservations           Create reservation
 GET    /api/reservations/:memberId Get member reservations
@@ -611,6 +644,7 @@ GET    /api/reservations/book/:bookId  Reservation queue for a book
 ```
 
 #### Staff Routes
+
 ```
 GET    /api/staff                  Get all staff
 POST   /api/staff                  Add staff (admin only)
@@ -619,6 +653,7 @@ DELETE /api/staff/:id              Delete staff (admin only)
 ```
 
 #### Report Routes
+
 ```
 GET    /api/reports/dashboard      Dashboard summary stats
 GET    /api/reports/popular-books  Most borrowed books
@@ -629,13 +664,14 @@ GET    /api/reports/genre-stats    Genre distribution
 ```
 
 #### AI Routes
+
 ```
 POST   /api/ai/recommend           Get book recommendations for member
 ```
 
----
+\---
 
-## 8. AI FEATURE - BOOK RECOMMENDATION
+## 8\. AI FEATURE - BOOK RECOMMENDATION
 
 ### How It Works
 
@@ -668,6 +704,7 @@ POST   /api/ai/recommend           Get book recommendations for member
 ```
 
 ### Fallback Logic
+
 ```
 Has borrowing history?
 ├── YES → Content-based filtering → top 5 recommendations
@@ -675,18 +712,19 @@ Has borrowing history?
 ```
 
 ### AI Service Structure
+
 ```
 ai-service/
 ├── app.py              Flask app with /recommend endpoint
 ├── model.py            TF-IDF model setup and training
 ├── recommend.py        Recommendation logic
 ├── requirements.txt    Python dependencies
-└── data_loader.py      MongoDB connection and data fetch
+└── data\\\_loader.py      MongoDB connection and data fetch
 ```
 
----
+\---
 
-## 9. DATA ENGINEERING & ETL
+## 9\. DATA ENGINEERING \& ETL
 
 ### ETL Pipeline
 
@@ -711,6 +749,7 @@ ai-service/
 ```
 
 ### ETL Pipeline Files
+
 ```
 etl-pipeline/
 ├── extract.py          Pull raw data from MongoDB collections
@@ -721,6 +760,7 @@ etl-pipeline/
 ```
 
 ### Reports Generated by ETL
+
 ```
 Report                    Source Data             Output
 ─────────────────────────────────────────────────────────────
@@ -732,9 +772,9 @@ New members per month     users created           Line chart data
 Active vs inactive        borrow status           Donut chart data
 ```
 
----
+\---
 
-## 10. CLOUD & DEPLOYMENT
+## 10\. CLOUD \& DEPLOYMENT
 
 ### AWS Free Tier Services Used
 
@@ -782,6 +822,7 @@ GITHUB (feature branch → dev → main)
 ```
 
 ### Nginx Configuration Purpose
+
 ```
 EC2 Instance
 ├── Port 80/443  → Nginx (reverse proxy)
@@ -794,7 +835,7 @@ EC2 Instance
 
 ```
 CloudWatch Events Rule
-├── Schedule: cron(0 0 * * ? *)     Every day at midnight
+├── Schedule: cron(0 0 \\\* \\\* ? \\\*)     Every day at midnight
 ├── Target: Lambda function
 └── Lambda does:
     ├── Connect to MongoDB Atlas
@@ -805,6 +846,7 @@ CloudWatch Events Rule
 ```
 
 ### S3 Bucket Structure
+
 ```
 lms-storage-bucket/
 ├── covers/          Book cover images
@@ -818,9 +860,9 @@ lms-frontend-bucket/
 └── build/           React production build (static hosting)
 ```
 
----
+\---
 
-## 11. DEVOPS & GIT WORKFLOW
+## 11\. DEVOPS \& GIT WORKFLOW
 
 ### Git Branching Strategy
 
@@ -837,6 +879,7 @@ main (production)
 ```
 
 ### Git Workflow Rules
+
 ```
 1. Never push directly to main
 2. Never push directly to dev
@@ -876,9 +919,9 @@ All containers on same Docker network
 One command: docker-compose up → entire project runs
 ```
 
----
+\---
 
-## 12. SECURITY
+## 12\. SECURITY
 
 ### Security Measures Implemented
 
@@ -917,9 +960,9 @@ One command: docker-compose up → entire project runs
 └──────────────────────────────────────────────────────────────┘
 ```
 
----
+\---
 
-## 13. USER ROLES & ACCESS CONTROL
+## 13\. USER ROLES \& ACCESS CONTROL
 
 ### Permissions Matrix
 
@@ -950,9 +993,9 @@ Manage staff                      ✅        ❌          ❌
 View AI recommendations           ✅        ✅          ✅
 ```
 
----
+\---
 
-## 14. NOTIFICATIONS
+## 14\. NOTIFICATIONS
 
 ### Email Notification Events
 
@@ -970,6 +1013,7 @@ Account suspended                  Member       On suspension
 ```
 
 ### Notification Flow
+
 ```
 Lambda / node-cron runs daily
         │
@@ -987,11 +1031,12 @@ When book returned
         └── Update reservation status to notified
 ```
 
----
+\---
 
-## 15. EDGE CASES & HANDLING
+## 15\. EDGE CASES \& HANDLING
 
 ### Book Management
+
 ```
 Edge Case                           Handling
 ──────────────────────────────────────────────────────────────────
@@ -1003,7 +1048,8 @@ Duplicate book entry                ISBN uniqueness check at DB level
 E-book PDF too large                File size limit 50MB, reject if exceeded
 ```
 
-### Borrowing & Returns
+### Borrowing \& Returns
+
 ```
 Edge Case                           Handling
 ──────────────────────────────────────────────────────────────────
@@ -1017,6 +1063,7 @@ Return after very long time         Calculate fine for all days, cap at Rs 500
 ```
 
 ### Fine Management
+
 ```
 Edge Case                           Handling
 ──────────────────────────────────────────────────────────────────
@@ -1028,6 +1075,7 @@ Fine calculation on holidays        Same rate applies, no holiday exceptions
 ```
 
 ### Reservations
+
 ```
 Edge Case                           Handling
 ──────────────────────────────────────────────────────────────────
@@ -1039,6 +1087,7 @@ Queue order                         First-come-first-served by reservedAt date
 ```
 
 ### Authentication
+
 ```
 Edge Case                           Handling
 ──────────────────────────────────────────────────────────────────
@@ -1051,6 +1100,7 @@ Password too weak                   Validate: min 8 chars, 1 number, 1 special
 ```
 
 ### File Uploads
+
 ```
 Edge Case                           Handling
 ──────────────────────────────────────────────────────────────────
@@ -1060,17 +1110,18 @@ Very large file                     Images max 5MB, PDFs max 50MB
 Same file uploaded twice            Overwrite with new file, keep S3 key same
 ```
 
----
+\---
 
-## 16. PROJECT PLANNING & METHODOLOGY
+## 16\. PROJECT PLANNING \& METHODOLOGY
 
 ### Approach
+
 We follow **Agile Scrum** methodology adapted for our team size and timeline.
 
 ### Planning Breakdown
 
 ```
-Phase 1: Setup & Foundation
+Phase 1: Setup \\\& Foundation
 ├── GitHub repository setup
 ├── Project folder structure
 ├── MongoDB Atlas cluster creation
@@ -1098,7 +1149,7 @@ Phase 4: Cloud Deployment
 ├── CloudWatch monitoring
 └── Domain/IP testing
 
-Phase 5: Testing & Polish
+Phase 5: Testing \\\& Polish
 ├── All modules integration tested
 ├── Edge cases verified
 ├── UI responsive check
@@ -1107,6 +1158,7 @@ Phase 5: Testing & Polish
 ```
 
 ### Communication Plan
+
 ```
 Daily Standup (10 minutes):
 ├── What did I complete yesterday?
@@ -1123,9 +1175,10 @@ Issue Tracking:
 ```
 
 
----
 
-## 18. DEFINITION OF DONE
+\---
+
+## 18\. DEFINITION OF DONE
 
 ### A task is considered DONE only when:
 
@@ -1160,9 +1213,9 @@ For Deployment:
 └── Tested by all team members
 ```
 
----
+\---
 
-## 19. PROJECT FOLDER STRUCTURE
+## 19\. PROJECT FOLDER STRUCTURE
 
 ```
 library-management-system/
@@ -1269,7 +1322,7 @@ library-management-system/
 │   ├── app.py
 │   ├── model.py
 │   ├── recommend.py
-│   ├── data_loader.py
+│   ├── data\\\_loader.py
 │   └── requirements.txt
 │
 ├── etl-pipeline/                        # Python Data Engineering
@@ -1288,46 +1341,49 @@ library-management-system/
 └── README.md
 ```
 
----
+\---
 
-## 20. ENVIRONMENT VARIABLES
+## 20\. ENVIRONMENT VARIABLES
 
 ### Server (.env)
+
 ```
 PORT=5000
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/lms
-JWT_SECRET=your_super_secret_key
-JWT_EXPIRE=7d
+MONGO\\\_URI=mongodb+srv://username:password@cluster.mongodb.net/lms
+JWT\\\_SECRET=your\\\_super\\\_secret\\\_key
+JWT\\\_EXPIRE=7d
 
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_BUCKET_NAME=lms-storage-bucket
-AWS_REGION=ap-south-1
+AWS\\\_ACCESS\\\_KEY\\\_ID=your\\\_access\\\_key
+AWS\\\_SECRET\\\_ACCESS\\\_KEY=your\\\_secret\\\_key
+AWS\\\_BUCKET\\\_NAME=lms-storage-bucket
+AWS\\\_REGION=ap-south-1
 
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
+EMAIL\\\_HOST=smtp.gmail.com
+EMAIL\\\_PORT=587
+EMAIL\\\_USER=your\\\_email@gmail.com
+EMAIL\\\_PASS=your\\\_app\\\_password
 
-AI_SERVICE_URL=http://localhost:5001
-FINE_RATE_PER_DAY=2
-MAX_BORROW_LIMIT=5
-LOAN_PERIOD_DAYS=14
-RENEWAL_EXTENSION_DAYS=7
-MAX_RENEWALS=2
-RESERVATION_EXPIRY_DAYS=3
+AI\\\_SERVICE\\\_URL=http://localhost:5001
+FINE\\\_RATE\\\_PER\\\_DAY=2
+MAX\\\_BORROW\\\_LIMIT=5
+LOAN\\\_PERIOD\\\_DAYS=14
+RENEWAL\\\_EXTENSION\\\_DAYS=7
+MAX\\\_RENEWALS=2
+RESERVATION\\\_EXPIRY\\\_DAYS=3
 ```
 
 ### Client (.env)
+
 ```
-REACT_APP_API_URL=http://localhost:5000/api
+REACT\\\_APP\\\_API\\\_URL=http://localhost:5000/api
 ```
 
----
+\---
 
-## 21. HOW TO RUN LOCALLY
+## 21\. HOW TO RUN LOCALLY
 
 ### Option A: Docker (Recommended)
+
 ```
 1. Install Docker Desktop
 2. Clone repository
@@ -1339,6 +1395,7 @@ REACT_APP_API_URL=http://localhost:5000/api
 ```
 
 ### Option B: Manual
+
 ```
 1. Start MongoDB locally or use MongoDB Atlas URI
 
@@ -1357,3 +1414,4 @@ REACT_APP_API_URL=http://localhost:5000/api
    pip install -r requirements.txt
    python app.py
 ```
+

@@ -15,7 +15,8 @@ Use only libraries listed here. Do not install anything else without team lead a
 Package                 Version       Purpose
 ───────────────────────────────────────────────────────
 express                 latest        Web framework
-mongoose                latest        MongoDB ODM
+prisma                  latest        PostgreSQL ORM
+@prisma/client          latest        PostgreSQL Client
 jsonwebtoken            latest        JWT auth
 bcryptjs                latest        Password hashing
 dotenv                  latest        Environment variables
@@ -27,6 +28,8 @@ node-cron               latest        Scheduled jobs (fine calc)
 express-validator       latest        Input validation
 morgan                  latest        HTTP request logging
 helmet                  latest        Security headers
+express-rate-limit      latest        Rate limiting
+@elastic/elasticsearch  latest        Elasticsearch client
 ```
 
 ## FRONTEND (client/)
@@ -34,6 +37,7 @@ helmet                  latest        Security headers
 ```
 Package                 Version       Purpose
 ───────────────────────────────────────────────────────
+vite                    latest        Build tool / Bundler
 react                   18+           UI framework
 react-dom               18+           DOM rendering
 react-router-dom        v6            Client-side routing
@@ -53,7 +57,7 @@ flask                   latest        REST API framework
 flask-cors              latest        CORS for Flask
 scikit-learn            latest        ML recommendation model
 pandas                  latest        Data processing
-pymongo                 latest        MongoDB connection
+psycopg2                latest        PostgreSQL connection
 numpy                   latest        Numerical operations
 ```
 
@@ -62,7 +66,7 @@ numpy                   latest        Numerical operations
 ```
 Package                 Version       Purpose
 ───────────────────────────────────────────────────────
-pymongo                 latest        MongoDB read/write
+psycopg2                latest        PostgreSQL read/write
 pandas                  latest        Data transformation
 schedule                latest        Daily ETL scheduling
 python-dotenv           latest        Environment variables
@@ -90,7 +94,7 @@ S3                      Frontend static + file storage
 Lambda                  Daily fine calculation trigger
 CloudWatch              Monitoring + alerts
 IAM                     Access management
-MongoDB Atlas M0        Free database cluster
+RDS PostgreSQL          Relational database cluster
 ```
 
 ---
@@ -101,7 +105,7 @@ MongoDB Atlas M0        Free database cluster
 - TypeScript (project uses JavaScript only)
 - Redux (use Context API)
 - GraphQL (use REST APIs)
-- Firebase (use MongoDB Atlas)
+- Firebase (use PostgreSQL RDS)
 - Vercel / Netlify (use AWS only)
 - Any paid API or service
 - React Query (use axios with useState/useEffect)

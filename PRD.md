@@ -73,7 +73,7 @@ Traditional libraries face:
 - Barcode generated from ISBN
 - Available copies updated automatically on issue/return
 - Books cannot be deleted if active borrows exist
-- Search works by title, author, genre, ISBN (partial match, case insensitive)
+- Search works by title, author, genre, ISBN using Elasticsearch for speed and accuracy
 - Filter by availability, genre, language, year
 - Sort by title, year, most borrowed
 
@@ -173,18 +173,19 @@ Traditional libraries face:
 ### Availability
 - Hosted on AWS EC2 with PM2 (auto-restart on crash)
 - CloudWatch alarms for CPU above 80%
-- MongoDB Atlas free tier with automatic backups
+- PostgreSQL RDS with automatic backups
 
 ### Scalability
 - Stateless backend (JWT-based, no server sessions)
-- MongoDB Atlas can scale independently
+- PostgreSQL database optimized with indexes
 - S3 for file storage (unlimited)
 
 ---
 
 ## 7. TECHNICAL CONSTRAINTS
 
-- Must use MERN stack (MongoDB, Express, React, Node)
+- Must use PERN stack (PostgreSQL, Express, React, Node)
+- Search must utilize Elasticsearch
 - AI service in Python Flask
 - ETL pipeline in Python with Pandas
 - Deployment on AWS Free Tier only

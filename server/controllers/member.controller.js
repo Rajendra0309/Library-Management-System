@@ -1,33 +1,5 @@
-const mongoose = require('mongoose');
-const User = require('../models/User');
-
-// Helper to lazily load Borrow and Book models for history population
-const getBorrowModel = () => {
-  if (mongoose.models.Borrow) {
-    return mongoose.models.Borrow;
-  }
-  return mongoose.model('Borrow', new mongoose.Schema({
-    memberId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    bookId: { type: mongoose.Schema.Types.ObjectId, ref: 'Book', required: true },
-    issueDate: { type: Date, required: true },
-    dueDate: { type: Date, required: true },
-    returnDate: { type: Date },
-    status: { type: String, enum: ['active', 'returned', 'overdue'], default: 'active' },
-    renewalCount: { type: Number, default: 0 }
-  }, { timestamps: true, collection: 'borrows' }));
-};
-
-const getBookModel = () => {
-  if (mongoose.models.Book) {
-    return mongoose.models.Book;
-  }
-  return mongoose.model('Book', new mongoose.Schema({
-    title: { type: String, required: true },
-    author: { type: String, required: true },
-    coverImage: { type: String },
-    isbn: { type: String, required: true }
-  }, { timestamps: true, collection: 'books' }));
-};
+const prisma = require('../prisma/client');
+const bcrypt = require('bcryptjs');
 
 /**
  * Get all members (Paginated, Searchable)
@@ -40,22 +12,37 @@ const getMembers = async (req, res) => {
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
 
-    const query = { role: 'member' };
-    
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { membershipId: { $regex: search, $options: 'i' } }
-      ];
-    }
+    const where = {
+      role: 'member',
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { membershipId: { contains: search, mode: 'insensitive' } }
+        ]
+      })
+    };
 
-    const total = await User.countDocuments(query);
-    const members = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const [total, members] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          membershipId: true,
+          status: true,
+          profileImage: true,
+          createdAt: true,
+          updatedAt: true
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      })
+    ]);
 
     res.status(200).json({
       success: true,
@@ -81,7 +68,21 @@ const getMemberById = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. You can only view your own profile.' });
     }
 
-    const member = await User.findOne({ _id: req.params.id, role: 'member' }).select('-password');
+    const member = await prisma.user.findFirst({
+      where: { id: req.params.id, role: 'member' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        membershipId: true,
+        status: true,
+        profileImage: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
     if (!member) {
       return res.status(404).json({ success: false, message: 'Member not found' });
     }
@@ -104,26 +105,40 @@ const createMember = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide name, email, and password' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email is already registered' });
     }
 
-    const member = new User({
-      name,
-      email,
-      password, // Pre-save hook will hash this
-      phone,
-      role: 'member',
-      status: 'active'
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    // For manual creation by admin, we also generate membership ID
+    const { generateMembershipId } = require('../utils/membershipId');
+    const newMembershipId = await generateMembershipId();
+
+    const member = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        phone,
+        role: 'member',
+        status: 'active',
+        membershipId: newMembershipId
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        membershipId: true,
+        status: true,
+        createdAt: true
+      }
     });
 
-    await member.save();
-
-    const responseData = member.toObject();
-    delete responseData.password;
-
-    res.status(201).json({ success: true, data: responseData });
+    res.status(201).json({ success: true, data: member });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -141,22 +156,34 @@ const updateMember = async (req, res) => {
 
     const { name, phone, profileImage } = req.body;
     
-    const member = await User.findOne({ _id: req.params.id, role: 'member' });
+    const member = await prisma.user.findFirst({
+      where: { id: req.params.id, role: 'member' }
+    });
+
     if (!member) {
       return res.status(404).json({ success: false, message: 'Member not found' });
     }
 
-    // Apply updates
-    if (name) member.name = name;
-    if (phone) member.phone = phone;
-    if (profileImage) member.profileImage = profileImage;
+    const updatedMember = await prisma.user.update({
+      where: { id: req.params.id },
+      data: {
+        ...(name && { name }),
+        ...(phone && { phone }),
+        ...(profileImage && { profileImage })
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        membershipId: true,
+        status: true,
+        profileImage: true,
+        updatedAt: true
+      }
+    });
 
-    await member.save();
-
-    const responseData = member.toObject();
-    delete responseData.password;
-
-    res.status(200).json({ success: true, data: responseData });
+    res.status(200).json({ success: true, data: updatedMember });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -172,19 +199,24 @@ const deleteMember = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
     }
 
-    const member = await User.findOne({ _id: req.params.id, role: 'member' });
+    const member = await prisma.user.findFirst({
+      where: { id: req.params.id, role: 'member' }
+    });
+
     if (!member) {
       return res.status(404).json({ success: false, message: 'Member not found' });
     }
 
     // Check if member has active borrows before deleting
-    const Borrow = getBorrowModel();
-    const activeBorrows = await Borrow.countDocuments({ memberId: req.params.id, status: 'active' });
+    const activeBorrows = await prisma.borrow.count({
+      where: { memberId: req.params.id, status: 'active' }
+    });
+
     if (activeBorrows > 0) {
       return res.status(400).json({ success: false, message: 'Cannot delete member. Member has active borrows.' });
     }
 
-    await member.deleteOne();
+    await prisma.user.delete({ where: { id: req.params.id } });
 
     res.status(200).json({ success: true, message: 'Member deleted successfully' });
   } catch (error) {
@@ -194,11 +226,10 @@ const deleteMember = async (req, res) => {
 
 /**
  * Suspend/Activate/Expire Member
- * Access: Librarian, Admin (only Admin can waive/suspend according to some sections, but PRD says librarian/admin can edit members)
+ * Access: Librarian, Admin 
  */
 const updateMemberStatus = async (req, res) => {
   try {
-    // Only Admin or Librarian can change status
     if (req.user.role !== 'admin' && req.user.role !== 'librarian') {
       return res.status(403).json({ success: false, message: 'Access denied. Librarians and Admins only.' });
     }
@@ -208,18 +239,27 @@ const updateMemberStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid status. Must be active, suspended, or expired.' });
     }
 
-    const member = await User.findOne({ _id: req.params.id, role: 'member' });
+    const member = await prisma.user.findFirst({
+      where: { id: req.params.id, role: 'member' }
+    });
+
     if (!member) {
       return res.status(404).json({ success: false, message: 'Member not found' });
     }
 
-    member.status = status;
-    await member.save();
+    const updatedMember = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { status },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        status: true,
+        membershipId: true
+      }
+    });
 
-    const responseData = member.toObject();
-    delete responseData.password;
-
-    res.status(200).json({ success: true, data: responseData });
+    res.status(200).json({ success: true, data: updatedMember });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -235,17 +275,28 @@ const getMemberHistory = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. You can only view your own history.' });
     }
 
-    const member = await User.findOne({ _id: req.params.id, role: 'member' });
+    const member = await prisma.user.findFirst({
+      where: { id: req.params.id, role: 'member' }
+    });
+
     if (!member) {
       return res.status(404).json({ success: false, message: 'Member not found' });
     }
 
-    const Borrow = getBorrowModel();
-    getBookModel(); // load model definition
-
-    const history = await Borrow.find({ memberId: req.params.id })
-      .populate('bookId', 'title author coverImage isbn')
-      .sort({ issueDate: -1 });
+    const history = await prisma.borrow.findMany({
+      where: { memberId: req.params.id },
+      include: {
+        book: {
+          select: {
+            title: true,
+            author: true,
+            coverImage: true,
+            isbn: true
+          }
+        }
+      },
+      orderBy: { issueDate: 'desc' }
+    });
 
     res.status(200).json({ success: true, data: history });
   } catch (error) {

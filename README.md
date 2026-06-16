@@ -35,8 +35,8 @@ The team is now ready to begin parallel development on the core modules:
 
 ## 🛠️ Tech Stack Overview
 
-- **Frontend**: React.js, Material-UI, React Router v6, Axios
-- **Backend**: Node.js, Express.js, JWT, MongoDB
+- **Frontend**: Vite, React.js, Material-UI, React Router v6, Axios
+- **Backend**: Node.js, Express.js, Prisma ORM, PostgreSQL, JWT
 - **AI Service**: Python, Flask, scikit-learn
 - **ETL Pipeline**: Python, Pandas
 - **Cloud & DevOps**: AWS (EC2, S3, Lambda), Docker Compose, GitHub Actions
@@ -48,8 +48,22 @@ The team is now ready to begin parallel development on the core modules:
 ## 🏃‍♂️ How to Get Started
 
 1. **Clone the Repository**: Pull the latest code to your local machine.
-2. **Review the Requirements**: Read `PRD.md` to fully understand the system requirements and your specific module.
-3. **Branch Out**: Checkout to your designated feature branch (do not push directly to `main` or `dev`).
-4. **Test-Driven Approach**: Read your module's specific test document in the `tests/` folder to understand the exact acceptance criteria before you start coding.
-5. **Begin Coding**: Start development in your respective folders (`client/` or `server/`).
-6. **Update Progress**: Once a feature is complete and passes the test cases, update this README with your completed tasks and raise a PR to the `dev` branch.
+2. **Backend Setup**:
+   - Make sure your local PostgreSQL is running.
+   - Inside the `server/` folder, create a `.env` file with:
+     ```env
+     DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/library_db?schema=public"
+     PORT=5000
+     JWT_SECRET="your_secret_key"
+     ```
+   - Run `npm install` inside `server/`.
+   - Run `npx prisma db push` to create the database tables.
+   - Run `npx prisma generate` to generate the client.
+   - Run `npm run dev` to start the backend.
+3. **Frontend Setup**:
+   - Inside the `client/` folder, run `npm install`.
+   - Run `npm run dev` to start the Vite frontend on port 3000.
+4. **Review the Requirements**: Read `PRD.md` to fully understand the system requirements and your specific module.
+5. **Branch Out**: Checkout to your designated feature branch (do not push directly to `main` or `dev`).
+6. **Test-Driven Approach**: Read your module's specific test document in the `tests/` folder.
+7. **Update Progress**: Once a feature is complete, update this README and raise a PR.

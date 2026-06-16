@@ -1,20 +1,4 @@
-const mongoose = require('mongoose');
-const Reservation = require('../models/Reservation');
-const User = require('../models/User');
-
-// Helper to lazily load Book model
-const getBookModel = () => {
-  if (mongoose.models.Book) {
-    return mongoose.models.Book;
-  }
-  return mongoose.model('Book', new mongoose.Schema({
-    title: { type: String, required: true },
-    author: { type: String, required: true },
-    coverImage: { type: String },
-    isbn: { type: String, required: true },
-    availableCopies: { type: Number, default: 0 }
-  }, { timestamps: true, collection: 'books' }));
-};
+const prisma = require('../prisma/client');
 
 /**
  * Helper to auto-expire reservations and notify next in queue.
@@ -24,15 +8,19 @@ const autoExpireReservations = async () => {
   try {
     const now = new Date();
     // Find all pending, notified reservations that have expired
-    const expiredReservations = await Reservation.find({
-      status: 'pending',
-      notified: true,
-      expiresAt: { $lt: now }
+    const expiredReservations = await prisma.reservation.findMany({
+      where: {
+        status: 'pending',
+        notified: true,
+        expiresAt: { lt: now }
+      }
     });
 
     for (const resDoc of expiredReservations) {
-      resDoc.status = 'expired';
-      await resDoc.save();
+      await prisma.reservation.update({
+        where: { id: resDoc.id },
+        data: { status: 'expired' }
+      });
       // Notify the next person in queue
       await notifyNextInQueue(resDoc.bookId);
     }
@@ -47,22 +35,29 @@ const autoExpireReservations = async () => {
 const notifyNextInQueue = async (bookId) => {
   try {
     // Find next pending, unnotified reservation sorted by reservedAt
-    const nextReservation = await Reservation.findOne({
-      bookId,
-      status: 'pending',
-      notified: false
-    }).sort({ reservedAt: 1 });
+    const nextReservation = await prisma.reservation.findFirst({
+      where: {
+        bookId,
+        status: 'pending',
+        notified: false
+      },
+      orderBy: { reservedAt: 'asc' }
+    });
 
     if (nextReservation) {
-      nextReservation.notified = true;
-      // Expires 3 days from now
-      nextReservation.expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-      await nextReservation.save();
+      const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+      
+      await prisma.reservation.update({
+        where: { id: nextReservation.id },
+        data: {
+          notified: true,
+          expiresAt
+        }
+      });
 
       // Trigger Email Notification (if mailer exists)
-      const Book = getBookModel();
-      const member = await User.findById(nextReservation.memberId);
-      const book = await Book.findById(nextReservation.bookId);
+      const member = await prisma.user.findUnique({ where: { id: nextReservation.memberId } });
+      const book = await prisma.book.findUnique({ where: { id: nextReservation.bookId } });
 
       if (member && book) {
         let mailer;
@@ -76,7 +71,7 @@ const notifyNextInQueue = async (bookId) => {
           await mailer.sendMail({
             to: member.email,
             subject: 'Reserved Book Available - LMS',
-            text: `Hello ${member.name},\n\nYour reserved book "${book.title}" is now available for borrowing. You have 3 days (until ${nextReservation.expiresAt.toLocaleDateString()}) to borrow this book before your reservation expires.\n\nThank you,\nLibrary Management System`
+            text: `Hello ${member.name},\n\nYour reserved book "${book.title}" is now available for borrowing. You have 3 days (until ${expiresAt.toLocaleDateString()}) to borrow this book before your reservation expires.\n\nThank you,\nLibrary Management System`
           });
         }
       }
@@ -95,8 +90,9 @@ const createReservation = async (req, res) => {
     await autoExpireReservations();
 
     const { bookId } = req.body;
-    // For Admins/Librarians, allow passing memberId in body. Otherwise, default to logged-in user.
     let memberId = req.user.id;
+    
+    // Admins/Librarians can reserve for others
     if ((req.user.role === 'admin' || req.user.role === 'librarian') && req.body.memberId) {
       memberId = req.body.memberId;
     }
@@ -106,7 +102,7 @@ const createReservation = async (req, res) => {
     }
 
     // 1. Verify Member Status
-    const member = await User.findById(memberId);
+    const member = await prisma.user.findUnique({ where: { id: memberId } });
     if (!member) {
       return res.status(404).json({ success: false, message: 'Member not found' });
     }
@@ -115,8 +111,7 @@ const createReservation = async (req, res) => {
     }
 
     // 2. Verify Book Availability
-    const Book = getBookModel();
-    const book = await Book.findById(bookId);
+    const book = await prisma.book.findUnique({ where: { id: bookId } });
     if (!book) {
       return res.status(404).json({ success: false, message: 'Book not found' });
     }
@@ -130,10 +125,12 @@ const createReservation = async (req, res) => {
     }
 
     // 3. Enforce maximum 1 active reservation per book per member
-    const existingReservation = await Reservation.findOne({
-      memberId,
-      bookId,
-      status: 'pending'
+    const existingReservation = await prisma.reservation.findFirst({
+      where: {
+        memberId,
+        bookId,
+        status: 'pending'
+      }
     });
 
     if (existingReservation) {
@@ -141,14 +138,14 @@ const createReservation = async (req, res) => {
     }
 
     // Create reservation
-    const reservation = new Reservation({
-      memberId,
-      bookId,
-      status: 'pending',
-      notified: false
+    const reservation = await prisma.reservation.create({
+      data: {
+        memberId,
+        bookId,
+        status: 'pending',
+        notified: false
+      }
     });
-
-    await reservation.save();
 
     res.status(201).json({
       success: true,
@@ -174,10 +171,15 @@ const getMemberReservations = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. You can only view your own reservations.' });
     }
 
-    const Book = getBookModel(); // Ensure model loaded
-    const reservations = await Reservation.find({ memberId })
-      .populate('bookId', 'title author coverImage isbn')
-      .sort({ createdAt: -1 });
+    const reservations = await prisma.reservation.findMany({
+      where: { memberId },
+      include: {
+        book: {
+          select: { title: true, author: true, coverImage: true, isbn: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.status(200).json({
       success: true,
@@ -199,13 +201,13 @@ const cancelReservation = async (req, res) => {
 
     const { id } = req.params;
 
-    const reservation = await Reservation.findById(id);
+    const reservation = await prisma.reservation.findUnique({ where: { id } });
     if (!reservation) {
       return res.status(404).json({ success: false, message: 'Reservation not found' });
     }
 
     // Auth check
-    if (req.user.role === 'member' && req.user.id !== reservation.memberId.toString()) {
+    if (req.user.role === 'member' && req.user.id !== reservation.memberId) {
       return res.status(403).json({ success: false, message: 'Access denied. You can only cancel your own reservations.' });
     }
 
@@ -213,11 +215,12 @@ const cancelReservation = async (req, res) => {
       return res.status(400).json({ success: false, message: `Cannot cancel a reservation that is already ${reservation.status}` });
     }
 
-    reservation.status = 'cancelled';
-    await reservation.save();
+    const updatedReservation = await prisma.reservation.update({
+      where: { id },
+      data: { status: 'cancelled' }
+    });
 
-    // If this reservation was already notified (meaning book was allocated to them),
-    // and they cancel, we pass the book to the next person in queue.
+    // If this reservation was already notified pass the book to the next person in queue.
     if (reservation.notified) {
       await notifyNextInQueue(reservation.bookId);
     }
@@ -225,7 +228,7 @@ const cancelReservation = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Reservation cancelled successfully',
-      data: reservation
+      data: updatedReservation
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -242,12 +245,18 @@ const getReservationQueue = async (req, res) => {
 
     const { bookId } = req.params;
 
-    const queue = await Reservation.find({
-      bookId,
-      status: 'pending'
-    })
-    .populate('memberId', 'name email membershipId status')
-    .sort({ reservedAt: 1 });
+    const queue = await prisma.reservation.findMany({
+      where: {
+        bookId,
+        status: 'pending'
+      },
+      include: {
+        member: {
+          select: { name: true, email: true, membershipId: true, status: true }
+        }
+      },
+      orderBy: { reservedAt: 'asc' }
+    });
 
     res.status(200).json({
       success: true,
@@ -267,11 +276,13 @@ const getAllReservations = async (req, res) => {
   try {
     await autoExpireReservations();
 
-    const Book = getBookModel(); // Ensure model loaded
-    const reservations = await Reservation.find()
-      .populate('memberId', 'name email membershipId status')
-      .populate('bookId', 'title author coverImage isbn')
-      .sort({ createdAt: -1 });
+    const reservations = await prisma.reservation.findMany({
+      include: {
+        member: { select: { name: true, email: true, membershipId: true, status: true } },
+        book: { select: { title: true, author: true, coverImage: true, isbn: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.status(200).json({
       success: true,
@@ -289,5 +300,5 @@ module.exports = {
   cancelReservation,
   getReservationQueue,
   getAllReservations,
-  notifyNextInQueue // Exported for use on borrowing return updates
+  notifyNextInQueue
 };

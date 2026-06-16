@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const prisma = require('../prisma/client');
 
 /**
  * Protect routes - verify JWT token
@@ -25,7 +25,22 @@ const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_key');
 
     // Add user from payload to request object
-    req.user = await User.findById(decoded.id).select('-password');
+    req.user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        membershipId: true,
+        status: true,
+        profileImage: true,
+        createdAt: true,
+        updatedAt: true
+      } // Excludes password
+    });
+
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'User associated with token no longer exists.' });
     }
