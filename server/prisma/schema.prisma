@@ -8,17 +8,23 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  password     String
-  role         String    @default("member") // "admin", "librarian", "member"
-  phone        String?
-  membershipId String?   @unique
-  status       String    @default("active") // "active", "suspended", "expired"
-  profileImage String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  password       String
+  role           String    @default("member") // "admin", "librarian", "member"
+  phone          String?
+  membershipId   String?   @unique
+  status         String    @default("active") // "active", "suspended", "expired"
+  profileImage   String?
+  // Staff-specific fields
+  department     String?
+  employeeId     String?   @unique
+  // Account lockout fields
+  loginAttempts  Int       @default(0)
+  lockUntil      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   reservations Reservation[]
   borrows      Borrow[]

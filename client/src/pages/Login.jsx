@@ -1,16 +1,38 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
+  const [formData, setFormData]         = useState({ email: '', password: '' });
+  const [error, setError]               = useState('');
+  const [loading, setLoading]           = useState(false);
 
-  const handleLogin = (e) => {
+  const { login } = useAuth();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+
+  // If user was redirected from a protected route, send them back there after login
+  const from = location.state?.from?.pathname || '/dashboard';
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    if (error) setError(''); // clear error on new input
+  };
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // For now, mock login and redirect to dashboard
-    localStorage.setItem('token', 'mock-jwt-token');
-    localStorage.setItem('user', JSON.stringify({ id: '1', name: 'Mock Admin', role: 'admin' }));
-    navigate('/dashboard');
+    setLoading(true);
+    setError('');
+    try {
+      await login(formData.email, formData.password);
+      navigate(from, { replace: true });
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Login failed. Please try again.';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,6 +73,14 @@ const Login = () => {
             <h1 className="font-headline-2xl text-headline-2xl text-on-surface mb-2">Welcome back</h1>
             <p className="font-body-base text-body-base text-text-secondary">Please enter your credentials to access your workspace.</p>
           </div>
+
+          {/* Error Banner */}
+          {error && (
+            <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+              <span className="material-symbols-outlined text-red-500 text-xl mt-0.5 flex-shrink-0">error</span>
+              <p className="font-body-sm text-body-sm text-red-700">{error}</p>
+            </div>
+          )}
           
           <form className="space-y-6" onSubmit={handleLogin}>
             {/* Email Input */}
@@ -67,6 +97,9 @@ const Login = () => {
                   placeholder="name@institution.edu" 
                   required 
                   type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -75,7 +108,6 @@ const Login = () => {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block font-label-xs text-label-xs text-on-surface uppercase" htmlFor="password">Password</label>
-                <a className="font-body-sm text-body-sm text-primary hover:text-primary-fixed-variant transition-colors" href="#">Forgot password?</a>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -88,6 +120,9 @@ const Login = () => {
                   placeholder="••••••••" 
                   required 
                   type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={handleChange}
+                  autoComplete="current-password"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <button 
@@ -103,25 +138,21 @@ const Login = () => {
               </div>
             </div>
             
-            {/* Remember Me */}
-            <div className="flex items-center">
-              <input 
-                className="h-4 w-4 text-primary focus:ring-focus-ring border-border-default rounded bg-bg-surface cursor-pointer" 
-                id="remember-me" 
-                name="remember-me" 
-                type="checkbox"
-              />
-              <label className="ml-2 block font-body-sm text-body-sm text-text-secondary cursor-pointer" htmlFor="remember-me">
-                Remember me for 30 days
-              </label>
-            </div>
-            
             {/* Submit Button */}
             <button 
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-[10px] text-on-primary bg-primary brand-glow font-headline-lg text-headline-lg transition-all duration-150 active:scale-[0.97]" 
+              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-[10px] text-on-primary bg-primary brand-glow font-headline-lg text-headline-lg transition-all duration-150 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed" 
               type="submit"
+              disabled={loading}
+              id="login-submit-btn"
             >
-              Sign in to Workspace
+              {loading ? (
+                <>
+                  <span className="material-symbols-outlined text-xl animate-spin">progress_activity</span>
+                  Signing in…
+                </>
+              ) : (
+                'Sign in to Workspace'
+              )}
             </button>
           </form>
           
