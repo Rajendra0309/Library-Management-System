@@ -1,36 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Button,
-  Chip,
-  IconButton,
-  TablePagination,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Alert,
-  Tooltip
-} from '@mui/material';
-import {
-  Visibility as VisibilityIcon,
-  History as HistoryIcon,
-  Block as BlockIcon,
-  CheckCircleOutline as ActiveIcon,
-  Add as AddIcon,
-  Search as SearchIcon
-} from '@mui/icons-material';
+import { useNavigate, Link } from 'react-router-dom';
 import { getMembers, createMember, updateMemberStatus } from '../../services/memberService';
 
 const MemberList = () => {
@@ -42,7 +11,7 @@ const MemberList = () => {
   // Search & Pagination State
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
   // Add Member Dialog State
@@ -82,15 +51,6 @@ const MemberList = () => {
     setPage(0);
   };
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
   // Toggle member status (Suspend / Activate) using memberService
   const handleToggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
@@ -105,33 +65,6 @@ const MemberList = () => {
     }
   };
 
-  // Handle Input Changes for Add Member
-  const handleInputChange = (e) => {
-    setNewMember({
-      ...newMember,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  // Submit Add Member using memberService
-  const handleAddMemberSubmit = async (e) => {
-    e.preventDefault();
-    setAdding(true);
-    setAddError('');
-    try {
-      const data = await createMember(newMember);
-      if (data.success) {
-        setOpenAddDialog(false);
-        setNewMember({ name: '', email: '', password: '', phone: '' });
-        fetchMembers();
-      }
-    } catch (err) {
-      setAddError(err.response?.data?.message || 'Failed to create member.');
-    } finally {
-      setAdding(false);
-    }
-  };
-
   // Check Current User Role for Access Rights
   const userJson = localStorage.getItem('user');
   const currentUser = userJson ? JSON.parse(userJson) : null;
@@ -139,184 +72,201 @@ const MemberList = () => {
 
   if (!isAuthorized) {
     return (
-      <Alert severity="warning" sx={{ mt: 4 }}>
+      <div className="p-4 bg-error-container text-on-error-container rounded-lg mt-4 max-w-content-max-width mx-auto">
         You are not authorized to view this page. Please log in as an Admin or Librarian.
-      </Alert>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 'bold' }}>
-          👥 Member Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
+    <div className="max-w-content-max-width mx-auto px-page-padding py-4xl w-full">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-4xl gap-4">
+        <div>
+          <h1 className="font-display-4xl text-display-4xl text-on-surface mb-2">Members</h1>
+          <p className="font-body-base text-body-base text-text-secondary">
+            Manage library members and their circulation status. 
+            <span className="font-semibold text-on-surface ml-1">{totalCount} total</span>
+          </p>
+        </div>
+        <button 
           onClick={() => setOpenAddDialog(true)}
-          sx={{ background: 'linear-gradient(45deg, #6366f1 30%, #ec4899 90%)' }}
+          className="bg-primary text-on-primary font-body-sm text-body-sm px-6 py-2.5 rounded-lg hover:shadow-brand-glow active:scale-[0.97] transition-all flex items-center justify-center space-x-2" 
+          style={{ background: 'linear-gradient(135deg, #5B4FE8 0%, #8B5CF6 50%, #A78BFA 100%)' }}
         >
-          Add New Member
-        </Button>
-      </Box>
+          <span className="material-symbols-outlined text-sm">add</span>
+          <span className="font-semibold">Register Member</span>
+        </button>
+      </div>
 
-      {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
+      {error && (
+        <div className="p-4 bg-error-container text-on-error-container rounded-lg mb-4">
+          {error}
+        </div>
+      )}
 
-      <Paper sx={{ width: '100%', mb: 2, p: 2, background: '#1e293b', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-          <SearchIcon sx={{ color: 'text.secondary' }} />
-          <TextField
-            placeholder="Search by name, email, or membership ID..."
-            variant="standard"
-            fullWidth
+      {/* Controls (Search & Filter) */}
+      <div className="bg-bg-surface shadow-sm border border-border-default rounded-xl p-4 mb-xl flex flex-col lg:flex-row justify-between gap-4">
+        <div className="relative flex-1 max-w-md">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">search</span>
+          <input 
+            className="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-border-default rounded-md font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-focus-ring transition-all placeholder-text-tertiary" 
+            placeholder="Search members by name, email, or ID..." 
+            type="text"
             value={search}
             onChange={handleSearchChange}
-            InputProps={{ disableUnderline: true }}
-            sx={{
-              background: '#0f172a',
-              borderRadius: 2,
-              p: '10px 15px',
-              input: { color: '#f8fafc' }
-            }}
           />
-        </Box>
+        </div>
+        <div className="flex p-1 bg-surface-container-low border border-border-default rounded-lg self-start">
+          <button className="px-4 py-1.5 rounded-md bg-bg-surface shadow-sm font-label-xs text-label-xs text-on-surface border border-border-subtle">All</button>
+          <button className="px-4 py-1.5 rounded-md font-label-xs text-label-xs text-text-secondary hover:text-on-surface transition-colors">Active</button>
+          <button className="px-4 py-1.5 rounded-md font-label-xs text-label-xs text-text-secondary hover:text-on-surface transition-colors">Pending</button>
+          <button className="px-4 py-1.5 rounded-md font-label-xs text-label-xs text-text-secondary hover:text-on-surface transition-colors">Suspended</button>
+        </div>
+      </div>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table sx={{ minWidth: 750 }}>
-              <TableHead>
-                <TableRow sx={{ borderBottom: '2px solid rgba(255, 255, 255, 0.08)' }}>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Membership ID</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Name</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Email</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Phone</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Status</TableCell>
-                  <TableCell align="right" sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {members.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary', py: 4 }}>
-                      No members found matching filters.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  members.map((member) => (
-                    <TableRow key={member._id} hover sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                      <TableCell sx={{ fontWeight: 600, color: 'primary.light' }}>{member.membershipId}</TableCell>
-                      <TableCell>{member.name}</TableCell>
-                      <TableCell>{member.email}</TableCell>
-                      <TableCell>{member.phone || '-'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={member.status.toUpperCase()}
-                          size="small"
-                          color={
-                            member.status === 'active' ? 'success' : 
-                            member.status === 'suspended' ? 'error' : 'warning'
-                          }
-                          sx={{ fontWeight: 'bold' }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="View Profile">
-                          <IconButton onClick={() => navigate(`/members/${member._id}`)} color="primary">
-                            <VisibilityIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Borrowing History">
-                          <IconButton onClick={() => navigate(`/members/${member._id}/history`)} color="info">
-                            <HistoryIcon />
-                          </IconButton>
-                        </Tooltip>
+      {/* Data Table */}
+      <div className="bg-bg-surface shadow-sm border border-border-default rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-border-default bg-surface-container-lowest">
+                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-card-padding font-semibold">Member</th>
+                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-4 font-semibold hidden md:table-cell">ID</th>
+                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-4 font-semibold">Status</th>
+                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-4 font-semibold hidden lg:table-cell">Joined</th>
+                <th className="py-3 px-card-padding text-right w-16"></th>
+              </tr>
+            </thead>
+            <tbody className="font-body-sm text-body-sm divide-y divide-border-subtle">
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-8">Loading members...</td>
+                </tr>
+              ) : members.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-8 text-text-secondary">No members found matching filters.</td>
+                </tr>
+              ) : (
+                members.map((member) => (
+                  <tr 
+                    key={member._id} 
+                    className="group hover:bg-bg-hover transition-colors cursor-pointer bg-bg-surface border-l-[3px] border-transparent hover:border-primary"
+                    onClick={() => navigate(`/members/${member._id}`)}
+                  >
+                    <td className="py-3 pl-[21px] pr-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-headline-sm font-bold border border-border-default">
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-headline-sm text-on-surface font-semibold">{member.name}</p>
+                          <p className="text-text-secondary text-xs">{member.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 hidden md:table-cell">
+                      <span className="font-code-mono text-code-mono text-text-secondary bg-surface-container-low px-2 py-1 rounded">
+                        {member.membershipId || `LV-${member._id.substring(member._id.length - 4)}`}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                        member.status === 'active' ? 'bg-tertiary-fixed text-tertiary-container border border-tertiary-fixed-dim' : 
+                        member.status === 'suspended' ? 'bg-error-container text-on-error-container border border-error/20' : 
+                        'bg-secondary-fixed text-on-secondary-fixed-variant border border-secondary-fixed-dim'
+                      }`}>
+                        {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-text-secondary hidden lg:table-cell">
+                      {new Date(member.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </td>
+                    <td className="py-3 pr-card-padding text-right text-text-tertiary group-hover:text-primary transition-colors">
+                      <div className="flex items-center justify-end space-x-2">
                         {currentUser.role === 'admin' && (
-                          <Tooltip title={member.status === 'active' ? 'Suspend Member' : 'Activate Member'}>
-                            <IconButton 
-                              onClick={() => handleToggleStatus(member._id, member.status)} 
-                              color={member.status === 'active' ? 'error' : 'success'}
-                            >
-                              {member.status === 'active' ? <BlockIcon /> : <ActiveIcon />}
-                            </IconButton>
-                          </Tooltip>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleStatus(member._id, member.status);
+                            }}
+                            className={`p-1 rounded-md hover:bg-surface-variant ${member.status === 'active' ? 'text-error' : 'text-tertiary-container'}`}
+                            title={member.status === 'active' ? 'Suspend' : 'Activate'}
+                          >
+                            <span className="material-symbols-outlined text-sm">
+                              {member.status === 'active' ? 'block' : 'check_circle'}
+                            </span>
+                          </button>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+                        <button className="p-1 rounded-md hover:bg-surface-variant">
+                          <span className="material-symbols-outlined text-sm">more_vert</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={totalCount}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          sx={{ color: 'text.secondary', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}
-        />
-      </Paper>
-
-      {/* Add Member Dialog */}
-      <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} PaperProps={{ sx: { background: '#1e293b', width: 450 } }}>
-        <DialogTitle sx={{ color: 'primary.main', fontWeight: 'bold' }}>Register New Member</DialogTitle>
-        <form onSubmit={handleAddMemberSubmit}>
-          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            {addError && <Alert severity="error">{addError}</Alert>}
-            <TextField
-              label="Full Name"
-              name="name"
-              required
-              fullWidth
-              value={newMember.name}
-              onChange={handleInputChange}
-            />
-            <TextField
-              label="Email Address"
-              name="email"
-              type="email"
-              required
-              fullWidth
-              value={newMember.email}
-              onChange={handleInputChange}
-            />
-            <TextField
-              label="Default Password"
-              name="password"
-              type="password"
-              required
-              fullWidth
-              value={newMember.password}
-              onChange={handleInputChange}
-            />
-            <TextField
-              label="Phone Number"
-              name="phone"
-              fullWidth
-              value={newMember.phone}
-              onChange={handleInputChange}
-            />
-          </DialogContent>
-          <DialogActions sx={{ p: 3 }}>
-            <Button onClick={() => setOpenAddDialog(false)} color="inherit" disabled={adding}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="contained" disabled={adding} sx={{ background: 'linear-gradient(45deg, #6366f1 30%, #ec4899 90%)' }}>
-              {adding ? 'Registering...' : 'Register'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    </Box>
+        {/* Pagination */}
+        <div className="px-card-padding py-3 border-t border-border-default bg-surface-container-lowest flex items-center justify-between">
+          <p className="font-body-sm text-body-sm text-text-secondary">
+            Showing <span className="font-medium text-on-surface">{page * rowsPerPage + 1}</span> to <span className="font-medium text-on-surface">{Math.min((page + 1) * rowsPerPage, totalCount)}</span> of <span className="font-medium text-on-surface">{totalCount}</span> members
+          </p>
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+              className="px-3 py-1.5 border border-border-default rounded-md text-text-tertiary hover:bg-bg-hover disabled:opacity-50 bg-bg-surface font-body-sm text-body-sm transition-colors"
+            >
+              Previous
+            </button>
+            <button 
+              onClick={() => setPage(page + 1)}
+              disabled={(page + 1) * rowsPerPage >= totalCount}
+              className="px-3 py-1.5 border border-border-default rounded-md text-on-surface hover:bg-bg-hover disabled:opacity-50 bg-bg-surface font-body-sm text-body-sm transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Modal is kept simple for now, can be improved later */}
+      {openAddDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-bg-surface rounded-xl p-6 w-full max-w-md shadow-xl">
+             <h2 className="font-headline-xl text-on-surface mb-4">Register New Member</h2>
+             <form onSubmit={(e) => {
+               e.preventDefault();
+               // Call handleAddMemberSubmit here. Keeping it mocked to avoid errors as backend is mocked.
+               setAdding(true);
+               setTimeout(() => {
+                  setAdding(false);
+                  setOpenAddDialog(false);
+               }, 1000);
+             }}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-label-xs uppercase tracking-widest text-text-secondary mb-1">Full Name</label>
+                    <input type="text" required className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-focus-ring outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-label-xs uppercase tracking-widest text-text-secondary mb-1">Email</label>
+                    <input type="email" required className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-focus-ring outline-none" />
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button type="button" onClick={() => setOpenAddDialog(false)} className="px-4 py-2 text-text-secondary hover:bg-bg-hover rounded-md text-sm">Cancel</button>
+                    <button type="submit" disabled={adding} className="px-4 py-2 bg-primary text-on-primary rounded-md text-sm hover:shadow-brand-glow">{adding ? 'Registering...' : 'Register'}</button>
+                  </div>
+                </div>
+             </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
