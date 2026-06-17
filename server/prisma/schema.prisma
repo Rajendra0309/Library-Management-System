@@ -30,7 +30,16 @@ model Book {
   author          String
   coverImage      String?
   isbn            String   @unique
+  barcode         String?  @unique
+  genre           String[]
+  language        String   @default("English")
+  publisher       String?
+  publishYear     Int?
+  description     String?
+  totalCopies     Int      @default(1)
   availableCopies Int      @default(0)
+  isEbook         Boolean  @default(false)
+  ebookUrl        String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
