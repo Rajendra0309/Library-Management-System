@@ -20,6 +20,32 @@ We have successfully completed **Phase 1: Setup & Foundation**. The following in
 - [x] **Version Control Setup**
   - Configured a comprehensive `.gitignore` file to ensure clean commits (excluding node_modules, Python caches, build artifacts, etc.).
 
+### Module 1: Authentication & Staff (Samarth)
+- [x] Finalized the core User and Staff database schemas in Prisma.
+- [ ] API endpoints for Login, Register, and Role-Based Access Control.
+
+### Module 2: Books & Search (Madhusudhan)
+- [x] Analyzed requirements for the Book Catalog and finalized the DB model.
+- [ ] API endpoints for Book CRUD, Catalog Search, and Inventory tracking.
+
+### Module 3: Members & Reservations (Samrudhi)
+- [x] Defined logic for membership ID generation and reservation queue workflows.
+- [ ] API endpoints for Member management and Book Reservations.
+
+### Module 4: Borrowing & Fines (Spoorthy)
+- [x] Initialized the GitHub repository and base project folder structure.
+- [ ] API endpoints for Issuing/Returning books and calculating Overdue Fines.
+
+### Module 5 (Integration & AI) Progress (Rajendra)
+- [x] **Phase 1: AI Recommendation Backend & API**
+  - Created Python Flask service with `scikit-learn` content-based filtering logic.
+  - Successfully connected AI service to PostgreSQL database.
+  - Implemented Node.js API endpoints (`/api/ai/recommend`) to proxy requests securely.
+  - Passed TC-03 and TC-04 endpoint tests.
+- [ ] Phase 2: Data Engineering (ETL Pipeline)
+- [ ] Phase 3: Frontend Dashboard Integration
+- [ ] Phase 4: DevOps & Cloud Architecture
+
 ---
 
 ## 🎯 Next Steps (Phase 2: Core Modules Development)
@@ -29,7 +55,7 @@ The team is now ready to begin parallel development on the core modules:
 - **Member 2 (Madhusudhan)**: Book Management + Search & Catalog (`feature/books-search`)
 - **Member 3 (Samrudhi)**: Member Management + Reservation System (`feature/members-reservations`)
 - **Member 4 (Spoorthy)**: Borrowing & Returns + Fine Management (`feature/borrowing-fines`)
-- **Member 5 / Lead (Rajendra)**: Integration + Data Engineering + Cloud + DevOps + Reporting (`feature/integration-ai-cloud`)
+- **Member 5 (Rajendra)**: Integration + Data Engineering + Cloud + DevOps + Reporting (`feature/integration-ai-cloud`)
 
 ---
 

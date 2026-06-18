@@ -25,9 +25,11 @@ app.use(express.json());
 // Routes
 const memberRoutes = require('./routes/member.routes');
 const reservationRoutes = require('./routes/reservation.routes');
+const aiRoutes = require('./routes/ai.routes');
 
 app.use('/api/members', memberRoutes);
 app.use('/api/reservations', reservationRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Base route for health check
 app.get('/', (req, res) => {
