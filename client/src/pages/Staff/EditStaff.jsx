@@ -1,13 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 
-// Password validation helpers
-const hasMinLength = (p) => p.length >= 8;
-const hasNumber    = (p) => /\d/.test(p);
-const hasSpecial   = (p) => /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/.test(p);
-
-// ─── InputField defined OUTSIDE AddStaff so it never re-mounts on re-render ──
+// ─── Reusable InputField (defined at module level — never re-mounts) ──────────
 const InputField = ({ label, name, type = 'text', placeholder, required = false, hint, value, onChange, error }) => (
   <div>
     <label
@@ -45,25 +40,49 @@ const InputField = ({ label, name, type = 'text', placeholder, required = false,
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const AddStaff = () => {
+const EditStaff = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
     phone: '',
     role: 'librarian',
     department: '',
-    employeeId: ''
+    employeeId: '',
+    status: 'active'
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]           = useState(false);
-  const [error, setError]               = useState('');
-  const [fieldErrors, setFieldErrors]   = useState({});
+  const [originalEmail, setOriginalEmail] = useState('');
+  const [fetchLoading, setFetchLoading]   = useState(true);
+  const [fetchError, setFetchError]       = useState('');
+  const [loading, setLoading]             = useState(false);
+  const [error, setError]                 = useState('');
+  const [fieldErrors, setFieldErrors]     = useState({});
 
-  const password = formData.password;
+  // ── Fetch existing staff data on mount ────────────────────────────────────
+  useEffect(() => {
+    const fetchStaff = async () => {
+      setFetchLoading(true);
+      try {
+        const res = await api.get(`/staff/${id}`);
+        const s   = res.data.data;
+        setFormData({
+          name:       s.name       || '',
+          phone:      s.phone      || '',
+          role:       s.role       || 'librarian',
+          department: s.department || '',
+          employeeId: s.employeeId || '',
+          status:     s.status     || 'active'
+        });
+        setOriginalEmail(s.email || '');
+      } catch (err) {
+        setFetchError(err.response?.data?.message || 'Failed to load staff member.');
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+    fetchStaff();
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,12 +95,7 @@ const AddStaff = () => {
 
   const validate = () => {
     const errs = {};
-    if (!formData.name.trim())      errs.name  = 'Full name is required.';
-    if (!formData.email.trim())     errs.email = 'Email is required.';
-    if (!hasMinLength(password))    errs.password = 'Password must be at least 8 characters.';
-    else if (!hasNumber(password))  errs.password = 'Password must contain at least one number.';
-    else if (!hasSpecial(password)) errs.password = 'Password must contain at least one special character.';
-    if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
+    if (!formData.name.trim()) errs.name = 'Full name is required.';
     return errs;
   };
 
@@ -96,22 +110,49 @@ const AddStaff = () => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/staff', {
+      await api.put(`/staff/${id}`, {
         name:       formData.name,
-        email:      formData.email,
-        password:   formData.password,
         phone:      formData.phone       || undefined,
         role:       formData.role,
         department: formData.department  || undefined,
-        employeeId: formData.employeeId  || undefined
+        employeeId: formData.employeeId  || undefined,
+        status:     formData.status
       });
-      navigate('/staff', { state: { successMsg: `Staff member "${formData.name}" added successfully.` } });
+      navigate('/staff', { state: { successMsg: `"${formData.name}" updated successfully.` } });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create staff member. Please try again.');
+      setError(err.response?.data?.message || 'Failed to update staff member. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  // ── Loading skeleton ───────────────────────────────────────────────────────
+  if (fetchLoading) {
+    return (
+      <div className="flex-1 w-full max-w-content-max-width mx-auto p-page-padding flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <span className="material-symbols-outlined text-4xl text-text-tertiary animate-spin">progress_activity</span>
+          <p className="font-body-sm text-body-sm text-text-secondary">Loading staff details…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Fetch error state ──────────────────────────────────────────────────────
+  if (fetchError) {
+    return (
+      <div className="flex-1 w-full max-w-content-max-width mx-auto p-page-padding flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <span className="material-symbols-outlined text-5xl text-red-400">error</span>
+        <p className="font-headline-lg text-headline-lg text-on-surface">{fetchError}</p>
+        <button
+          className="px-6 py-2.5 rounded-lg bg-primary text-white font-body-sm text-body-sm hover:opacity-90 transition-opacity"
+          onClick={() => navigate('/staff')}
+        >
+          Back to Staff List
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 w-full max-w-content-max-width mx-auto p-page-padding">
@@ -125,8 +166,10 @@ const AddStaff = () => {
           <span className="material-symbols-outlined text-lg">arrow_back</span>
         </button>
         <div>
-          <h1 className="font-display-3xl text-display-3xl text-on-surface">Add Staff Member</h1>
-          <p className="font-body-base text-body-base text-text-secondary">Create a new admin or librarian account.</p>
+          <h1 className="font-display-3xl text-display-3xl text-on-surface">Edit Staff Member</h1>
+          <p className="font-body-base text-body-base text-text-secondary">
+            Editing: <span className="font-semibold text-primary">{originalEmail}</span>
+          </p>
         </div>
       </div>
 
@@ -156,16 +199,19 @@ const AddStaff = () => {
               onChange={handleChange}
               error={fieldErrors.name}
             />
-            <InputField
-              label="Email Address"
-              name="email"
-              type="email"
-              placeholder="jane@libravault.edu"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              error={fieldErrors.email}
-            />
+            {/* Email is read-only — changing email could break authentication */}
+            <div>
+              <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5">
+                Email Address <span className="normal-case font-normal text-text-tertiary">(cannot be changed)</span>
+              </label>
+              <input
+                type="email"
+                value={originalEmail}
+                readOnly
+                disabled
+                className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base bg-surface-container-low text-text-secondary cursor-not-allowed"
+              />
+            </div>
             <InputField
               label="Phone Number"
               name="phone"
@@ -228,105 +274,28 @@ const AddStaff = () => {
               onChange={handleChange}
               error={fieldErrors.employeeId}
             />
-          </div>
-        </div>
 
-        {/* ── Section: Password ─────────────────────────────────── */}
-        <div className="p-6 border-b border-border-subtle">
-          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-5 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-xl">lock</span>
-            Set Password
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Password — inline because it has a toggle button and checklist */}
+            {/* Status */}
             <div>
               <label
                 className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5"
-                htmlFor="password"
+                htmlFor="status"
               >
-                Password <span className="text-red-500">*</span>
+                Account Status
               </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  autoComplete="new-password"
-                  className={`w-full rounded-lg border px-3 pr-10 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${
-                    fieldErrors.password
-                      ? 'border-red-400 bg-red-50'
-                      : 'border-border-default focus:border-primary'
-                  }`}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-on-surface-variant"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  <span className="material-symbols-outlined text-[20px]">
-                    {showPassword ? 'visibility' : 'visibility_off'}
-                  </span>
-                </button>
-              </div>
-              {fieldErrors.password && (
-                <p className="mt-1 font-body-sm text-body-sm text-red-500 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">error</span>
-                  {fieldErrors.password}
-                </p>
-              )}
-              {/* Live checklist */}
-              {password.length > 0 && (
-                <ul className="mt-2 space-y-1">
-                  {[
-                    [hasMinLength(password), 'At least 8 characters'],
-                    [hasNumber(password),    'Contains a number'],
-                    [hasSpecial(password),   'Contains a special character']
-                  ].map(([ok, label]) => (
-                    <li key={label} className="flex items-center gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
-                      <span
-                        className={`material-symbols-outlined text-[14px] ${ok ? 'text-green-500' : 'text-outline'}`}
-                        style={{ fontVariationSettings: ok ? "'FILL' 1" : "'FILL' 0" }}
-                      >
-                        {ok ? 'check_circle' : 'radio_button_unchecked'}
-                      </span>
-                      {label}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label
-                className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5"
-                htmlFor="confirmPassword"
-              >
-                Confirm Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                required
-                value={formData.confirmPassword}
+              <select
+                id="status"
+                name="status"
+                value={formData.status}
                 onChange={handleChange}
-                autoComplete="new-password"
-                className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${
-                  fieldErrors.confirmPassword
-                    ? 'border-red-400 bg-red-50'
-                    : 'border-border-default focus:border-primary'
-                }`}
-              />
-              {fieldErrors.confirmPassword && (
-                <p className="mt-1 font-body-sm text-body-sm text-red-500 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">error</span>
-                  {fieldErrors.confirmPassword}
+                className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm bg-surface"
+              >
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+              </select>
+              {formData.status === 'suspended' && (
+                <p className="mt-1 font-body-sm text-body-sm text-red-500">
+                  ⚠️ Suspended staff cannot log in.
                 </p>
               )}
             </div>
@@ -345,19 +314,19 @@ const AddStaff = () => {
           </button>
           <button
             type="submit"
-            id="add-staff-submit-btn"
+            id="edit-staff-submit-btn"
             disabled={loading}
             className="px-8 py-2.5 rounded-lg bg-primary text-white font-body-sm text-body-sm font-semibold hover:shadow-[0_4px_14px_0_rgba(91,79,232,0.39)] active:scale-[0.97] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
               <>
                 <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
-                Creating…
+                Saving…
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-lg">person_add</span>
-                Create Staff Member
+                <span className="material-symbols-outlined text-lg">save</span>
+                Save Changes
               </>
             )}
           </button>
@@ -367,4 +336,4 @@ const AddStaff = () => {
   );
 };
 
-export default AddStaff;
+export default EditStaff;

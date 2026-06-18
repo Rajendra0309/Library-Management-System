@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 
 const ROLE_STYLES = {
@@ -31,7 +31,19 @@ const StaffList = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [successMsg, setSuccessMsg]   = useState('');
 
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location   = useLocation();
+
+  // Show success toast if redirected from AddStaff or EditStaff
+  useEffect(() => {
+    if (location.state?.successMsg) {
+      setSuccessMsg(location.state.successMsg);
+      // Clear the state so it doesn't re-show on refresh
+      window.history.replaceState({}, '');
+      setTimeout(() => setSuccessMsg(''), 4000);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchStaff = useCallback(async () => {
     setLoading(true);

@@ -29,6 +29,7 @@ import NotFound from './pages/NotFound';
 // ─── Staff Pages (Module 1) ───────────────────────────────────────────────────
 import StaffList from './pages/Staff/StaffList';
 import AddStaff from './pages/Staff/AddStaff';
+import EditStaff from './pages/Staff/EditStaff';
 
 function App() {
   return (
@@ -61,6 +62,7 @@ function App() {
                 <Route element={<ProtectedRoute roles={['admin']} />}>
                   <Route path="staff" element={<StaffList />} />
                   <Route path="staff/add" element={<AddStaff />} />
+                  <Route path="staff/edit/:id" element={<EditStaff />} />
                   <Route path="reports" element={<Reports />} />
                 </Route>
 
