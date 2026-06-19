@@ -61,3 +61,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# AI rule
+AI_RULES.md
