@@ -89,6 +89,7 @@ const getStaffById = async (req, res) => {
         employeeId: true,
         status: true,
         profileImage: true,
+        securityQuestion: true,
         createdAt: true,
         updatedAt: true
       }
@@ -133,7 +134,16 @@ const createStaff = async (req, res) => {
       });
     }
 
-    const { name, email, password, phone, role, department, employeeId } = req.body;
+    const { name, email, password, phone, role, department, employeeId, securityQuestion, securityAnswer } = req.body;
+
+    // Security question is required for staff too
+    if (!securityQuestion || !securityAnswer) {
+      return res.status(400).json({
+        success: false,
+        message: 'Security question and answer are required.',
+        error: 'Missing security question'
+      });
+    }
 
     // Check duplicate email
     const existingEmail = await prisma.user.findUnique({ where: { email } });
@@ -157,9 +167,10 @@ const createStaff = async (req, res) => {
       }
     }
 
-    // Hash password
+    // Hash password & security answer
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedAnswer = await bcrypt.hash(securityAnswer.trim().toLowerCase(), 12);
 
     const staff = await prisma.user.create({
       data: {
@@ -170,7 +181,9 @@ const createStaff = async (req, res) => {
         role: role || 'librarian',
         department: department || null,
         employeeId: employeeId || null,
-        status: 'active'
+        status: 'active',
+        securityQuestion: securityQuestion.trim(),
+        securityAnswer: hashedAnswer
       },
       select: {
         id: true,
@@ -240,7 +253,7 @@ const updateStaff = async (req, res) => {
       });
     }
 
-    const { name, phone, role, department, employeeId, status } = req.body;
+    const { name, phone, role, department, employeeId, status, securityQuestion, securityAnswer } = req.body;
 
     // Check duplicate employeeId (if changing and not own record)
     if (employeeId && employeeId !== existing.employeeId) {
@@ -256,6 +269,11 @@ const updateStaff = async (req, res) => {
       }
     }
 
+    let hashedAnswer;
+    if (securityAnswer) {
+      hashedAnswer = await bcrypt.hash(securityAnswer.trim().toLowerCase(), 12);
+    }
+
     const updatedStaff = await prisma.user.update({
       where: { id: req.params.id },
       data: {
@@ -264,7 +282,9 @@ const updateStaff = async (req, res) => {
         ...(role && { role }),
         ...(department !== undefined && { department }),
         ...(employeeId !== undefined && { employeeId }),
-        ...(status && { status })
+        ...(status && { status }),
+        ...(securityQuestion && { securityQuestion: securityQuestion.trim() }),
+        ...(hashedAnswer && { securityAnswer: hashedAnswer })
       },
       select: {
         id: true,
