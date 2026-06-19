@@ -42,8 +42,14 @@ We have successfully completed **Phase 1: Setup & Foundation**. The following in
   - Successfully connected AI service to PostgreSQL database.
   - Implemented Node.js API endpoints (`/api/ai/recommend`) to proxy requests securely.
   - Passed TC-03 and TC-04 endpoint tests.
-- [ ] Phase 2: Data Engineering (ETL Pipeline)
-- [ ] Phase 3: Frontend Dashboard Integration
+- [x] **Phase 2: Data Engineering (ETL Pipeline)**
+  - Updated PostgreSQL schema with `Report` model.
+  - Built Python data extraction and transformation logic using `pandas`.
+  - Configured `schedule` to load daily aggregates of books, members, active/overdue borrows, and fines.
+  - Implemented `/api/reports/dashboard` Express endpoint.
+- [x] **Phase 3: Frontend Dashboard Integration**
+  - Created `Dashboard.jsx` using `recharts` to visualize real-time data from ETL output.
+  - Created `ReportDetails.jsx` for tabular data representation alongside the existing `Reports.jsx` UI.
 - [ ] Phase 4: DevOps & Cloud Architecture
 
 ---

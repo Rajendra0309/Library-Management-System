@@ -67,10 +67,10 @@ Status: PASS
 ### TC-05: ETL pipeline runs
 ```
 Step 1: Run ETL manually: python etl-pipeline/scheduler.py
-Step 2: Check MongoDB reports collection
+Step 2: Check PostgreSQL reports collection
 Expected: Reports collection updated with latest aggregated data
-Actual: ___________
-Status: ___________
+Actual: ETL ran successfully and inserted data into PostgreSQL Report table
+Status: PASS
 ```
 
 ### TC-06: Dashboard charts load
@@ -78,8 +78,8 @@ Status: ___________
 Step 1: Login as admin
 Step 2: Go to /dashboard
 Expected: All charts load, no empty states, data matches DB
-Actual: ___________
-Status: ___________
+Actual: Recharts load correctly using data from GET /api/reports/dashboard
+Status: PASS
 ```
 
 ---
