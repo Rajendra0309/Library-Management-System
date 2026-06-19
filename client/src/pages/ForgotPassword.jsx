@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
@@ -7,16 +7,39 @@ const hasMinLength = (p) => p.length >= 8;
 const hasNumber    = (p) => /\d/.test(p);
 const hasSpecial   = (p) => /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/.test(p);
 
-// ─── Steps ────────────────────────────────────────────────────────────────────
 const STEP = {
-  EMAIL:         1,  // Enter email → fetch security question
-  SECURITY_Q:   2,  // Answer security question
-  OTP:           3,  // Security answer was wrong → enter OTP shown in popup
-  NEW_PASSWORD:  4,  // Verified → set new password
-  SUCCESS:       5   // Done
+  EMAIL:        1,
+  SECURITY_Q:  2,
+  OTP:          3,
+  NEW_PASSWORD: 4,
+  SUCCESS:      5
 };
 
-// ─── OTP Popup Component ──────────────────────────────────────────────────────
+// ─── All components defined at MODULE level — never re-mount on re-render ─────
+
+const StepIndicator = ({ current, total }) => (
+  <div className="flex items-center gap-2 mb-8">
+    {Array.from({ length: total }, (_, i) => i + 1).map((s) => (
+      <React.Fragment key={s}>
+        <div
+          className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold transition-all ${
+            s < current   ? 'bg-primary text-white' :
+            s === current ? 'bg-primary text-white ring-4 ring-primary/20' :
+                            'bg-surface-container-low text-text-tertiary'
+          }`}
+        >
+          {s < current
+            ? <span className="material-symbols-outlined text-[14px]">check</span>
+            : s}
+        </div>
+        {s < total && (
+          <div className={`flex-1 h-0.5 rounded-full transition-all ${s < current ? 'bg-primary' : 'bg-surface-container-low'}`} />
+        )}
+      </React.Fragment>
+    ))}
+  </div>
+);
+
 const OtpPopup = ({ otp, onClose }) => {
   const [copied, setCopied] = useState(false);
 
@@ -29,7 +52,6 @@ const OtpPopup = ({ otp, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-surface rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-border-subtle">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-5">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-outlined text-primary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -42,7 +64,6 @@ const OtpPopup = ({ otp, onClose }) => {
           </div>
         </div>
 
-        {/* OTP Display */}
         <div className="bg-surface-container-low rounded-xl p-4 mb-4 flex items-center justify-between border border-border-default">
           <span className="font-mono text-3xl font-bold tracking-[0.3em] text-on-surface select-all">
             {otp}
@@ -50,9 +71,7 @@ const OtpPopup = ({ otp, onClose }) => {
           <button
             onClick={handleCopy}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body-sm text-body-sm font-semibold transition-all ${
-              copied
-                ? 'bg-green-100 text-green-700'
-                : 'bg-primary/10 text-primary hover:bg-primary/20'
+              copied ? 'bg-green-100 text-green-700' : 'bg-primary/10 text-primary hover:bg-primary/20'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">
@@ -77,54 +96,47 @@ const OtpPopup = ({ otp, onClose }) => {
   );
 };
 
-// ─── Step Indicator ───────────────────────────────────────────────────────────
-const StepIndicator = ({ current, total }) => (
-  <div className="flex items-center gap-2 mb-8">
-    {Array.from({ length: total }, (_, i) => i + 1).map((s) => (
-      <React.Fragment key={s}>
-        <div
-          className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold transition-all ${
-            s < current  ? 'bg-primary text-white' :
-            s === current ? 'bg-primary text-white ring-4 ring-primary/20' :
-            'bg-surface-container-low text-text-tertiary'
-          }`}
-        >
-          {s < current ? (
-            <span className="material-symbols-outlined text-[14px]">check</span>
-          ) : s}
-        </div>
-        {s < total && (
-          <div className={`flex-1 h-0.5 rounded-full transition-all ${s < current ? 'bg-primary' : 'bg-surface-container-low'}`} />
-        )}
-      </React.Fragment>
-    ))}
+const ErrorBanner = ({ message }) => (
+  <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+    <span className="material-symbols-outlined text-red-500 text-xl mt-0.5 flex-shrink-0">error</span>
+    <p className="font-body-sm text-body-sm text-red-700">{message}</p>
   </div>
 );
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+const SubmitButton = ({ loading, label, loadingLabel, disabled }) => (
+  <button
+    type="submit"
+    disabled={loading || disabled}
+    className="w-full py-3 rounded-lg bg-primary text-white font-headline-lg text-headline-lg hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+  >
+    {loading && <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>}
+    {loading ? loadingLabel : label}
+  </button>
+);
+
+// ─── Main ForgotPassword Component ────────────────────────────────────────────
 const ForgotPassword = () => {
   const navigate = useNavigate();
 
-  const [step, setStep]                     = useState(STEP.EMAIL);
-  const [email, setEmail]                   = useState('');
+  const [step, setStep]                   = useState(STEP.EMAIL);
+  const [email, setEmail]                 = useState('');
   const [securityQuestion, setSecurityQuestion] = useState('');
-  const [securityAnswer, setSecurityAnswer] = useState('');
-  const [otpInput, setOtpInput]             = useState('');
-  const [newPassword, setNewPassword]       = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword]     = useState(false);
-  const [resetToken, setResetToken]         = useState('');
+  const [securityAnswer, setSecurityAnswer]     = useState('');
+  const [wrongAnswerOtp, setWrongAnswerOtp]     = useState(''); // OTP from failed answer
+  const [showOtpPopup, setShowOtpPopup]         = useState(false);
+  const [otpInput, setOtpInput]                 = useState('');
+  const [newPassword, setNewPassword]           = useState('');
+  const [confirmPassword, setConfirmPassword]   = useState('');
+  const [showPassword, setShowPassword]         = useState(false);
+  const [resetToken, setResetToken]             = useState('');
 
-  // OTP popup
-  const [otpPopupValue, setOtpPopupValue]   = useState('');
-  const [showOtpPopup, setShowOtpPopup]     = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState('');
+  const [wrongAnswer, setWrongAnswer] = useState(false); // shows "wrong answer" inline on Step 2
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
+  const clearError = () => { setError(''); setWrongAnswer(false); };
 
-  const clearError = () => setError('');
-
-  // ── Step 1: Fetch security question by email ──────────────────────────────
+  // ── Step 1: Fetch security question ────────────────────────────────────────
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -134,13 +146,13 @@ const ForgotPassword = () => {
       setSecurityQuestion(res.data.data.securityQuestion);
       setStep(STEP.SECURITY_Q);
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not find account. Check the email and try again.');
+      setError(err.response?.data?.message || 'Could not find an account with that email.');
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Step 2: Verify security answer ───────────────────────────────────────
+  // ── Step 2: Verify security answer ─────────────────────────────────────────
   const handleAnswerSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -149,14 +161,14 @@ const ForgotPassword = () => {
       const res = await api.post('/auth/forgot-password/verify-answer', { email, securityAnswer });
 
       if (res.data.data?.resetToken) {
-        // Correct answer — go straight to password reset
+        // Correct answer → go straight to reset
         setResetToken(res.data.data.resetToken);
         setStep(STEP.NEW_PASSWORD);
       } else if (res.data.data?.otp) {
-        // Wrong answer — show OTP popup then move to OTP step
-        setOtpPopupValue(res.data.data.otp);
-        setShowOtpPopup(true);
-        // Step transition happens after user closes popup (see OtpPopup onClose)
+        // Wrong answer → store OTP, show inline error with "Try another way?" link
+        setWrongAnswerOtp(res.data.data.otp);
+        setWrongAnswer(true);
+        setError('Incorrect security answer. Please try again or use the OTP fallback.');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
@@ -165,12 +177,17 @@ const ForgotPassword = () => {
     }
   };
 
+  // User clicks "Try another way?" link on Step 2
+  const handleShowOtp = () => {
+    setShowOtpPopup(true);
+  };
+
   const handleOtpPopupClose = () => {
     setShowOtpPopup(false);
     setStep(STEP.OTP);
   };
 
-  // ── Step 3: Verify OTP ────────────────────────────────────────────────────
+  // ── Step 3: Verify OTP ──────────────────────────────────────────────────────
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -186,11 +203,10 @@ const ForgotPassword = () => {
     }
   };
 
-  // ── Step 4: Reset password ────────────────────────────────────────────────
+  // ── Step 4: Reset password ──────────────────────────────────────────────────
   const handleResetSubmit = async (e) => {
     e.preventDefault();
     clearError();
-
     if (!hasMinLength(newPassword)) return setError('Password must be at least 8 characters.');
     if (!hasNumber(newPassword))    return setError('Password must contain at least one number.');
     if (!hasSpecial(newPassword))   return setError('Password must contain at least one special character.');
@@ -207,46 +223,36 @@ const ForgotPassword = () => {
     }
   };
 
-  // ── Shared card wrapper ───────────────────────────────────────────────────
-  const Card = ({ title, subtitle, children, onSubmit }) => (
-    <div className="w-full max-w-md mx-auto">
-      <div className="mb-6 flex items-center gap-3">
-        <span className="material-symbols-outlined text-primary text-3xl">menu_book</span>
-        <span className="font-display-3xl text-display-3xl font-bold text-primary tracking-tight">LibraVault</span>
-      </div>
-      <StepIndicator current={step} total={4} />
-      <h1 className="font-headline-2xl text-headline-2xl text-on-surface mb-1">{title}</h1>
-      <p className="font-body-base text-body-base text-text-secondary mb-6">{subtitle}</p>
-
-      {error && (
-        <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
-          <span className="material-symbols-outlined text-red-500 text-xl mt-0.5 flex-shrink-0">error</span>
-          <p className="font-body-sm text-body-sm text-red-700">{error}</p>
+  const pageWrapper = (children) => (
+    <div className="min-h-screen bg-bg-page flex items-center justify-center p-6">
+      {showOtpPopup && <OtpPopup otp={wrongAnswerOtp} onClose={handleOtpPopupClose} />}
+      <div className="w-full max-w-md mx-auto">
+        <div className="mb-6 flex items-center gap-3">
+          <span className="material-symbols-outlined text-primary text-3xl">menu_book</span>
+          <span className="font-display-3xl text-display-3xl font-bold text-primary tracking-tight">LibraVault</span>
         </div>
-      )}
-
-      <form onSubmit={onSubmit} className="space-y-5">
+        <StepIndicator current={step} total={4} />
         {children}
-      </form>
-
-      <div className="mt-6 text-center">
-        <Link to="/login" className="font-body-sm text-body-sm text-text-secondary hover:text-primary transition-colors inline-flex items-center gap-1">
-          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-          Back to Login
-        </Link>
+        <div className="mt-6 text-center">
+          <Link to="/login" className="font-body-sm text-body-sm text-text-secondary hover:text-primary transition-colors inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            Back to Login
+          </Link>
+        </div>
       </div>
     </div>
   );
 
-  // ── STEP 1: Email ─────────────────────────────────────────────────────────
+  // ── STEP 1 ─────────────────────────────────────────────────────────────────
   if (step === STEP.EMAIL) {
-    return (
-      <div className="min-h-screen bg-bg-page flex items-center justify-center p-6">
-        <Card
-          title="Forgot Password?"
-          subtitle="Enter your registered email address to begin."
-          onSubmit={handleEmailSubmit}
-        >
+    return pageWrapper(
+      <>
+        <h1 className="font-headline-2xl text-headline-2xl text-on-surface mb-1">Forgot Password?</h1>
+        <p className="font-body-base text-body-base text-text-secondary mb-6">
+          Enter your registered email address to begin.
+        </p>
+        {error && <ErrorBanner message={error} />}
+        <form onSubmit={handleEmailSubmit} className="space-y-5">
           <div>
             <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="fp-email">
               Email Address
@@ -265,32 +271,43 @@ const ForgotPassword = () => {
               />
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-lg bg-primary text-white font-headline-lg text-headline-lg hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : null}
-            {loading ? 'Checking…' : 'Continue'}
-          </button>
-        </Card>
-      </div>
+          <SubmitButton loading={loading} label="Continue" loadingLabel="Checking…" />
+        </form>
+      </>
     );
   }
 
-  // ── STEP 2: Security Question ─────────────────────────────────────────────
+  // ── STEP 2 ─────────────────────────────────────────────────────────────────
   if (step === STEP.SECURITY_Q) {
-    return (
-      <div className="min-h-screen bg-bg-page flex items-center justify-center p-6">
-        {showOtpPopup && (
-          <OtpPopup otp={otpPopupValue} onClose={handleOtpPopupClose} />
+    return pageWrapper(
+      <>
+        <h1 className="font-headline-2xl text-headline-2xl text-on-surface mb-1">Security Question</h1>
+        <p className="font-body-base text-body-base text-text-secondary mb-6">
+          Answer your security question to verify your identity.
+        </p>
+
+        {/* Inline error — shows after a wrong attempt */}
+        {error && (
+          <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+            <span className="material-symbols-outlined text-red-500 text-xl mt-0.5 flex-shrink-0">error</span>
+            <div>
+              <p className="font-body-sm text-body-sm text-red-700">{error}</p>
+              {/* "Try another way?" only appears after a wrong answer */}
+              {wrongAnswer && (
+                <button
+                  type="button"
+                  className="mt-2 font-body-sm text-body-sm text-primary underline hover:no-underline"
+                  onClick={handleShowOtp}
+                >
+                  Try another way? (Use OTP)
+                </button>
+              )}
+            </div>
+          </div>
         )}
-        <Card
-          title="Security Question"
-          subtitle="Answer your security question to verify your identity."
-          onSubmit={handleAnswerSubmit}
-        >
-          {/* Display the question */}
+
+        <form onSubmit={handleAnswerSubmit} className="space-y-5">
+          {/* Display the security question */}
           <div className="bg-surface-container-low rounded-xl p-4 border border-border-default flex items-start gap-3">
             <span className="material-symbols-outlined text-primary text-xl mt-0.5 flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>help</span>
             <p className="font-body-base text-body-base text-on-surface font-medium">{securityQuestion}</p>
@@ -304,43 +321,38 @@ const ForgotPassword = () => {
               id="sec-answer"
               type="text"
               required
-              autoFocus
               value={securityAnswer}
               onChange={(e) => { setSecurityAnswer(e.target.value); clearError(); }}
               placeholder="Type your answer…"
               className="w-full rounded-lg border border-border-default px-3 py-2.5 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm"
             />
             <p className="mt-1 font-body-sm text-body-sm text-text-secondary">
-              Casing doesn't matter. If you get this wrong, an OTP will be generated for you.
+              Casing doesn't matter.
             </p>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-lg bg-primary text-white font-headline-lg text-headline-lg hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : null}
-            {loading ? 'Verifying…' : 'Verify Answer'}
-          </button>
-        </Card>
-      </div>
+          <SubmitButton loading={loading} label="Verify Answer" loadingLabel="Verifying…" />
+        </form>
+      </>
     );
   }
 
-  // ── STEP 3: OTP Verification ──────────────────────────────────────────────
+  // ── STEP 3 ─────────────────────────────────────────────────────────────────
   if (step === STEP.OTP) {
-    return (
-      <div className="min-h-screen bg-bg-page flex items-center justify-center p-6">
-        <Card
-          title="Enter Your OTP"
-          subtitle="Enter the 6-digit OTP that was shown in the popup."
-          onSubmit={handleOtpSubmit}
-        >
+    return pageWrapper(
+      <>
+        <h1 className="font-headline-2xl text-headline-2xl text-on-surface mb-1">Enter Your OTP</h1>
+        <p className="font-body-base text-body-base text-text-secondary mb-6">
+          Enter the 6-digit OTP that was shown in the popup.
+        </p>
+
+        {error && <ErrorBanner message={error} />}
+
+        <form onSubmit={handleOtpSubmit} className="space-y-5">
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
             <span className="material-symbols-outlined text-amber-600 text-xl flex-shrink-0">info</span>
             <p className="font-body-sm text-body-sm text-amber-700">
-              The OTP expires in 10 minutes. Make sure you have it copied before proceeding.
+              The OTP expires in 10 minutes.
             </p>
           </div>
 
@@ -362,31 +374,27 @@ const ForgotPassword = () => {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading || otpInput.length !== 6}
-            className="w-full py-3 rounded-lg bg-primary text-white font-headline-lg text-headline-lg hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : null}
-            {loading ? 'Verifying…' : 'Verify OTP'}
-          </button>
-        </Card>
-      </div>
+          <SubmitButton loading={loading} label="Verify OTP" loadingLabel="Verifying…" disabled={otpInput.length !== 6} />
+        </form>
+      </>
     );
   }
 
-  // ── STEP 4: New Password ──────────────────────────────────────────────────
+  // ── STEP 4 ─────────────────────────────────────────────────────────────────
   if (step === STEP.NEW_PASSWORD) {
     const strength = [hasMinLength(newPassword), hasNumber(newPassword), hasSpecial(newPassword)].filter(Boolean).length;
     const strengthColors = ['bg-surface-variant', 'bg-error', 'bg-warning', 'bg-success'];
 
-    return (
-      <div className="min-h-screen bg-bg-page flex items-center justify-center p-6">
-        <Card
-          title="Set New Password"
-          subtitle="Choose a strong password for your account."
-          onSubmit={handleResetSubmit}
-        >
+    return pageWrapper(
+      <>
+        <h1 className="font-headline-2xl text-headline-2xl text-on-surface mb-1">Set New Password</h1>
+        <p className="font-body-base text-body-base text-text-secondary mb-6">
+          Choose a strong password for your account.
+        </p>
+
+        {error && <ErrorBanner message={error} />}
+
+        <form onSubmit={handleResetSubmit} className="space-y-5">
           {/* New Password */}
           <div>
             <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="new-pass">
@@ -395,6 +403,7 @@ const ForgotPassword = () => {
             <div className="relative">
               <input
                 id="new-pass"
+                name="new-pass"
                 type={showPassword ? 'text' : 'password'}
                 required
                 autoFocus
@@ -407,7 +416,7 @@ const ForgotPassword = () => {
               <button
                 type="button"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-on-surface-variant"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((p) => !p)}
               >
                 <span className="material-symbols-outlined text-[20px]">
                   {showPassword ? 'visibility' : 'visibility_off'}
@@ -415,7 +424,6 @@ const ForgotPassword = () => {
               </button>
             </div>
 
-            {/* Strength bars */}
             {newPassword.length > 0 && (
               <>
                 <div className="flex gap-1.5 mt-2 mb-1">
@@ -441,13 +449,14 @@ const ForgotPassword = () => {
             )}
           </div>
 
-          {/* Confirm Password */}
+          {/* Confirm Password — separate input, NOT inside a component wrapper */}
           <div>
             <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="confirm-pass">
               Confirm Password
             </label>
             <input
               id="confirm-pass"
+              name="confirm-pass"
               type={showPassword ? 'text' : 'password'}
               required
               value={confirmPassword}
@@ -465,31 +474,25 @@ const ForgotPassword = () => {
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            id="reset-password-submit-btn"
-            className="w-full py-3 rounded-lg bg-primary text-white font-headline-lg text-headline-lg hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : null}
-            {loading ? 'Resetting…' : 'Reset Password'}
-          </button>
-        </Card>
-      </div>
+          <SubmitButton loading={loading} label="Reset Password" loadingLabel="Resetting…" />
+        </form>
+      </>
     );
   }
 
-  // ── STEP 5: Success ───────────────────────────────────────────────────────
+  // ── STEP 5: Success ─────────────────────────────────────────────────────────
   if (step === STEP.SUCCESS) {
     return (
       <div className="min-h-screen bg-bg-page flex items-center justify-center p-6">
         <div className="w-full max-w-md mx-auto text-center">
           <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-            <span className="material-symbols-outlined text-green-600 text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+            <span className="material-symbols-outlined text-green-600 text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+              check_circle
+            </span>
           </div>
           <h1 className="font-display-3xl text-display-3xl text-on-surface mb-2">Password Reset!</h1>
           <p className="font-body-base text-body-base text-text-secondary mb-8">
-            Your password has been successfully updated. You can now log in with your new password.
+            Your password has been updated. You can now log in with your new password.
           </p>
           <button
             className="w-full py-3 rounded-lg bg-primary text-white font-headline-lg text-headline-lg hover:opacity-90 active:scale-[0.97] transition-all"
