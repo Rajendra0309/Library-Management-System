@@ -14,7 +14,9 @@ const Register = () => {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    securityQuestion: '',
+    securityAnswer: ''
   });
   const [error, setError]     = useState('');
   const [success, setSuccess] = useState('');
@@ -51,6 +53,12 @@ const Register = () => {
     if (formData.password !== formData.confirmPassword) {
       return setError('Passwords do not match.');
     }
+    if (!formData.securityQuestion.trim()) {
+      return setError('Please enter a security question.');
+    }
+    if (!formData.securityAnswer.trim()) {
+      return setError('Please enter an answer to your security question.');
+    }
 
     setLoading(true);
     try {
@@ -58,7 +66,9 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        phone: formData.phone || undefined
+        phone: formData.phone || undefined,
+        securityQuestion: formData.securityQuestion.trim(),
+        securityAnswer:   formData.securityAnswer.trim()
       });
       setSuccess('Account created successfully! Redirecting to login…');
       setTimeout(() => navigate('/login'), 1500);
@@ -261,6 +271,52 @@ const Register = () => {
               )}
             </div>
             
+            {/* ── Security Question ───────────────────────────── */}
+            <div className="pt-2 border-t border-border-subtle mt-2">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+                <p className="font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant">Account Recovery</p>
+              </div>
+              <p className="font-body-sm text-body-sm text-text-secondary mb-4">
+                Set a security question and answer. This will be used to verify your identity if you forget your password.
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="securityQuestion">
+                    Security Question <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="securityQuestion"
+                    name="securityQuestion"
+                    type="text"
+                    placeholder="e.g. My dog's name is?"
+                    required
+                    value={formData.securityQuestion}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="securityAnswer">
+                    Answer <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="securityAnswer"
+                    name="securityAnswer"
+                    type="text"
+                    placeholder="One-word answer (case-insensitive)"
+                    required
+                    value={formData.securityAnswer}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm"
+                  />
+                  <p className="mt-1 font-body-sm text-body-sm text-text-secondary">
+                    Keep it simple and memorable. Casing doesn't matter.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Terms */}
             <div className="flex items-start gap-3 pt-2">
               <div className="flex items-center h-5">

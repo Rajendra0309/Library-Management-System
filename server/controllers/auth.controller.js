@@ -5,7 +5,11 @@ const prisma = require('../prisma/client');
 const { generateMembershipId } = require('../utils/membershipId');
 
 const MAX_LOGIN_ATTEMPTS = 3;
-const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const LOCK_DURATION_MS   = 15 * 60 * 1000; // 15 minutes
+const OTP_EXPIRY_MS      = 10 * 60 * 1000; // 10 minutes
+
+/** Generate a random 6-digit numeric OTP */
+const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 /**
  * Generate a signed JWT token for a user ID
@@ -31,7 +35,16 @@ const register = async (req, res) => {
       });
     }
 
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, securityQuestion, securityAnswer } = req.body;
+
+    // Security question is required
+    if (!securityQuestion || !securityAnswer) {
+      return res.status(400).json({
+        success: false,
+        message: 'Security question and answer are required.',
+        error: 'Missing security question'
+      });
+    }
 
     // Check for duplicate email
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -50,6 +63,9 @@ const register = async (req, res) => {
     // Generate unique membership ID (LMS-YYYY-XXXX)
     const membershipId = await generateMembershipId();
 
+    // Hash security answer (case-insensitive — normalise to lowercase before hashing)
+    const hashedAnswer = await bcrypt.hash(securityAnswer.trim().toLowerCase(), 12);
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -59,7 +75,9 @@ const register = async (req, res) => {
         phone: phone || null,
         role: 'member',
         status: 'active',
-        membershipId
+        membershipId,
+        securityQuestion: securityQuestion.trim(),
+        securityAnswer:   hashedAnswer
       },
       select: {
         id: true,
@@ -295,4 +313,201 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, changePassword };
+/**
+ * @desc    Return the security question for a given email (no answer)
+ * @route   POST /api/auth/forgot-password/question
+ * @access  Public
+ */
+const getSecurityQuestion = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { securityQuestion: true }
+    });
+
+    // Generic response to prevent email enumeration
+    if (!user || !user.securityQuestion) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with that email, or no security question set.'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: { securityQuestion: user.securityQuestion }
+    });
+  } catch (error) {
+    console.error('[auth.controller] getSecurityQuestion error:', error);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+/**
+ * @desc    Verify security answer. On failure, generate + return a one-time OTP.
+ * @route   POST /api/auth/forgot-password/verify-answer
+ * @access  Public
+ */
+const verifySecurityAnswer = async (req, res) => {
+  try {
+    const { email, securityAnswer } = req.body;
+    if (!email || !securityAnswer) {
+      return res.status(400).json({ success: false, message: 'Email and answer are required.' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, securityAnswer: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Account not found.' });
+    }
+
+    // Compare answer (normalise to lowercase before comparing)
+    const isMatch = await bcrypt.compare(
+      securityAnswer.trim().toLowerCase(),
+      user.securityAnswer
+    );
+
+    if (isMatch) {
+      // Answer correct — issue a short-lived reset token so the client can call resetPassword
+      const resetToken = jwt.sign({ id: user.id, purpose: 'reset' }, process.env.JWT_SECRET, { expiresIn: '15m' });
+      return res.status(200).json({
+        success: true,
+        message: 'Security answer verified.',
+        data: { resetToken }
+      });
+    }
+
+    // Answer wrong — generate OTP and return it to the client for display
+    const otp = generateOtp();
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetOtp:        otpHash,
+        resetOtpExpiry:  new Date(Date.now() + OTP_EXPIRY_MS)
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Security answer incorrect. An OTP has been generated for fallback verification.',
+      data: { otp }   // shown on-screen via popup
+    });
+  } catch (error) {
+    console.error('[auth.controller] verifySecurityAnswer error:', error);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+/**
+ * @desc    Verify the on-screen OTP. Returns a reset token on success.
+ * @route   POST /api/auth/forgot-password/verify-otp
+ * @access  Public
+ */
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP are required.' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, resetOtp: true, resetOtpExpiry: true }
+    });
+
+    if (!user || !user.resetOtp) {
+      return res.status(400).json({ success: false, message: 'No OTP found. Please restart the process.' });
+    }
+
+    // Check expiry
+    if (user.resetOtpExpiry < new Date()) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { resetOtp: null, resetOtpExpiry: null }
+      });
+      return res.status(400).json({ success: false, message: 'OTP has expired. Please try again.' });
+    }
+
+    // Compare OTP
+    const isMatch = await bcrypt.compare(otp.trim(), user.resetOtp);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP. Please check and try again.' });
+    }
+
+    // OTP valid — clear it and issue reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetOtp: null, resetOtpExpiry: null }
+    });
+
+    const resetToken = jwt.sign({ id: user.id, purpose: 'reset' }, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP verified.',
+      data: { resetToken }
+    });
+  } catch (error) {
+    console.error('[auth.controller] verifyOtp error:', error);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+/**
+ * @desc    Reset password using a valid reset token
+ * @route   POST /api/auth/forgot-password/reset
+ * @access  Public (but needs resetToken)
+ */
+const resetPassword = async (req, res) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+    if (!resetToken || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Reset token and new password are required.' });
+    }
+
+    // Verify the reset token
+    let decoded;
+    try {
+      decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+    } catch {
+      return res.status(400).json({ success: false, message: 'Reset link is invalid or has expired.' });
+    }
+
+    if (decoded.purpose !== 'reset') {
+      return res.status(400).json({ success: false, message: 'Invalid reset token.' });
+    }
+
+    // Hash and save new password
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await prisma.user.update({
+      where: { id: decoded.id },
+      data: {
+        password:      hashedPassword,
+        loginAttempts: 0,       // clear any lockout
+        lockUntil:     null
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset successfully. You can now log in with your new password.'
+    });
+  } catch (error) {
+    console.error('[auth.controller] resetPassword error:', error);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+module.exports = { register, login, getMe, changePassword, getSecurityQuestion, verifySecurityAnswer, verifyOtp, resetPassword };

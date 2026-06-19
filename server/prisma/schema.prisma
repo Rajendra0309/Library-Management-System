@@ -21,10 +21,17 @@ model User {
   department     String?
   employeeId     String?   @unique
   // Account lockout fields
-  loginAttempts  Int       @default(0)
-  lockUntil      DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  loginAttempts    Int       @default(0)
+  lockUntil        DateTime?
+  // Security question (for forgot password fallback step 1)
+  securityQuestion String?
+  securityAnswer   String?   // stored as bcrypt hash
+  // OTP reset fields (fallback step 2 — shown on-screen)
+  resetOtp         String?
+  resetOtpExpiry   DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
 
   reservations Reservation[]
   borrows      Borrow[]

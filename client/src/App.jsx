@@ -9,6 +9,7 @@ import Layout from './components/Layout';
 // ─── Auth Pages ───────────────────────────────────────────────────────────────
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 
 // ─── Main Pages ───────────────────────────────────────────────────────────────
 import AdminDashboard from './pages/AdminDashboard';
@@ -42,6 +43,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Protected: any authenticated user */}
             <Route element={<ProtectedRoute />}>

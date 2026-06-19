@@ -1,7 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const router = express.Router();
-const { register, login, getMe, changePassword } = require('../controllers/auth.controller');
+const { register, login, getMe, changePassword, getSecurityQuestion, verifySecurityAnswer, verifyOtp, resetPassword } = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth.middleware');
 
 // Password validation rule (reusable)
@@ -63,6 +63,61 @@ router.put(
       .matches(/[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/).withMessage('New password must contain at least one special character.')
   ],
   changePassword
+);
+
+
+// ─── Forgot Password Flow ─────────────────────────────────────────────────────
+
+/**
+ * @route   POST /api/auth/forgot-password/question
+ * @desc    Fetch security question for a given email
+ * @access  Public
+ */
+router.post('/forgot-password/question', getSecurityQuestion);
+
+/**
+ * @route   POST /api/auth/forgot-password/verify-answer
+ * @desc    Verify security answer. Returns resetToken on success, OTP on failure.
+ * @access  Public
+ */
+router.post(
+  '/forgot-password/verify-answer',
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email required.'),
+    body('securityAnswer').trim().notEmpty().withMessage('Security answer is required.')
+  ],
+  verifySecurityAnswer
+);
+
+/**
+ * @route   POST /api/auth/forgot-password/verify-otp
+ * @desc    Verify the on-screen OTP. Returns resetToken on success.
+ * @access  Public
+ */
+router.post(
+  '/forgot-password/verify-otp',
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email required.'),
+    body('otp').trim().isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits.')
+  ],
+  verifyOtp
+);
+
+/**
+ * @route   POST /api/auth/forgot-password/reset
+ * @desc    Reset password using a valid resetToken
+ * @access  Public
+ */
+router.post(
+  '/forgot-password/reset',
+  [
+    body('resetToken').notEmpty().withMessage('Reset token is required.'),
+    body('newPassword')
+      .isLength({ min: 8 }).withMessage('Password must be at least 8 characters.')
+      .matches(/\d/).withMessage('Password must contain at least one number.')
+      .matches(/[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/).withMessage('Password must contain at least one special character.')
+  ],
+  resetPassword
 );
 
 module.exports = router;
