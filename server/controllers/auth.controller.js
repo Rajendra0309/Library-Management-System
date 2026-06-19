@@ -147,6 +147,15 @@ const login = async (req, res) => {
       });
     }
 
+    // Check if account is suspended
+    if (user.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been suspended. Please contact an administrator.',
+        error: 'Account suspended'
+      });
+    }
+
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
