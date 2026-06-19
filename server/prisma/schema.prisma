@@ -8,53 +8,68 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   name         String
-  email        String    @unique
+  email        String   @unique
   password     String
-  role         String    @default("member") // "admin", "librarian", "member"
+  role         String   @default("member") // "admin", "librarian", "member"
   phone        String?
-  membershipId String?   @unique
-  status       String    @default("active") // "active", "suspended", "expired"
+  membershipId String?  @unique
+  status       String   @default("active") // "active", "suspended", "expired"
   profileImage String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   reservations Reservation[]
   borrows      Borrow[]
 }
 
 model Book {
-  id              String   @id @default(cuid())
-  title           String
-  author          String
-  coverImage      String?
-  isbn            String   @unique
-  barcode         String?  @unique
-  genre           String[]
-  language        String   @default("English")
-  publisher       String?
-  publishYear     Int?
-  description     String?
-  totalCopies     Int      @default(1)
-  availableCopies Int      @default(0)
-  isEbook         Boolean  @default(false)
-  ebookUrl        String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id String @id @default(cuid())
 
+  // Basic Information
+  title  String
+  author String
+  isbn   String @unique
+
+  // Classification
+  genre       String
+  language    String?
+  publisher   String?
+  publishYear Int?
+
+  // Description
+  description String?
+
+  // Inventory
+  totalCopies     Int @default(1)
+  availableCopies Int @default(1)
+  timesBorrowed   Int @default(0)
+
+  // Digital Assets (AWS S3)
+  coverImage String?
+  ebookUrl   String?
+
+  // Barcode
+  barcode String?
+
+  // Audit Fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
   reservations Reservation[]
   borrows      Borrow[]
 }
 
 model Reservation {
-  id         String   @id @default(cuid())
-  reservedAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  reservedAt DateTime  @default(now())
   expiresAt  DateTime?
-  status     String   @default("pending") // "pending", "fulfilled", "cancelled", "expired"
-  notified   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  status     String    @default("pending") // "pending", "fulfilled", "cancelled", "expired"
+  notified   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   memberId String
   bookId   String
