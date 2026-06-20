@@ -12,66 +12,57 @@ app.use(cors());
 
 // Rate Limiting (100 requests per 15 minutes per IP)
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100, 
-  standardHeaders: true, 
-  legacyHeaders: false, 
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api', limiter);
 
 // Body Parser
 app.use(express.json());
 
-// Routes
+// ─── Routes ─────────────────────────────────────────────────────────────────
+
+// Module 1: Auth + Staff Management
+const authRoutes = require('./routes/auth.routes');
+const staffRoutes = require('./routes/staff.routes');
+
+// Module 3: Members + Reservations
 const memberRoutes = require('./routes/member.routes');
 const reservationRoutes = require('./routes/reservation.routes');
-const jwt = require('jsonwebtoken');
-const prisma = require('./prisma/client');
+const bookRoutes = require('./routes/book.routes');
+const aiRoutes = require('./routes/ai.routes');
+const reportRoutes = require('./routes/report.routes');
+const borrowRoutes = require('./routes/borrow.routes');
+const fineRoutes = require('./routes/fine.routes');
 
-// --- DEVELOPMENT MOCK LOGIN ---
-app.post('/api/mock-login', async (req, res) => {
-  const { role } = req.body; // 'admin', 'librarian', or 'member'
-  const email = `mock${role}@library.com`;
-  
-  try {
-    let user = await prisma.user.findUnique({ where: { email } });
-    
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          name: `Mock ${role.charAt(0).toUpperCase() + role.slice(1)}`,
-          email: email,
-          password: 'mockpassword', // Usually this would be hashed, but it's a mock
-          role: role,
-          status: 'active',
-          membershipId: `LMS-MOCK-${Math.floor(Math.random() * 10000)}`
-        }
-      });
-    }
-
-    const token = jwt.sign(
-      { id: user.id }, 
-      process.env.JWT_SECRET || 'your_super_secret_key', 
-      { expiresIn: '1d' }
-    );
-
-    res.json({ success: true, token, user });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-// ------------------------------
-
+app.use('/api/auth', authRoutes);
+app.use('/api/staff', staffRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/reservations', reservationRoutes);
+app.use('/api/books', bookRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/borrow', borrowRoutes);
+app.use('/api/fines', fineRoutes);
 
-// Base route for health check
+// ─── Health Check ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.send('LMS Server is running (PostgreSQL + Prisma)');
+  res.json({
+    success: true,
+    message: 'LMS Server is running (PostgreSQL + Prisma)',
+    version: '1.0.0'
+  });
+});
+
+// ─── 404 Handler ─────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found.' });
 });
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running in development mode on port ${PORT}`);
+  console.log(`✅ LMS Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });

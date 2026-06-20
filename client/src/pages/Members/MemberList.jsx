@@ -1,62 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Button,
-  Chip,
-  IconButton,
-  TablePagination,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Alert,
-  Tooltip
-} from '@mui/material';
-import {
-  Visibility as VisibilityIcon,
-  History as HistoryIcon,
-  Block as BlockIcon,
-  CheckCircleOutline as ActiveIcon,
-  Add as AddIcon,
-  Search as SearchIcon
-} from '@mui/icons-material';
+import { useAuth } from '../../context/AuthContext';
 import { getMembers, createMember, updateMemberStatus } from '../../services/memberService';
 
 const MemberList = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  // Search & Pagination State
+
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Add Member Dialog State
   const [openAddDialog, setOpenAddDialog] = useState(false);
-  const [newMember, setNewMember] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: ''
-  });
+  const [newMember, setNewMember] = useState({ name: '', email: '', password: '', phone: '' });
   const [addError, setAddError] = useState('');
   const [adding, setAdding] = useState(false);
 
-  // Fetch Members using memberService
+  // ─── Fetch Members ─────────────────────────────────────────────────────────
   const fetchMembers = async () => {
     try {
       setLoading(true);
@@ -67,7 +32,7 @@ const MemberList = () => {
         setTotalCount(data.total);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch members list. Please ensure you are logged in as Librarian or Admin.');
+      setError(err.response?.data?.message || 'Failed to fetch members list.');
     } finally {
       setLoading(false);
     }
@@ -75,6 +40,7 @@ const MemberList = () => {
 
   useEffect(() => {
     fetchMembers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, search]);
 
   const handleSearchChange = (e) => {
@@ -82,16 +48,7 @@ const MemberList = () => {
     setPage(0);
   };
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  // Toggle member status (Suspend / Activate) using memberService
+  // ─── Toggle Member Status ──────────────────────────────────────────────────
   const handleToggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
     try {
@@ -105,15 +62,7 @@ const MemberList = () => {
     }
   };
 
-  // Handle Input Changes for Add Member
-  const handleInputChange = (e) => {
-    setNewMember({
-      ...newMember,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  // Submit Add Member using memberService
+  // ─── Add Member Submit ─────────────────────────────────────────────────────
   const handleAddMemberSubmit = async (e) => {
     e.preventDefault();
     setAdding(true);
@@ -132,191 +81,217 @@ const MemberList = () => {
     }
   };
 
-  // Check Current User Role for Access Rights
-  const userJson = localStorage.getItem('user');
-  const currentUser = userJson ? JSON.parse(userJson) : null;
+  // ─── Access Guard ──────────────────────────────────────────────────────────
   const isAuthorized = currentUser && (currentUser.role === 'admin' || currentUser.role === 'librarian');
 
   if (!isAuthorized) {
     return (
-      <Alert severity="warning" sx={{ mt: 4 }}>
-        You are not authorized to view this page. Please log in as an Admin or Librarian.
-      </Alert>
+      <div className="max-w-content-max-width mx-auto px-page-padding py-4xl">
+        <div className="p-4 bg-error-container text-on-error-container rounded-lg">
+          You are not authorized to view this page. Please log in as an Admin or Librarian.
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 'bold' }}>
-          👥 Member Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
+    <div className="max-w-content-max-width mx-auto px-page-padding py-4xl w-full">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-4xl gap-4">
+        <div>
+          <h1 className="font-display-4xl text-display-4xl text-on-surface mb-2">Members</h1>
+          <p className="font-body-base text-body-base text-text-secondary">
+            Manage library members and their circulation status.
+            <span className="font-semibold text-on-surface ml-1">{totalCount} total</span>
+          </p>
+        </div>
+        <button
           onClick={() => setOpenAddDialog(true)}
-          sx={{ background: 'linear-gradient(45deg, #6366f1 30%, #ec4899 90%)' }}
+          className="bg-primary text-on-primary font-body-sm text-body-sm px-6 py-2.5 rounded-lg hover:opacity-90 active:scale-[0.97] transition-all flex items-center justify-center space-x-2"
         >
-          Add New Member
-        </Button>
-      </Box>
+          <span className="material-symbols-outlined text-sm">add</span>
+          <span className="font-semibold">Register Member</span>
+        </button>
+      </div>
 
-      {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
+      {error && (
+        <div className="p-4 bg-error-container text-on-error-container rounded-lg mb-4">{error}</div>
+      )}
 
-      <Paper sx={{ width: '100%', mb: 2, p: 2, background: '#1e293b', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-          <SearchIcon sx={{ color: 'text.secondary' }} />
-          <TextField
-            placeholder="Search by name, email, or membership ID..."
-            variant="standard"
-            fullWidth
+      {/* Search Bar */}
+      <div className="bg-bg-surface shadow-sm border border-border-default rounded-xl p-4 mb-xl flex flex-col lg:flex-row justify-between gap-4">
+        <div className="relative flex-1 max-w-md">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm">search</span>
+          <input
+            className="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-border-default rounded-md font-body-sm text-body-sm focus:outline-none focus:border-primary transition-all placeholder-text-tertiary"
+            placeholder="Search by name, email, or Membership ID..."
+            type="text"
             value={search}
             onChange={handleSearchChange}
-            InputProps={{ disableUnderline: true }}
-            sx={{
-              background: '#0f172a',
-              borderRadius: 2,
-              p: '10px 15px',
-              input: { color: '#f8fafc' }
-            }}
           />
-        </Box>
+        </div>
+      </div>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table sx={{ minWidth: 750 }}>
-              <TableHead>
-                <TableRow sx={{ borderBottom: '2px solid rgba(255, 255, 255, 0.08)' }}>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Membership ID</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Name</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Email</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Phone</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Status</TableCell>
-                  <TableCell align="right" sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {members.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary', py: 4 }}>
-                      No members found matching filters.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  members.map((member) => (
-                    <TableRow key={member.id} hover sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                      <TableCell sx={{ fontWeight: 600, color: 'primary.light' }}>{member.membershipId}</TableCell>
-                      <TableCell>{member.name}</TableCell>
-                      <TableCell>{member.email}</TableCell>
-                      <TableCell>{member.phone || '-'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={member.status.toUpperCase()}
-                          size="small"
-                          color={
-                            member.status === 'active' ? 'success' : 
-                            member.status === 'suspended' ? 'error' : 'warning'
+      {/* Data Table */}
+      <div className="bg-bg-surface shadow-sm border border-border-default rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-border-default bg-surface-container-lowest">
+                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-card-padding font-semibold">Member</th>
+                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-4 font-semibold hidden md:table-cell">Membership ID</th>
+                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-4 font-semibold">Status</th>
+                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-4 font-semibold hidden lg:table-cell">Joined</th>
+                <th className="py-3 px-card-padding text-right"></th>
+              </tr>
+            </thead>
+            <tbody className="font-body-sm text-body-sm divide-y divide-border-subtle">
+              {loading ? (
+                <tr><td colSpan="5" className="text-center py-8 text-text-secondary">Loading members...</td></tr>
+              ) : members.length === 0 ? (
+                <tr><td colSpan="5" className="text-center py-8 text-text-secondary">No members found.</td></tr>
+              ) : (
+                members.map((member) => (
+                  <tr
+                    key={member.id}
+                    className="group hover:bg-bg-hover transition-colors cursor-pointer"
+                    onClick={() => navigate(`/members/${member.id}`)}
+                  >
+                    <td className="py-3 pl-card-padding pr-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center font-semibold text-sm border border-border-default overflow-hidden flex-shrink-0">
+                          {member.profileImage
+                            ? <img src={member.profileImage} alt={member.name} className="w-full h-full object-cover" />
+                            : <span className="text-primary">{member.name.charAt(0).toUpperCase()}</span>
                           }
-                          sx={{ fontWeight: 'bold' }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="View Profile">
-                          <IconButton onClick={() => navigate(`/members/${member.id}`)} color="primary">
-                            <VisibilityIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Borrowing History">
-                          <IconButton onClick={() => navigate(`/members/${member.id}/history`)} color="info">
-                            <HistoryIcon />
-                          </IconButton>
-                        </Tooltip>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-on-surface">{member.name}</p>
+                          <p className="text-text-secondary text-xs">{member.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 hidden md:table-cell">
+                      <span className="font-code-mono text-code-mono text-text-secondary bg-surface-container-low px-2 py-1 rounded">
+                        {member.membershipId || '—'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                        member.status === 'active' ? 'bg-tertiary-fixed text-on-tertiary-fixed' :
+                        member.status === 'suspended' ? 'bg-error-container text-on-error-container' :
+                        'bg-secondary-fixed text-on-secondary-fixed'
+                      }`}>
+                        {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-text-secondary hidden lg:table-cell">
+                      {new Date(member.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </td>
+                    <td className="py-3 pr-card-padding text-right">
+                      <div className="flex items-center justify-end space-x-1">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/members/${member.id}`); }}
+                          className="p-1.5 rounded-md hover:bg-surface-variant text-text-secondary hover:text-primary transition-colors"
+                          title="View Profile"
+                        >
+                          <span className="material-symbols-outlined text-sm">visibility</span>
+                        </button>
                         {currentUser.role === 'admin' && (
-                          <Tooltip title={member.status === 'active' ? 'Suspend Member' : 'Activate Member'}>
-                            <IconButton 
-                              onClick={() => handleToggleStatus(member.id, member.status)} 
-                              color={member.status === 'active' ? 'error' : 'success'}
-                            >
-                              {member.status === 'active' ? <BlockIcon /> : <ActiveIcon />}
-                            </IconButton>
-                          </Tooltip>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggleStatus(member.id, member.status); }}
+                            className={`p-1.5 rounded-md hover:bg-surface-variant transition-colors ${member.status === 'active' ? 'text-error' : 'text-tertiary'}`}
+                            title={member.status === 'active' ? 'Suspend' : 'Activate'}
+                          >
+                            <span className="material-symbols-outlined text-sm">
+                              {member.status === 'active' ? 'block' : 'check_circle'}
+                            </span>
+                          </button>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={totalCount}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          sx={{ color: 'text.secondary', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}
-        />
-      </Paper>
+        {/* Pagination */}
+        <div className="px-card-padding py-3 border-t border-border-default bg-surface-container-lowest flex items-center justify-between">
+          <p className="font-body-sm text-body-sm text-text-secondary">
+            Showing <span className="font-medium text-on-surface">{totalCount === 0 ? 0 : page * rowsPerPage + 1}</span>
+            {' '}to <span className="font-medium text-on-surface">{Math.min((page + 1) * rowsPerPage, totalCount)}</span>
+            {' '}of <span className="font-medium text-on-surface">{totalCount}</span> members
+          </p>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+              className="px-3 py-1.5 border border-border-default rounded-md text-text-secondary hover:bg-bg-hover disabled:opacity-50 bg-bg-surface font-body-sm text-body-sm transition-colors"
+            >Previous</button>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={(page + 1) * rowsPerPage >= totalCount}
+              className="px-3 py-1.5 border border-border-default rounded-md text-on-surface hover:bg-bg-hover disabled:opacity-50 bg-bg-surface font-body-sm text-body-sm transition-colors"
+            >Next</button>
+          </div>
+        </div>
+      </div>
 
-      {/* Add Member Dialog */}
-      <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} PaperProps={{ sx: { background: '#1e293b', width: 450 } }}>
-        <DialogTitle sx={{ color: 'primary.main', fontWeight: 'bold' }}>Register New Member</DialogTitle>
-        <form onSubmit={handleAddMemberSubmit}>
-          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            {addError && <Alert severity="error">{addError}</Alert>}
-            <TextField
-              label="Full Name"
-              name="name"
-              required
-              fullWidth
-              value={newMember.name}
-              onChange={handleInputChange}
-            />
-            <TextField
-              label="Email Address"
-              name="email"
-              type="email"
-              required
-              fullWidth
-              value={newMember.email}
-              onChange={handleInputChange}
-            />
-            <TextField
-              label="Default Password"
-              name="password"
-              type="password"
-              required
-              fullWidth
-              value={newMember.password}
-              onChange={handleInputChange}
-            />
-            <TextField
-              label="Phone Number"
-              name="phone"
-              fullWidth
-              value={newMember.phone}
-              onChange={handleInputChange}
-            />
-          </DialogContent>
-          <DialogActions sx={{ p: 3 }}>
-            <Button onClick={() => setOpenAddDialog(false)} color="inherit" disabled={adding}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="contained" disabled={adding} sx={{ background: 'linear-gradient(45deg, #6366f1 30%, #ec4899 90%)' }}>
-              {adding ? 'Registering...' : 'Register'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    </Box>
+      {/* Add Member Modal */}
+      {openAddDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-bg-surface rounded-xl p-6 w-full max-w-md shadow-xl border border-border-default">
+            <h2 className="font-headline-2xl text-headline-2xl text-on-surface mb-4">Register New Member</h2>
+            {addError && (
+              <div className="p-3 bg-error-container text-on-error-container rounded-lg mb-4 text-sm">{addError}</div>
+            )}
+            <form onSubmit={handleAddMemberSubmit}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-label-xs font-label-xs uppercase tracking-widest text-text-secondary mb-1">Full Name *</label>
+                  <input type="text" required value={newMember.name}
+                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary outline-none bg-surface"
+                    placeholder="e.g. Jane Smith" />
+                </div>
+                <div>
+                  <label className="block text-label-xs font-label-xs uppercase tracking-widest text-text-secondary mb-1">Email *</label>
+                  <input type="email" required value={newMember.email}
+                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary outline-none bg-surface"
+                    placeholder="jane@example.com" />
+                </div>
+                <div>
+                  <label className="block text-label-xs font-label-xs uppercase tracking-widest text-text-secondary mb-1">Password *</label>
+                  <input type="password" required value={newMember.password}
+                    onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
+                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary outline-none bg-surface"
+                    placeholder="Min. 8 characters" />
+                </div>
+                <div>
+                  <label className="block text-label-xs font-label-xs uppercase tracking-widest text-text-secondary mb-1">Phone</label>
+                  <input type="tel" value={newMember.phone}
+                    onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary outline-none bg-surface"
+                    placeholder="9876543210" />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" disabled={adding}
+                    onClick={() => { setOpenAddDialog(false); setAddError(''); setNewMember({ name: '', email: '', password: '', phone: '' }); }}
+                    className="px-4 py-2 text-text-secondary hover:bg-bg-hover rounded-lg text-sm transition-colors">Cancel</button>
+                  <button type="submit" disabled={adding}
+                    className="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm hover:opacity-90 transition-all disabled:opacity-60">
+                    {adding ? 'Registering...' : 'Register Member'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
