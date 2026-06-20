@@ -34,14 +34,18 @@ const reservationRoutes = require('./routes/reservation.routes');
 const bookRoutes = require('./routes/book.routes');
 const aiRoutes = require('./routes/ai.routes');
 const reportRoutes = require('./routes/report.routes');
+const borrowRoutes = require('./routes/borrow.routes');
+const fineRoutes = require('./routes/fine.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/reservations', reservationRoutes);
-app.use('/api/books', bookRoutes); 
+app.use('/api/books', bookRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/borrow', borrowRoutes);
+app.use('/api/fines', fineRoutes);
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {

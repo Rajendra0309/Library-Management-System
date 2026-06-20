@@ -28,6 +28,7 @@ model User {
 
   reservations Reservation[]
   borrows      Borrow[]
+  fines        Fine[]
 }
 
 model Book {
@@ -99,6 +100,26 @@ model Borrow {
 
   member User @relation(fields: [memberId], references: [id])
   book   Book @relation(fields: [bookId], references: [id])
+
+  fines Fine[]
+}
+
+model Fine {
+  id          String    @id @default(cuid())
+  amount      Float
+  daysOverdue Int
+  status      String    @default("pending") // "pending", "paid", "waived"
+  paidAt      DateTime?
+  waivedBy    String?
+  reason      String? // Mandatory if waived
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  memberId String
+  borrowId String
+
+  member User   @relation(fields: [memberId], references: [id])
+  borrow Borrow @relation(fields: [borrowId], references: [id])
 }
 
 model Report {
