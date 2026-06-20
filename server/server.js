@@ -24,11 +24,11 @@ app.use(express.json());
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
-// Module 1: Auth + Staff Management
+// // Module 1: Auth + Staff Management
 const authRoutes = require('./routes/auth.routes');
 const staffRoutes = require('./routes/staff.routes');
 
-// Module 3: Members + Reservations
+// // Module 3: Members + Reservations
 const memberRoutes = require('./routes/member.routes');
 const reservationRoutes = require('./routes/reservation.routes');
 const bookRoutes = require('./routes/book.routes');
@@ -36,6 +36,11 @@ const aiRoutes = require('./routes/ai.routes');
 const reportRoutes = require('./routes/report.routes');
 const borrowRoutes = require('./routes/borrow.routes');
 const fineRoutes = require('./routes/fine.routes');
+const uploadRoutes = require("./routes/upload.routes");
+
+// // -----------s3 route---------------------------
+// const s3 = require("./config/s3");
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/staff', staffRoutes);
@@ -46,6 +51,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/borrow', borrowRoutes);
 app.use('/api/fines', fineRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -56,10 +62,32 @@ app.get('/', (req, res) => {
   });
 });
 
+// // -------------------------checking s3-------------------------
+// app.get("/test-s3", async (req, res) => {
+//   try {
+//     const data = await s3.listBuckets().promise();
+
+//     res.json({
+//       success: true,
+//       buckets: data.Buckets,
+//     });
+//   } catch (error) {
+//     console.error(error);
+
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// });
+
+
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found.' });
 });
+
+
 
 const PORT = process.env.PORT || 5000;
 
