@@ -98,7 +98,7 @@ const MemberList = () => {
       setError('');
       const data = await updateMemberStatus(id, newStatus);
       if (data.success) {
-        setMembers(members.map(m => m._id === id ? { ...m, status: newStatus } : m));
+        setMembers(members.map(m => m.id === id ? { ...m, status: newStatus } : m));
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update member status.');
@@ -208,7 +208,7 @@ const MemberList = () => {
                   </TableRow>
                 ) : (
                   members.map((member) => (
-                    <TableRow key={member._id} hover sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                    <TableRow key={member.id} hover sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
                       <TableCell sx={{ fontWeight: 600, color: 'primary.light' }}>{member.membershipId}</TableCell>
                       <TableCell>{member.name}</TableCell>
                       <TableCell>{member.email}</TableCell>
@@ -226,19 +226,19 @@ const MemberList = () => {
                       </TableCell>
                       <TableCell align="right">
                         <Tooltip title="View Profile">
-                          <IconButton onClick={() => navigate(`/members/${member._id}`)} color="primary">
+                          <IconButton onClick={() => navigate(`/members/${member.id}`)} color="primary">
                             <VisibilityIcon />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Borrowing History">
-                          <IconButton onClick={() => navigate(`/members/${member._id}/history`)} color="info">
+                          <IconButton onClick={() => navigate(`/members/${member.id}/history`)} color="info">
                             <HistoryIcon />
                           </IconButton>
                         </Tooltip>
                         {currentUser.role === 'admin' && (
                           <Tooltip title={member.status === 'active' ? 'Suspend Member' : 'Activate Member'}>
                             <IconButton 
-                              onClick={() => handleToggleStatus(member._id, member.status)} 
+                              onClick={() => handleToggleStatus(member.id, member.status)} 
                               color={member.status === 'active' ? 'error' : 'success'}
                             >
                               {member.status === 'active' ? <BlockIcon /> : <ActiveIcon />}

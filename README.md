@@ -67,3 +67,17 @@ The team is now ready to begin parallel development on the core modules:
 5. **Branch Out**: Checkout to your designated feature branch (do not push directly to `main` or `dev`).
 6. **Test-Driven Approach**: Read your module's specific test document in the `tests/` folder.
 7. **Update Progress**: Once a feature is complete, update this README and raise a PR.
+
+---
+
+## ✅ Completed Modules
+
+### Module 3: Member Management & Reservations (Samrudhi)
+- **Status:** Completed
+- **Features Implemented:**
+  - Member profile and status management (active/suspended)
+  - Paginated and searchable members list view
+  - Complete member borrowing history view
+  - Reservation system (create, cancel, queue management)
+  - Prisma mapping fixes in frontend React components
+- **Notes:** Email notifications (Nodemailer) skipped per current phase requirements.

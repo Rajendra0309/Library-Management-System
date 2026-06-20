@@ -80,7 +80,7 @@ const ReservationList = () => {
       const data = await cancelReservation(id);
       if (data.success) {
         // Set the reservation state locally to cancelled
-        setReservations(reservations.map(r => r._id === id ? { ...r, status: 'cancelled' } : r));
+        setReservations(reservations.map(r => r.id === id ? { ...r, status: 'cancelled' } : r));
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to cancel reservation.');
@@ -111,9 +111,9 @@ const ReservationList = () => {
 
   // Filter reservations based on search text (filters by member name and book title)
   const filteredReservations = reservations.filter((res) => {
-    const titleMatch = res.bookId?.title?.toLowerCase().includes(search.toLowerCase()) || false;
-    const nameMatch = res.memberId?.name?.toLowerCase().includes(search.toLowerCase()) || false;
-    const idMatch = res.memberId?.membershipId?.toLowerCase().includes(search.toLowerCase()) || false;
+    const titleMatch = res.book?.title?.toLowerCase().includes(search.toLowerCase()) || false;
+    const nameMatch = res.member?.name?.toLowerCase().includes(search.toLowerCase()) || false;
+    const idMatch = res.member?.membershipId?.toLowerCase().includes(search.toLowerCase()) || false;
     return titleMatch || nameMatch || idMatch;
   });
 
@@ -191,16 +191,16 @@ const ReservationList = () => {
               </TableHead>
               <TableBody>
                 {paginatedReservations.map((res) => (
-                  <TableRow key={res._id} hover sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                    <TableCell sx={{ fontWeight: 600, color: 'primary.light' }}>{res.bookId?.title || 'Unknown Title'}</TableCell>
-                    <TableCell>{res.bookId?.isbn || '-'}</TableCell>
+                  <TableRow key={res.id} hover sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                    <TableCell sx={{ fontWeight: 600, color: 'primary.light' }}>{res.book?.title || 'Unknown Title'}</TableCell>
+                    <TableCell>{res.book?.isbn || '-'}</TableCell>
                     {isLibrarianOrAdmin && (
                       <TableCell>
                         <Typography sx={{ fontSize: '0.9rem', fontWeight: 550 }}>
-                          {res.memberId?.name || 'Deleted User'}
+                          {res.member?.name || 'Deleted User'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {res.memberId?.membershipId || '-'}
+                          {res.member?.membershipId || '-'}
                         </Typography>
                       </TableCell>
                     )}
@@ -242,7 +242,7 @@ const ReservationList = () => {
                             color="error"
                             size="small"
                             startIcon={<CancelIcon />}
-                            onClick={() => handleCancel(res._id)}
+                            onClick={() => handleCancel(res.id)}
                           >
                             Cancel
                           </Button>

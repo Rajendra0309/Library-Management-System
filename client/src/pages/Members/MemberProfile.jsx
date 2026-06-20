@@ -125,7 +125,7 @@ const MemberProfile = () => {
     if (!member) return;
     const newStatus = member.status === 'active' ? 'suspended' : 'active';
     try {
-      const data = await updateMemberStatus(member._id, newStatus);
+      const data = await updateMemberStatus(member.id, newStatus);
       if (data.success) {
         setMember({ ...member, status: newStatus });
       }
@@ -307,8 +307,8 @@ const MemberProfile = () => {
                     </TableHead>
                     <TableBody>
                       {activeBorrows.map((borrow) => (
-                        <TableRow key={borrow._id}>
-                          <TableCell>{borrow.bookId?.title || 'Unknown Title'}</TableCell>
+                        <TableRow key={borrow.id}>
+                          <TableCell>{borrow.book?.title || 'Unknown Title'}</TableCell>
                           <TableCell>{new Date(borrow.dueDate).toLocaleDateString()}</TableCell>
                           <TableCell>
                             <Chip 
@@ -349,8 +349,8 @@ const MemberProfile = () => {
                     </TableHead>
                     <TableBody>
                       {borrowHistory.map((historyItem) => (
-                        <TableRow key={historyItem._id} hover>
-                          <TableCell sx={{ fontWeight: 500 }}>{historyItem.bookId?.title || 'Deleted Book'}</TableCell>
+                        <TableRow key={historyItem.id} hover>
+                          <TableCell sx={{ fontWeight: 500 }}>{historyItem.book?.title || 'Deleted Book'}</TableCell>
                           <TableCell>{new Date(historyItem.issueDate).toLocaleDateString()}</TableCell>
                           <TableCell>
                             {historyItem.returnDate 

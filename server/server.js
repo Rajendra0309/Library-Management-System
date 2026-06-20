@@ -25,6 +25,42 @@ app.use(express.json());
 // Routes
 const memberRoutes = require('./routes/member.routes');
 const reservationRoutes = require('./routes/reservation.routes');
+const jwt = require('jsonwebtoken');
+const prisma = require('./prisma/client');
+
+// --- DEVELOPMENT MOCK LOGIN ---
+app.post('/api/mock-login', async (req, res) => {
+  const { role } = req.body; // 'admin', 'librarian', or 'member'
+  const email = `mock${role}@library.com`;
+  
+  try {
+    let user = await prisma.user.findUnique({ where: { email } });
+    
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          name: `Mock ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+          email: email,
+          password: 'mockpassword', // Usually this would be hashed, but it's a mock
+          role: role,
+          status: 'active',
+          membershipId: `LMS-MOCK-${Math.floor(Math.random() * 10000)}`
+        }
+      });
+    }
+
+    const token = jwt.sign(
+      { id: user.id }, 
+      process.env.JWT_SECRET || 'your_super_secret_key', 
+      { expiresIn: '1d' }
+    );
+
+    res.json({ success: true, token, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+// ------------------------------
 
 app.use('/api/members', memberRoutes);
 app.use('/api/reservations', reservationRoutes);

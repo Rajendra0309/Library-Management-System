@@ -68,10 +68,25 @@ const theme = createTheme({
 // A simple navigation layout component
 const Layout = ({ children }) => {
   // Mock login/logout handlers for testing
-  const handleMockLogin = (role) => {
-    localStorage.setItem('token', 'mock-jwt-token');
-    localStorage.setItem('user', JSON.stringify({ id: '654321098765432109876543', name: 'Samrudhi Member 3', role: role }));
-    window.location.reload();
+  const handleMockLogin = async (role) => {
+    try {
+      // Import api directly or use fetch, but we can just use fetch for simplicity to avoid import issues
+      const response = await fetch('http://localhost:5000/api/mock-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      });
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.reload();
+      } else {
+        alert('Mock login failed: ' + data.message);
+      }
+    } catch (err) {
+      alert('Mock login network error. Is the backend running on port 5000?');
+    }
   };
 
   const handleLogout = () => {

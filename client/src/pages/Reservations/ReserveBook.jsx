@@ -57,7 +57,7 @@ const ReserveBook = ({ book, onReservationCreated }) => {
     setError('');
     try {
       const response = await api.post('/reservations', {
-        bookId: book._id,
+        bookId: book.id,
         memberId: currentUser.id
       });
 
