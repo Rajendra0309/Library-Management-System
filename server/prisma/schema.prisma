@@ -100,3 +100,17 @@ model Borrow {
   member User @relation(fields: [memberId], references: [id])
   book   Book @relation(fields: [bookId], references: [id])
 }
+
+model Report {
+  id              String   @id @default(cuid())
+  date            DateTime @default(now())
+  totalBooks      Int
+  totalMembers    Int
+  activeBorrows   Int
+  overdueBorrows  Int
+  totalFines      Float?
+  genreStats      Json?
+  borrowingTrends Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

@@ -32,12 +32,16 @@ const staffRoutes = require('./routes/staff.routes');
 const memberRoutes = require('./routes/member.routes');
 const reservationRoutes = require('./routes/reservation.routes');
 const bookRoutes = require('./routes/book.routes');
+const aiRoutes = require('./routes/ai.routes');
+const reportRoutes = require('./routes/report.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/books', bookRoutes); 
+app.use('/api/ai', aiRoutes);
+app.use('/api/reports', reportRoutes);
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
