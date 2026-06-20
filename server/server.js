@@ -31,11 +31,13 @@ const staffRoutes = require('./routes/staff.routes');
 // Module 3: Members + Reservations
 const memberRoutes = require('./routes/member.routes');
 const reservationRoutes = require('./routes/reservation.routes');
+const bookRoutes = require('./routes/book.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/reservations', reservationRoutes);
+app.use('/api/books', bookRoutes); 
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
