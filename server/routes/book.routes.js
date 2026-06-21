@@ -8,6 +8,7 @@ const {
   updateBook,
   deleteBook,
   searchBooks,
+  getEbookUrl,
 } = require("../controllers/book.controller");
 
 const {
@@ -15,10 +16,13 @@ const {
   authorize,
 } = require("../middleware/auth.middleware");
 
+const upload = require("../middleware/upload.middleware");
+
 /*
 =====================================
-Search Routes
+Search Books
 Members + Librarians + Admins
+GET /api/books/search
 =====================================
 */
 router.get(
@@ -29,8 +33,22 @@ router.get(
 
 /*
 =====================================
-Read Routes
+Get Ebook (Pre-Signed URL)
 Members + Librarians + Admins
+GET /api/books/:id/ebook
+=====================================
+*/
+router.get(
+  "/:id/ebook",
+  protect,
+  getEbookUrl
+);
+
+/*
+=====================================
+Get All Books
+Members + Librarians + Admins
+GET /api/books
 =====================================
 */
 router.get(
@@ -39,6 +57,13 @@ router.get(
   getBooks
 );
 
+/*
+=====================================
+Get Single Book
+Members + Librarians + Admins
+GET /api/books/:id
+=====================================
+*/
 router.get(
   "/:id",
   protect,
@@ -47,21 +72,27 @@ router.get(
 
 /*
 =====================================
-Create Route
-Admin + Librarian
+Create Book
+Admin + Librarian Only
+POST /api/books
 =====================================
 */
 router.post(
   "/",
   protect,
   authorize("admin", "librarian"),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "ebook", maxCount: 1 }
+  ]),
   createBook
 );
 
 /*
 =====================================
-Update Route
-Admin + Librarian
+Update Book
+Admin + Librarian Only
+PUT /api/books/:id
 =====================================
 */
 router.put(
@@ -73,8 +104,9 @@ router.put(
 
 /*
 =====================================
-Delete Route
-Admin + Librarian
+Delete Book
+Admin + Librarian Only
+DELETE /api/books/:id
 =====================================
 */
 router.delete(

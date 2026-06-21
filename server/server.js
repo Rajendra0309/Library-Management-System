@@ -36,7 +36,7 @@ const aiRoutes = require('./routes/ai.routes');
 const reportRoutes = require('./routes/report.routes');
 const borrowRoutes = require('./routes/borrow.routes');
 const fineRoutes = require('./routes/fine.routes');
-const uploadRoutes = require("./routes/upload.routes");
+
 
 // // -----------s3 route---------------------------
 // const s3 = require("./config/s3");
@@ -51,7 +51,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/borrow', borrowRoutes);
 app.use('/api/fines', fineRoutes);
-app.use("/api/uploads", uploadRoutes);
+
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -62,24 +62,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// // -------------------------checking s3-------------------------
-// app.get("/test-s3", async (req, res) => {
-//   try {
-//     const data = await s3.listBuckets().promise();
-
-//     res.json({
-//       success: true,
-//       buckets: data.Buckets,
-//     });
-//   } catch (error) {
-//     console.error(error);
-
-//     res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// });
 
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
