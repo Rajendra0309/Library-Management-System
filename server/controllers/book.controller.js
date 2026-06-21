@@ -1,5 +1,5 @@
 const prisma = require("../prisma/client");
-
+const s3 = require("../config/s3");
 /*
 =====================================
 Create Book
@@ -8,17 +8,18 @@ POST /api/books
 */
 exports.createBook = async (req, res) => {
   try {
+
     const {
-      title,
-      author,
-      isbn,
-      genre,
-      language,
-      publisher,
-      publishYear,
-      description,
-      totalCopies,
-    } = req.body;
+    title,
+    author,
+    isbn,
+    genre,
+    language,
+    publisher,
+    publishYear,
+    description,
+    totalCopies,
+  } = req.body;
 
     // Required field validation
     if (!title || !author || !isbn || !genre) {
@@ -53,23 +54,80 @@ exports.createBook = async (req, res) => {
         success: false,
         message: "Invalid publish year",
       });
+
+    }
+    let coverImageUrl = null;
+    let ebookUrl = null;
+
+    /*
+    =====================================
+    Upload Cover Image
+    =====================================
+    */
+    if (req.files?.cover?.[0]) {
+      const coverFile = req.files.cover[0];
+
+      const coverUpload = await s3.upload({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `covers/${Date.now()}-${coverFile.originalname}`,
+        Body: coverFile.buffer,
+        ContentType: coverFile.mimetype,
+      }).promise();
+
+      coverImageUrl = coverUpload.Location;
     }
 
-    const book = await prisma.book.create({
-      data: {
-        title,
-        author,
-        isbn,
-        genre,
-        language,
-        publisher,
-        publishYear: publishYear ? Number(publishYear) : null,
-        description,
-        totalCopies: copies,
-        availableCopies: copies,
-        barcode: isbn,
-      },
-    });
+    /*
+    =====================================
+    Upload Ebook
+    =====================================
+    */
+    if (req.files?.ebook?.[0]) {
+      const ebookFile = req.files.ebook[0];
+
+      if (ebookFile.mimetype !== "application/pdf") {
+        return res.status(400).json({
+          success: false,
+          message: "Only PDF files are allowed",
+        });
+      }
+
+      const ebookUpload = await s3.upload({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `ebooks/${Date.now()}-${ebookFile.originalname}`,
+        Body: ebookFile.buffer,
+        ContentType: ebookFile.mimetype,
+      }).promise();
+
+      ebookUrl = ebookUpload.Location;
+    }
+
+
+  const book = await prisma.book.create({
+    data: {
+      title: title.trim(),
+      author: author.trim(),
+      isbn: isbn.trim(),
+      genre: genre.trim(),
+
+      language: language?.trim() || null,
+      publisher: publisher?.trim() || null,
+
+      publishYear: publishYear
+        ? Number(publishYear)
+        : null,
+
+      description: description?.trim() || null,
+
+      totalCopies: copies,
+      availableCopies: copies,
+
+      coverImage: coverImageUrl,
+      ebookUrl: ebookUrl,
+
+      barcode: isbn.trim(),
+    },
+  });
 
     return res.status(201).json({
       success: true,
@@ -84,6 +142,7 @@ exports.createBook = async (req, res) => {
       message: error.message,
     });
   }
+  
 };
 
 /*
@@ -294,7 +353,6 @@ exports.updateBook = async (req, res) => {
     });
   }
 };
-
 /*
 =====================================
 Delete Book
@@ -319,6 +377,7 @@ exports.deleteBook = async (req, res) => {
       });
     }
 
+    // Prevent deletion if active borrow exists
     const activeBorrows = book.borrows.filter(
       (borrow) => borrow.status === "active"
     );
@@ -330,6 +389,52 @@ exports.deleteBook = async (req, res) => {
       });
     }
 
+    /*
+    =====================================
+    Delete Cover Image From S3
+    =====================================
+    */
+    if (book.coverImage) {
+      const coverKey = new URL(book.coverImage)
+        .pathname
+        .substring(1);
+
+      await s3.deleteObject({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: coverKey,
+      }).promise();
+
+      
+    }
+
+    /*
+    =====================================
+    Delete Ebook From S3
+    =====================================
+    */
+      if (book.ebookUrl) {
+
+        
+
+        const ebookKey = decodeURIComponent(
+          new URL(book.ebookUrl).pathname.substring(1)
+        );
+
+      
+
+        await s3.deleteObject({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: ebookKey,
+        }).promise();
+
+        
+      }
+
+    /*
+    =====================================
+    Delete Book Record
+    =====================================
+    */
     await prisma.book.delete({
       where: { id },
     });
@@ -347,7 +452,6 @@ exports.deleteBook = async (req, res) => {
     });
   }
 };
-
 /*
 =====================================
 Search Books
@@ -399,6 +503,60 @@ exports.searchBooks = async (req, res) => {
     });
   } catch (error) {
     console.error("Search Books Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/*
+=====================================
+Get Ebook URL
+GET /api/books/:id/ebook
+=====================================
+*/
+exports.getEbookUrl = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const book = await prisma.book.findUnique({
+      where: { id },
+    });
+
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    if (!book.ebookUrl) {
+      return res.status(404).json({
+        success: false,
+        message: "Ebook not available",
+      });
+    }
+
+    
+
+    const key = decodeURIComponent(
+      new URL(book.ebookUrl).pathname.substring(1)
+    );
+
+    const signedUrl = s3.getSignedUrl("getObject", {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+      Expires: 60 * 60, // 1 hour
+    });
+
+    return res.status(200).json({
+      success: true,
+      ebookUrl: signedUrl,
+    });
+  } catch (error) {
+    console.error("Get Ebook URL Error:", error);
 
     return res.status(500).json({
       success: false,
