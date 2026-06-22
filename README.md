@@ -61,11 +61,11 @@ All test cases in `tests/AUTH_TEST.md` — **PASS** ✅
 
 ### Module 3: Members & Reservations (Samrudhi)
 - [x] Defined logic for membership ID generation and reservation queue workflows.
-- [ ] API endpoints for Member management and Book Reservations.
+- [x] API endpoints for Member management and Book Reservations.
 
 ### Module 4: Borrowing & Fines (Spoorthy)
 - [x] Initialized the GitHub repository and base project folder structure.
-- [ ] API endpoints for Issuing/Returning books and calculating Overdue Fines.
+- [x] API endpoints for Issuing/Returning books and calculating Overdue Fines.
 
 ### ✅ Module 5 (Integration & AI) Progress (Rajendra)
 - [x] **Phase 1: AI Recommendation Backend & API**
@@ -81,7 +81,11 @@ All test cases in `tests/AUTH_TEST.md` — **PASS** ✅
 - [x] **Phase 3: Frontend Dashboard Integration**
   - Created `Dashboard.jsx` using `recharts` to visualize real-time data from ETL output.
   - Created `ReportDetails.jsx` for tabular data representation alongside the existing `Reports.jsx` UI.
-- [ ] Phase 4: DevOps & Cloud Architecture
+- [x] **Phase 4: DevOps & Cloud Architecture**
+  - Containerized all microservices with Docker.
+  - Built GitHub Actions CI/CD pipeline.
+  - Converted fines to Serverless AWS Lambda architecture.
+  - Wrote complete AWS Enterprise Deployment Guide.
 
 ---
 
