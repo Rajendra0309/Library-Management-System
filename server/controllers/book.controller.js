@@ -67,9 +67,12 @@ exports.createBook = async (req, res) => {
     if (req.files?.cover?.[0]) {
       const coverFile = req.files.cover[0];
 
+      const safeFileName =
+        coverFile.originalname.replace(/\s+/g, "-");
+
       const coverUpload = await s3.upload({
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `covers/${Date.now()}-${coverFile.originalname}`,
+        Key: `covers/${Date.now()}-${safeFileName}`,
         Body: coverFile.buffer,
         ContentType: coverFile.mimetype,
       }).promise();
@@ -92,12 +95,15 @@ exports.createBook = async (req, res) => {
         });
       }
 
-      const ebookUpload = await s3.upload({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `ebooks/${Date.now()}-${ebookFile.originalname}`,
-        Body: ebookFile.buffer,
-        ContentType: ebookFile.mimetype,
-      }).promise();
+        const safeFileName =
+          ebookFile.originalname.replace(/\s+/g, "-");
+
+        const ebookUpload = await s3.upload({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: `ebooks/${Date.now()}-${safeFileName}`,
+          Body: ebookFile.buffer,
+          ContentType: ebookFile.mimetype,
+        }).promise();
 
       ebookUrl = ebookUpload.Location;
     }
@@ -287,6 +293,64 @@ exports.updateBook = async (req, res) => {
       });
     }
 
+    let coverImage = existingBook.coverImage;
+
+    if (req.files?.cover?.[0]) {
+      const coverFile = req.files.cover[0];
+
+      if (existingBook.coverImage) {
+        const oldCoverKey = decodeURIComponent(
+          new URL(existingBook.coverImage).pathname.substring(1)
+        ).replace(/\+/g, " ");
+
+        await s3.deleteObject({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: oldCoverKey,
+        }).promise();
+      }
+
+      const safeFileName =
+        coverFile.originalname.replace(/\s+/g, "-");
+
+      const coverUpload = await s3.upload({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `covers/${Date.now()}-${safeFileName}`,
+        Body: coverFile.buffer,
+        ContentType: coverFile.mimetype,
+      }).promise();
+
+      coverImage = coverUpload.Location;
+    }
+
+    let ebookUrl = existingBook.ebookUrl;
+
+    if (req.files?.ebook?.[0]) {
+      const ebookFile = req.files.ebook[0];
+
+      if (existingBook.ebookUrl) {
+        const oldEbookKey = decodeURIComponent(
+          new URL(existingBook.ebookUrl).pathname.substring(1)
+        ).replace(/\+/g, " ");
+
+        await s3.deleteObject({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: oldEbookKey,
+        }).promise();
+      }
+
+      const safeFileName =
+        ebookFile.originalname.replace(/\s+/g, "-");
+
+      const ebookUpload = await s3.upload({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `ebooks/${Date.now()}-${safeFileName}`,
+        Body: ebookFile.buffer,
+        ContentType: ebookFile.mimetype,
+      }).promise();
+
+      ebookUrl = ebookUpload.Location;
+    }    
+
     // Validate publish year
     if (
       req.body.publishYear &&
@@ -334,9 +398,58 @@ exports.updateBook = async (req, res) => {
       });
     }
 
+        const borrowedCopies =
+          existingBook.totalCopies -
+          existingBook.availableCopies;
+
+        if (
+          req.body.totalCopies &&
+          Number(req.body.totalCopies) < borrowedCopies
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: `Cannot reduce total copies below ${borrowedCopies}. ${borrowedCopies} copies are currently borrowed.`,
+          });
+        }
+
+        let availableCopies =
+          existingBook.availableCopies;
+
+        if (req.body.totalCopies) {
+          const newTotalCopies =
+            Number(req.body.totalCopies);
+
+          const difference =
+            newTotalCopies -
+            existingBook.totalCopies;
+
+          availableCopies =
+            existingBook.availableCopies +
+            difference;
+
+          if (availableCopies < 0) {
+            availableCopies = 0;
+          }
+        }        
+
     const updatedBook = await prisma.book.update({
       where: { id },
-      data: req.body,
+      data: {
+        ...req.body,
+
+        publishYear: req.body.publishYear
+          ? Number(req.body.publishYear)
+          : null,
+
+        totalCopies: req.body.totalCopies
+          ? Number(req.body.totalCopies)
+          : existingBook.totalCopies,
+
+        availableCopies,
+
+        coverImage,
+        ebookUrl,
+      },
     });
 
     return res.status(200).json({
@@ -541,9 +654,11 @@ exports.getEbookUrl = async (req, res) => {
 
     
 
-    const key = decodeURIComponent(
-      new URL(book.ebookUrl).pathname.substring(1)
-    );
+      const key = decodeURIComponent(
+        new URL(book.ebookUrl).pathname.substring(1)
+      ).replace(/\+/g, " ");
+
+
 
     const signedUrl = s3.getSignedUrl("getObject", {
       Bucket: process.env.AWS_BUCKET_NAME,

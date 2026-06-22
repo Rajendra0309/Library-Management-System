@@ -1,27 +1,71 @@
-import React from 'react';
-import { Link, useParams } from 'react-router-dom';
-
+import React, { useEffect, useState } from 'react';
+import { Link,useNavigate, useParams } from 'react-router-dom';
+import api from '../../api/axios';
 const BookDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
+ 
+  useEffect(() => {
+    fetchBook();
+  }, [id]);
 
-  // Mock data based on Stitch UI
-  const book = {
-    id: id || 1,
-    title: "The Design of Everyday Things",
-    author: "Don Norman",
-    isbn: "9780465050659",
-    publisher: "Basic Books",
-    language: "English",
-    publishYear: "2013",
-    format: "Paperback, E-Book",
-    timesBorrowed: 124,
-    status: "Available",
-    copiesAvailable: 4,
-    totalCopies: 5,
-    description: "Even the smartest among us can feel inept as we fail to figure out which light switch or oven burner to turn on, or whether to push, pull, or slide a door. The fault, argues this ingenious—even liberating—book, lies not in ourselves, but in product design that ignores the needs of users and the principles of cognitive psychology. The problems range from ambiguous and hidden controls to arbitrary relationships between controls and functions...",
-    coverUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDWhXR2JJyGALJ-TGrSo6yYZA8-6jf3eRnTI8xEHKREg78ixxjSc6l_2nCDxMEPhDBYeiu0H_JpaDRvOEE57UR6D_ruNiVRy74Xs8ZlHwokPYGHFpIiK82NPKxEL2zOzngVRjsp0c8MuIJC-34OzfWbih9ZDoSbhAggmJ_riq-aAyOYFGQujihDY0ZZzYiOwaImABUk0rpdTIBLaqXcsMR6Aj8C6VCBnDZBy2YoSrZ6tX5ZVjJaDgO1FXCLjO3OatDEhcVHuWjYW3c",
-    genres: ["Design", "Psychology", "Non-Fiction"]
+  const fetchBook = async () => {
+    try {
+      const res = await api.get(`/books/${id}`);
+      setBook(res.data.data);
+    } catch (error) {
+      console.error("Error fetching book:", error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleReadEbook = async () => {
+    try {
+      const res = await api.get(`/books/${id}/ebook`);
+
+      window.open(
+        res.data.ebookUrl,
+        "_blank"
+      );
+    } catch (error) {
+      alert("Ebook not available");
+    }
+  };
+
+    const handleDelete = async () => {
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this book?"
+      );
+
+      if (!confirmed) return;
+
+      try {
+        const res = await api.delete(`/books/${id}`);
+
+        if (res.data.success) {
+          navigate("/books");
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+
+        alert(
+          error.response?.data?.message ||
+          "Failed to delete book"
+        );
+      }
+    };
+
+  if (loading) {
+    return <div className="p-10">Loading...</div>;
+  }
+
+  if (!book) {
+    return <div className="p-10">Book not found</div>;
+  }  
 
   return (
     <div className="flex-1 p-lg md:p-page-padding max-w-content-max-width mx-auto w-full pb-32">
@@ -41,14 +85,16 @@ const BookDetail = () => {
         <div className="lg:col-span-5 flex flex-col gap-xl">
           {/* Cover Card */}
           <div className="bg-surface rounded-xl shadow-sm p-md relative group hover:-translate-y-[3px] hover:shadow-md transition-all border border-transparent hover:border-border-default">
+            {book.ebookUrl && (
             <div className="absolute top-xl right-xl z-10 flex flex-col gap-sm">
               <span className="bg-primary text-on-primary font-label-xs text-label-xs uppercase tracking-widest px-md py-base rounded-full shadow-md flex items-center gap-xs">
                 <span className="material-symbols-outlined text-[14px]">tablet_mac</span> E-Book
               </span>
             </div>
+            )}
             <div className="aspect-[3/4] w-full bg-surface-container-low rounded-lg overflow-hidden relative border border-border-subtle">
-              {book.coverUrl ? (
-                <img className="w-full h-full object-cover" src={book.coverUrl} alt={`Cover for ${book.title}`} />
+              {book.coverImage ? (
+                <img className="w-full h-full object-cover" src={book.coverImage} alt={`Cover for ${book.title}`} />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                    <span className="material-symbols-outlined text-outline-variant text-6xl">menu_book</span>
@@ -74,32 +120,38 @@ const BookDetail = () => {
                 <h1 className="font-headline-2xl text-headline-2xl text-on-surface mb-xs">{book.title}</h1>
                 <p className="font-body-base text-body-base text-text-secondary">by {book.author}</p>
               </div>
-              <span className={`${book.status === 'Available' ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-error text-on-error'} font-label-xs text-label-xs uppercase tracking-widest px-md py-sm rounded-full flex items-center gap-xs whitespace-nowrap`}>
-                <span className="material-symbols-outlined text-[14px]">{book.status === 'Available' ? 'check_circle' : 'cancel'}</span>
-                {book.status}
-              </span>
+                <span
+                  className={`${
+                    book.availableCopies > 0
+                      ? 'bg-tertiary-fixed text-on-tertiary-fixed'
+                      : 'bg-error text-on-error'
+                  } font-label-xs text-label-xs uppercase tracking-widest px-md py-sm rounded-full flex items-center gap-xs whitespace-nowrap`}
+                >
+                  <span className="material-symbols-outlined text-[14px]">
+                    {book.availableCopies > 0 ? 'check_circle' : 'cancel'}
+                  </span>
+                  {book.availableCopies > 0 ? 'Available' : 'Unavailable'}
+                </span>
             </div>
 
             {/* Genres */}
-            <div className="flex flex-wrap gap-sm mt-sm">
-              {book.genres.map((genre, idx) => (
-                <span key={idx} className="px-md py-base bg-surface-variant text-on-surface-variant rounded-full font-label-xs text-label-xs uppercase tracking-widest">
-                  {genre}
+              <div className="flex flex-wrap gap-sm mt-sm">
+                <span className="px-md py-base bg-surface-variant text-on-surface-variant rounded-full font-label-xs text-label-xs uppercase tracking-widest">
+                  {book.genre}
                 </span>
-              ))}
-            </div>
+              </div>
           </div>
 
           {/* Availability Progress */}
           <div className="bg-surface rounded-xl shadow-sm p-card-padding border border-border-subtle flex flex-col gap-md">
             <div className="flex justify-between items-end">
               <span className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Circulation Status</span>
-              <span className="font-body-sm text-body-sm text-on-surface font-semibold">{book.copiesAvailable} of {book.totalCopies} Copies Available</span>
+              <span className="font-body-sm text-body-sm text-on-surface font-semibold">{book.availableCopies} of {book.totalCopies} Copies Available</span>
             </div>
             <div className="w-full bg-surface-container-high rounded-full h-2 overflow-hidden">
               <div 
-                className={`${book.copiesAvailable > 0 ? 'bg-tertiary-container' : 'bg-error'} h-full rounded-full transition-all`} 
-                style={{ width: `${(book.copiesAvailable / book.totalCopies) * 100}%` }}
+                className={`${book.availableCopies > 0 ? 'bg-tertiary-container' : 'bg-error'} h-full rounded-full transition-all`} 
+                style={{ width: `${(book.availableCopies / book.totalCopies) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -124,7 +176,7 @@ const BookDetail = () => {
             </div>
             <div className="flex flex-col gap-xs">
               <span className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Format</span>
-              <span className="font-body-base text-body-base text-on-surface">{book.format}</span>
+              <span className="font-body-base text-body-base text-on-surface">{book.ebookUrl? "Physical + E-Book": "Physical Copy"}</span>
             </div>
             <div className="flex flex-col gap-xs">
               <span className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Times Borrowed</span>
@@ -145,19 +197,31 @@ const BookDetail = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-md pt-xl border-t border-border-subtle">
-            <button className="bg-brand-gradient text-on-primary font-body-base text-body-base px-3xl py-md rounded-lg shadow-sm hover:-translate-y-[2px] hover:shadow-brand-glow transition-all flex items-center gap-sm">
+            <button
+              onClick={handleReadEbook}
+              disabled={!book.ebookUrl}
+              className="bg-brand-gradient text-on-primary font-body-base text-body-base px-3xl py-md rounded-lg shadow-sm hover:-translate-y-[2px] hover:shadow-brand-glow transition-all flex items-center gap-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            >
               <span className="material-symbols-outlined">library_add_check</span>
-              Borrow Copy
+              {book.ebookUrl ? "Read Ebook" : "Ebook Not Available"}
             </button>
             <button className="border border-border-default text-primary font-body-base text-body-base px-3xl py-md rounded-lg hover:bg-bg-hover transition-colors flex items-center gap-sm">
               <span className="material-symbols-outlined">bookmark_add</span>
               Reserve
             </button>
             <div className="flex-1"></div>
-            <button className="p-sm text-text-secondary border border-border-default rounded-lg hover:bg-bg-hover hover:text-on-surface transition-colors" title="Edit Record">
+            <Link
+              to={`/books/edit/${book.id}`}
+              className="p-sm text-text-secondary border border-border-default rounded-lg hover:bg-bg-hover hover:text-on-surface transition-colors"
+              title="Edit Record"
+            >
               <span className="material-symbols-outlined">edit</span>
-            </button>
-            <button className="p-sm text-error border border-error-container bg-error-container/20 rounded-lg hover:bg-error-container transition-colors" title="Delete Record">
+            </Link>
+            <button
+              onClick={handleDelete}
+              className="p-sm text-error border border-error-container bg-error-container/20 rounded-lg hover:bg-error-container transition-colors"
+              title="Delete Record"
+            >
               <span className="material-symbols-outlined">delete</span>
             </button>
           </div>
