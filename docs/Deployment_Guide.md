@@ -107,3 +107,29 @@ AWS blocks Port 25, which breaks standard email servers. We will use a standard 
    - `EMAIL_PASS`: `the-16-character-app-password`
 
 *Your Node.js Mailer Utility is already set up to read these variables!*
+
+---
+
+## ⏰ 6. Serverless Fine Calculation (AWS Lambda + EventBridge)
+
+To save server memory and ensure 100% reliability, the daily fine calculation is handled by a serverless AWS Lambda function instead of a heavy Node.js cron job.
+
+**Steps in AWS Console:**
+1. Navigate to **Lambda** -> **Create function**.
+2. Name it `lms-fine-trigger`. Select **Node.js 18.x** runtime.
+3. Click **Create function**.
+4. In the "Code source" section, replace the default code with the exact contents of the `aws/lambda-fine-trigger.js` file from your repository.
+5. Click **Deploy**.
+6. Go to the **Configuration** tab -> **Environment variables** -> **Edit**.
+   - Add `API_URL`: Your backend URL (e.g., `https://api.yourdomain.com/api/fines/trigger-cron`).
+   - Add `CRON_SECRET_KEY`: A highly secure random password.
+7. *(Important)* Go to your ECS Fargate environment variables (or `.env` file) and ensure `CRON_SECRET_KEY` matches exactly so your backend accepts the request.
+
+**Trigger it Daily via EventBridge:**
+1. In the Lambda designer, click **Add trigger**.
+2. Select **EventBridge (CloudWatch Events)**.
+3. Select **Create a new rule**. Name it `DailyMidnightFineTrigger`.
+4. Set the **Schedule expression**: `cron(0 0 * * ? *)` (This means every day at midnight GMT).
+5. Click **Add**.
+
+Now, AWS will automatically execute the fine calculation every single night with zero performance impact on your main server!

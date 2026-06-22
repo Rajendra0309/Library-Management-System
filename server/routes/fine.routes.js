@@ -3,6 +3,9 @@ const router = express.Router();
 const fineController = require('../controllers/fine.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 
+// Serverless Cron Webhook - Unprotected by JWT, but uses x-api-key
+router.post('/trigger-cron', fineController.triggerCron);
+
 // All fine routes are protected
 router.use(protect);
 
