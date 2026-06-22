@@ -206,3 +206,86 @@ exports.getFineSummary = async (req, res) => {
         });
     }
 };
+
+/*
+=====================================
+Trigger Cron For Fines
+POST /api/fines/trigger-cron
+=====================================
+*/
+exports.triggerCron = async (req, res) => {
+    try {
+        const apiKey = req.headers['x-api-key'];
+        
+        if (!process.env.CRON_SECRET_KEY || apiKey !== process.env.CRON_SECRET_KEY) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Invalid or missing API Key",
+            });
+        }
+
+        const { calculateFineAmount } = require('../utils/fineCalculator');
+        const today = new Date();
+
+        const overdueBorrows = await prisma.borrow.findMany({
+            where: {
+                status: 'active',
+                dueDate: { lt: today }
+            }
+        });
+
+        let updated = 0;
+        let created = 0;
+
+        for (const borrow of overdueBorrows) {
+            const diffInTime = today.getTime() - new Date(borrow.dueDate).getTime();
+            const daysOverdue = Math.ceil(diffInTime / (1000 * 3600 * 24));
+
+            if (daysOverdue > 0) {
+                const fineAmount = calculateFineAmount(daysOverdue);
+
+                const existingFine = await prisma.fine.findFirst({
+                    where: {
+                        borrowId: borrow.id,
+                        status: 'pending'
+                    }
+                });
+
+                if (existingFine) {
+                    await prisma.fine.update({
+                        where: { id: existingFine.id },
+                        data: {
+                            amount: fineAmount,
+                            daysOverdue: daysOverdue
+                        }
+                    });
+                    updated++;
+                } else {
+                    await prisma.fine.create({
+                        data: {
+                            amount: fineAmount,
+                            daysOverdue: daysOverdue,
+                            memberId: borrow.memberId,
+                            borrowId: borrow.id,
+                            status: 'pending'
+                        }
+                    });
+                    created++;
+                }
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Fines processed successfully via Webhook",
+            stats: { overdueBorrows: overdueBorrows.length, finesCreated: created, finesUpdated: updated }
+        });
+
+    } catch (error) {
+        console.error("Trigger Cron Error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error during fine processing",
+        });
+    }
+};
