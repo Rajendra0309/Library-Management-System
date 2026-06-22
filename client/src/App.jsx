@@ -15,6 +15,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import LandingPage from './pages/LandingPage';
 import BookCatalog from './pages/Books/BookCatalog';
 import BookDetail from './pages/Books/BookDetail';
+import AddBook from './pages/Books/AddBook';
+import EditBook from './pages/Books/EditBook';
 import MemberList from './pages/Members/MemberList';
 import MemberProfile from './pages/Members/MemberProfile';
 import MemberHistory from './pages/Members/MemberHistory';
@@ -49,6 +51,8 @@ function App() {
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="books" element={<BookCatalog />} />
                 <Route path="books/:id" element={<BookDetail />} />
+                <Route path="books/add" element={<AddBook />} />
+                <Route path="books/edit/:id" element={<EditBook />} />
                 <Route path="member-dashboard" element={<MemberDashboard />} />
                 <Route path="members" element={<MemberList />} />
                 <Route path="members/:id" element={<MemberProfile />} />

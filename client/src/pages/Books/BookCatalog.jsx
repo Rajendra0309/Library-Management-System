@@ -1,55 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+// import api from '../../services/axios';
+import api from '../../api/axios';
 import { Link } from 'react-router-dom';
 
-const MOCK_BOOKS = [
-  {
-    id: 1,
-    title: "The Design of Everyday Things",
-    author: "Don Norman",
-    isbn: "9780465050659",
-    genre: "Design",
-    status: "Available",
-    coverUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuA1CSUvft2_Dvtp67w8E2jg_Fzdy2OyawdIbWqS0aooK-l3HB2nDdMYrzmnicBo0tkXhCfyl2wlz6DepqKRxG3h4u3DrjrULhJkINe0Q1LDYEy0HCSy9TUKtlQowwoBxatpHNWa6SsImPoCxLIiymFW7r5q1WaXZiG3qnKUvVmp4GkME2kDXS53rckU-Ri07xeNElONc2cMuZvQYfGiP3jI-txblglLyNaZxPaQNuNib4XSTA7QxL5F4PGVXyvJciwMfkOW-R9oOkY"
-  },
-  {
-    id: 2,
-    title: "The Catcher in the Rye",
-    author: "J.D. Salinger",
-    isbn: "9780316769488",
-    genre: "Fiction",
-    status: "Borrowed",
-    coverUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDQTbg4qBDGXFqhJt-BSm6-pFRUPkljvAwu_wi2rqwq8-VMRdQsmjyBovRYEk36hmiGJqcrPaz7ushis_wxrfLyVZcQEQsHOVWnz3yzmUKGn-Bu0IiqCFQJ1FWFv5icFkpedqui4wGxXDPZIwD9fVvkZbL26_trUTsqfU3oqYhgh_o5Ty2ZQ7zQGNzC1AEygGUOrBDMhLHsDipjOVHt3MOs4qJc2O_wr8_rphZoFkKFiYr7pNqsMa5VXQhQ7nWz61v67N18RgLsAn8"
-  },
-  {
-    id: 3,
-    title: "A Brief History of Time",
-    author: "Stephen Hawking",
-    isbn: "9780553380163",
-    genre: "Science",
-    status: "Available",
-    coverUrl: null
-  },
-  {
-    id: 4,
-    title: "Sapiens: A Brief History of Humankind",
-    author: "Yuval Noah Harari",
-    isbn: "9780062316097",
-    genre: "History",
-    status: "Available",
-    coverUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAMin3jV_5xdY66dzM52fGfSmU82dUSoTAYGnf8rlWMpj8W2Aiq0cC6hPMcR50HckbNKN_1JtYXmO1oQi4OqbW3J33J605zg9kDmMUQm4X5wFwwxqwtzxQWVim-152aP9HRAWxOxlZyWhpBIkk-rP9933EL-J-892Pg_mqdT4-kLIweEwgCmiCi9ozzyExkPT61hW21OZc-WHU1Tmqmzfe0plhJFBVOxUc_aYn1vby9cY121y7Wcdd2-TKlK6lm7rsncQzBXPnwS2Y"
-  }
-];
+
 
 const BookCatalog = () => {
   const [viewMode, setViewMode] = useState('grid');
-  
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [availableOnly, setAvailableOnly] = useState(false);
+
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+    const fetchBooks = async () => {
+      try {
+        const res = await api.get('/books');
+
+        setBooks(res.data.data || []);
+      } catch (error) {
+        console.error('Error fetching books:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const filteredBooks = books.filter((book) => {
+      const matchesSearch =
+        book.title
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        book.author
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        book.isbn?.includes(searchTerm);
+
+      const matchesGenre =
+        !selectedGenre ||
+        book.genre === selectedGenre;
+
+      const matchesAvailability =
+        !availableOnly ||
+        book.availableCopies > 0;
+
+      return (
+        matchesSearch &&
+        matchesGenre &&
+        matchesAvailability
+      );
+    });
+
+    if (loading) {
+      return (
+        <div className="max-w-content-max-width mx-auto px-page-padding py-4xl">
+          <h2>Loading books...</h2>
+        </div>
+      );
+    }
+
   return (
     <div className="max-w-content-max-width mx-auto px-page-padding py-4xl">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4xl">
         <div>
           <h1 className="font-display-3xl text-display-3xl text-on-surface mb-2">Book Catalog</h1>
-          <p className="font-body-base text-body-base text-text-secondary">Manage and browse 12,458 items in the collection.</p>
+          <p className="font-body-base text-body-base text-text-secondary">Manage and browse {filteredBooks.length} items in the collection.</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex bg-surface rounded-lg p-1 border border-border-default shadow-sm hidden md:flex">
@@ -68,10 +87,18 @@ const BookCatalog = () => {
               <span className="material-symbols-outlined">view_list</span>
             </button>
           </div>
-          <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-body-sm text-body-sm font-semibold hover:shadow-brand-glow active:scale-[0.97] transition-all">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
-            Add Book
-          </button>
+            <Link
+              to="/books/add"
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-body-sm text-body-sm font-semibold hover:shadow-brand-glow active:scale-[0.97] transition-all"
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                add
+              </span>
+              Add Book
+            </Link>
         </div>
       </div>
 
@@ -79,37 +106,89 @@ const BookCatalog = () => {
       <div className="bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle mb-4xl flex flex-col md:flex-row gap-4 items-center">
         <div className="relative flex-1 w-full">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">search</span>
-          <input 
-            className="w-full pl-10 pr-4 py-2 bg-surface-bright border border-border-default rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-focus-ring transition-shadow" 
-            placeholder="Search by title, author, or ISBN..." 
-            type="text"
-          />
+            <input
+              className="w-full pl-10 pr-4 py-2 bg-surface-bright border border-border-default rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-focus-ring transition-shadow"
+              placeholder="Search by title, author, or ISBN..."
+              type="text"
+              value={searchTerm}
+              onChange={(e) =>
+                setSearchTerm(e.target.value)
+              }
+            />
         </div>
         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          <select className="bg-surface-bright border border-border-default rounded-lg px-4 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary">
+          <select
+            value={selectedGenre}
+            onChange={(e) =>
+              setSelectedGenre(e.target.value)
+            }
+            className="bg-surface-bright border border-border-default rounded-lg px-4 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary"
+          >
             <option value="">All Genres</option>
-            <option value="fiction">Fiction</option>
-            <option value="non-fiction">Non-Fiction</option>
-            <option value="science">Science</option>
-            <option value="history">History</option>
+
+            <option value="Programming">
+              Programming
+            </option>
+
+            <option value="Technology">
+              Technology
+            </option>
+
+            <option value="Science">
+              Science
+            </option>
+
+            <option value="History">
+              History
+            </option>
+
+            <option value="Business">
+              Business
+            </option>
+
+            <option value="Education">
+              Education
+            </option>
+
+            <option value="Fiction">
+              Fiction
+            </option>
+
+            <option value="Non-Fiction">
+              Non-Fiction
+            </option>
           </select>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input className="form-checkbox rounded text-primary border-border-default focus:ring-focus-ring" type="checkbox"/>
+            <input
+              type="checkbox"
+              checked={availableOnly}
+              onChange={(e) =>
+                setAvailableOnly(e.target.checked)
+              }
+              className="form-checkbox rounded text-primary border-border-default focus:ring-focus-ring"
+            />
             <span className="font-body-sm text-body-sm text-on-surface">Available Now</span>
           </label>
-          <button className="text-text-secondary hover:text-primary font-body-sm text-body-sm transition-colors ml-auto md:ml-0">
-            Clear Filters
-          </button>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedGenre('');
+                  setAvailableOnly(false);
+                }}
+                className="text-text-secondary hover:text-primary font-body-sm text-body-sm transition-colors ml-auto md:ml-0"
+              >
+                Clear Filters
+              </button>
         </div>
       </div>
 
       {/* Grid View */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-xl mb-4xl">
-        {MOCK_BOOKS.map((book) => (
+        {filteredBooks.map((book) => (
           <div key={book.id} className="bg-bg-surface rounded-[14px] border border-border-subtle overflow-hidden relative group hover:-translate-y-1 hover:border-border-default hover:shadow-md transition-all duration-300 flex flex-col h-full">
             <div className={`aspect-[3/4] bg-surface-variant relative overflow-hidden ${!book.coverUrl ? 'flex items-center justify-center' : ''}`}>
-              {book.coverUrl ? (
-                <img alt={`Book cover for ${book.title}`} className="w-full h-full object-cover" src={book.coverUrl} />
+              {book.coverImage ? (
+                <img alt={`Book cover for ${book.title}`} className="w-full h-full object-cover" src={book.coverImage} />
               ) : (
                 <span className="material-symbols-outlined text-outline-variant text-6xl">menu_book</span>
               )}
@@ -124,8 +203,12 @@ const BookCatalog = () => {
               <div className="flex justify-between items-start mb-2 gap-2">
                 <span className="bg-surface-container-high text-on-surface font-label-xs text-label-xs px-2 py-1 rounded-full uppercase">{book.genre}</span>
                 <span 
-                  className={`w-2 h-2 rounded-full ${book.status === 'Available' ? 'bg-tertiary-fixed-dim' : 'bg-error'}`} 
-                  title={book.status}
+                  className={`w-2 h-2 rounded-full ${book.availableCopies > 0 ? 'bg-tertiary-fixed-dim' : 'bg-error'}`} 
+                  title={
+                    book.availableCopies > 0
+                      ? 'Available'
+                      : 'Unavailable'
+                  }
                 ></span>
               </div>
               <h3 className="font-headline-lg text-headline-lg text-on-surface mb-1 line-clamp-2">{book.title}</h3>

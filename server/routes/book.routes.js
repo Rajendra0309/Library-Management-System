@@ -99,6 +99,10 @@ router.put(
   "/:id",
   protect,
   authorize("admin", "librarian"),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "ebook", maxCount: 1 }
+  ]),
   updateBook
 );
 
