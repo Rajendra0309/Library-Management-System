@@ -7,11 +7,11 @@
 ---
 
 ## PRE-CONDITIONS
-- [ ] All modules built by M1, M2, M3, M4
-- [ ] All PRs merged to dev branch
-- [ ] AWS credentials configured
-- [ ] Python Flask AI service running
-- [ ] ETL pipeline configured
+- [x] All modules built by M1, M2, M3, M4
+- [x] All PRs merged to dev branch
+- [x] AWS credentials configured
+- [x] Python Flask AI service running
+- [x] ETL pipeline configured
 
 ---
 
@@ -115,7 +115,7 @@ Status: ___________
 ### TC-10: Lambda fine trigger
 ```
 Step 1: Manually invoke Lambda from AWS console
-Expected: Overdue borrows updated, fines created in MongoDB
+Expected: Overdue borrows updated, fines created in PostgreSQL
 Actual: ___________
 Status: ___________
 ```

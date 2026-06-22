@@ -7,9 +7,9 @@
 ---
 
 ## PRE-CONDITIONS
-- [ ] Server running, MongoDB connected
-- [ ] AWS S3 bucket configured in .env
-- [ ] Logged in as librarian or admin
+- [x] Server running, PostgreSQL connected
+- [x] AWS S3 bucket configured in .env
+- [x] Logged in as librarian or admin
 
 ---
 

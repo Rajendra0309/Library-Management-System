@@ -24,7 +24,6 @@ cors                    latest        Cross-origin requests
 multer                  latest        File upload handling
 aws-sdk                 latest        AWS S3 integration
 nodemailer              latest        Email notifications
-node-cron               latest        Scheduled jobs (fine calc)
 express-validator       latest        Input validation
 morgan                  latest        HTTP request logging
 helmet                  latest        Security headers
@@ -79,8 +78,6 @@ Tool                    Purpose
 ───────────────────────────────────────────────
 Docker                  Containerization
 Docker Compose          Local multi-service setup
-Nginx                   Reverse proxy on EC2
-PM2                     Node.js process manager
 GitHub Actions          CI/CD pipeline
 ```
 
@@ -89,9 +86,11 @@ GitHub Actions          CI/CD pipeline
 ```
 Service                 Purpose
 ───────────────────────────────────────────────
-EC2 t2.micro            Backend + AI service hosting
+ECS Fargate             Backend + AI service container hosting
 S3                      Frontend static + file storage
+CloudFront              Global CDN
 Lambda                  Daily fine calculation trigger
+EventBridge             Daily scheduling for Lambda
 CloudWatch              Monitoring + alerts
 IAM                     Access management
 RDS PostgreSQL          Relational database cluster

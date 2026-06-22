@@ -171,8 +171,8 @@ Traditional libraries face:
 - CORS configured to frontend domain only
 
 ### Availability
-- Hosted on AWS EC2 with PM2 (auto-restart on crash)
-- CloudWatch alarms for CPU above 80%
+- Hosted on AWS ECS Fargate (serverless container cluster)
+- CloudWatch Container Insights and CPU/Memory Alarms
 - PostgreSQL RDS with automatic backups
 
 ### Scalability

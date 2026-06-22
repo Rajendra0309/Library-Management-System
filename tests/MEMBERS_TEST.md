@@ -7,9 +7,9 @@
 ---
 
 ## PRE-CONDITIONS
-- [ ] Server running, MongoDB connected
-- [ ] NodeMailer configured in .env
-- [ ] At least one book exists in catalog
+- [x] Server running, PostgreSQL connected
+- [x] NodeMailer configured in .env
+- [x] At least one book exists in catalog
 
 ---
 

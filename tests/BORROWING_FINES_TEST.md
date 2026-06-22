@@ -7,10 +7,10 @@
 ---
 
 ## PRE-CONDITIONS
-- [ ] Server running, MongoDB connected
-- [ ] At least one book and one member exist
-- [ ] node-cron job configured
-- [ ] AWS Lambda configured (for cloud testing)
+- [x] Server running, PostgreSQL connected
+- [x] At least one book and one member exist
+- [x] node-cron job configured
+- [x] AWS Lambda configured (for cloud testing)
 
 ---
 
