@@ -1,177 +1,202 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { getActiveBorrows, getBorrowHistory, renewBook, returnBook } from '../../services/borrowService';
 
 const ActiveBorrows = () => {
+  const { user } = useAuth();
+  const [borrows, setBorrows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [filter, setFilter] = useState('All Statuses');
   const [search, setSearch] = useState('');
 
-  // Mock data for Active Borrows
-  const mockBorrows = [
-    {
-      _id: 'b1',
-      member: { name: 'Alice Johnson', id: 'ID-8842', initials: 'AJ' },
-      book: { title: 'The Design of Everyday Things', isbn: '978-0465050659' },
-      issueDate: '2023-10-12',
-      dueDate: '2023-11-02',
-      status: 'active',
-      daysLeft: 12
-    },
-    {
-      _id: 'b2',
-      member: { name: 'Marcus Kane', id: 'ID-7109', initials: 'MK' },
-      book: { title: 'Introduction to Algorithms', isbn: '978-0262033848' },
-      issueDate: '2023-09-01',
-      dueDate: '2023-09-22',
-      status: 'overdue',
-      daysOverdue: 28
-    },
-    {
-      _id: 'b3',
-      member: { name: 'Sarah Chen', id: 'ID-9201', initials: 'SC', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCJ0AfvylHx2oxFfxawwp1oRb-KKdovfCl0digaIR0o93_QGFcGpWy08-6-MnY-y_eDwfIGAT9WbXlGOdKKavwK5LC7b7WE5pl6pLrPwn8M2uxVsD5xxv_bmb8A7t3sUkbKcUn-Jfq2AOg70sZ4w60H96B7wvxH6DR_kgCsa9q01fxivt9ztwAYh0529oaD37N90DQ4DUjrvHatjcs7n4GTu2AjmqJEAR1Q3m342QFhrKSR367jjDOGEz8k8ci-7eeq-hVW4AlJCW0' },
-      book: { title: 'Sapiens: A Brief History', isbn: '978-0062316097' },
-      issueDate: '2023-10-05',
-      dueDate: '2023-10-26',
-      status: 'due soon',
-      daysLeft: 2
-    },
-    {
-      _id: 'b4',
-      member: { name: 'David Torres', id: 'ID-4412', initials: 'DT' },
-      book: { title: 'Thinking, Fast and Slow', isbn: '978-0374533557' },
-      issueDate: '2023-10-18',
-      dueDate: '2023-11-08',
-      status: 'active',
-      daysLeft: 18
+  const isMember = user?.role === 'member';
+
+  const fetchBorrows = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      if (isMember) {
+        const data = await getBorrowHistory(user.id);
+        // Only show currently active ones from history if it returns all
+        const activeOnly = data.data.filter(b => b.status === 'issued');
+        setBorrows(activeOnly);
+      } else {
+        const data = await getActiveBorrows();
+        setBorrows(data.data);
+      }
+    } catch (err) {
+      setError(isMember ? 'Failed to fetch your borrows.' : 'Failed to fetch active borrows.');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchBorrows();
+  }, []);
+
+  const handleRenew = async (id) => {
+    try {
+      setError('');
+      const response = await renewBook(id);
+      if (response.success) {
+        setSuccess('Book renewed successfully!');
+        fetchBorrows();
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to renew book');
+    }
+  };
+
+  const handleReturn = async (id) => {
+    try {
+      setError('');
+      const response = await returnBook(id);
+      if (response.success) {
+        setSuccess(response.message || 'Book returned successfully!');
+        fetchBorrows();
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to return book');
+    }
+  };
+
+  const filteredBorrows = borrows.filter(b => {
+    const matchesSearch = b.book.title.toLowerCase().includes(search.toLowerCase()) ||
+      b.member.name.toLowerCase().includes(search.toLowerCase()) ||
+      b.member.membershipId.toLowerCase().includes(search.toLowerCase());
+
+    if (filter === 'All Statuses') return matchesSearch;
+    if (filter === 'Overdue') return matchesSearch && new Date(b.dueDate) < new Date();
+    if (filter === 'Active') return matchesSearch && new Date(b.dueDate) >= new Date();
+    return matchesSearch;
+  });
 
   return (
     <div className="flex-1 w-full max-w-content-max-width mx-auto p-page-padding">
-      {/* Page Header & Filters */}
       <div className="mb-3xl flex flex-col lg:flex-row lg:items-end justify-between gap-lg">
         <div>
-          <h2 className="font-headline-2xl text-headline-2xl text-on-surface mb-xs">Active Borrows</h2>
-          <p className="font-body-sm text-text-secondary">Managing {mockBorrows.length} currently circulated items.</p>
+          <h2 className="font-headline-2xl text-headline-2xl text-on-surface mb-xs">
+            {isMember ? 'My Active Borrows' : 'Active Borrows'}
+          </h2>
+          <p className="font-body-sm text-text-secondary">
+            {isMember ? `You have ${borrows.length} books with you.` : `Managing ${borrows.length} items currently in circulation.`}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-md">
-          <div className="relative w-full sm:w-auto">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-[16px]">filter_list</span>
-            <select 
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="w-full sm:w-40 pl-9 pr-8 py-2 bg-bg-surface border border-border-default rounded-[6px] text-body-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-focus-ring appearance-none"
-            >
-              <option value="All Statuses">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Due Soon">Due Soon</option>
-              <option value="Overdue">Overdue</option>
-            </select>
-          </div>
-          <div className="relative w-full sm:w-auto">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="pl-4 pr-8 py-2 bg-bg-surface border border-border-default rounded-[6px] text-body-sm focus:border-primary outline-none"
+          >
+            <option value="All Statuses">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Overdue">Overdue</option>
+          </select>
+          <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-[16px]">search</span>
-            <input 
-              className="w-full sm:w-48 pl-9 pr-4 py-2 bg-bg-surface border border-border-default rounded-[6px] text-body-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-focus-ring" 
-              placeholder="Search..." 
-              type="text"
+            <input
+              className="pl-9 pr-4 py-2 bg-bg-surface border border-border-default rounded-[6px] text-body-sm focus:border-primary outline-none w-64"
+              placeholder={isMember ? "Search your books..." : "Search member or book..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <button className="p-2 border border-border-default text-text-secondary rounded-[6px] hover:bg-bg-hover transition-colors">
-            <span className="material-symbols-outlined text-[20px]">download</span>
-          </button>
         </div>
       </div>
 
-      {/* Data Table Component */}
+      {error && <div className="p-4 bg-error-container text-on-error-container rounded-lg mb-6 flex items-center gap-2">
+        <span className="material-symbols-outlined">error</span>
+        {error}
+      </div>}
+      {success && <div className="p-4 bg-tertiary-fixed text-tertiary-container rounded-lg mb-6 flex items-center gap-2">
+        <span className="material-symbols-outlined">check_circle</span>
+        {success}
+      </div>}
+
       <div className="bg-bg-surface rounded-[14px] shadow-sm border border-border-subtle overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="bg-surface-bright border-b border-border-subtle font-label-xs text-label-xs text-text-secondary uppercase tracking-[0.06em]">
-                <th className="px-2xl py-md font-semibold">Member</th>
-                <th className="px-2xl py-md font-semibold">Book Title</th>
-                <th className="px-2xl py-md font-semibold">Issue Date</th>
-                <th className="px-2xl py-md font-semibold">Due Date</th>
-                <th className="px-2xl py-md font-semibold text-center">Status</th>
-                <th className="px-2xl py-md font-semibold text-right">Actions</th>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-surface-bright border-b border-border-subtle text-label-xs uppercase tracking-widest text-text-secondary">
+              {!isMember && <th className="px-6 py-4 font-semibold">Member</th>}
+              <th className="px-6 py-4 font-semibold">Book Title</th>
+              <th className="px-6 py-4 font-semibold">Issue Date</th>
+              <th className="px-6 py-4 font-semibold">Due Date</th>
+              <th className="px-6 py-4 text-center font-semibold">Status</th>
+              {!isMember && <th className="px-6 py-4 text-right font-semibold">Actions</th>}
+            </tr>
+          </thead>
+          <tbody className="font-body-sm">
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="text-center py-20">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-text-secondary">Loading active borrows...</span>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="font-body-sm text-on-surface">
-              {mockBorrows.map(borrow => (
-                <tr key={borrow._id} className={`border-b border-border-subtle transition-colors h-[48px] group ${borrow.status === 'overdue' ? 'bg-error-container/20 hover:bg-error-container/30' : 'hover:bg-bg-hover'}`}>
-                  <td className="px-2xl py-sm align-middle">
-                    <div className="flex items-center gap-md">
-                      {borrow.member.avatar ? (
-                        <img src={borrow.member.avatar} alt="Member" className="w-8 h-8 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-surface-dim flex items-center justify-center text-primary font-medium text-xs">{borrow.member.initials}</div>
-                      )}
-                      <div>
-                        <div className="font-medium">{borrow.member.name}</div>
-                        <div className="font-code-mono text-code-mono text-text-tertiary text-[11px]">{borrow.member.id}</div>
+            ) : filteredBorrows.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="text-center py-20 text-text-tertiary">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="material-symbols-outlined text-4xl">folder_open</span>
+                    <span>No active borrows found.</span>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredBorrows.map(b => {
+              const overdueDate = new Date(b.dueDate);
+              const isOverdue = overdueDate < new Date();
+              return (
+                <tr key={b.id} className="border-b border-border-subtle hover:bg-bg-hover group transition-colors">
+                  {!isMember && (
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-on-surface">{b.member.name}</div>
+                      <div className="text-[11px] text-text-tertiary font-code-mono uppercase">{b.member.membershipId}</div>
+                    </td>
+                  )}
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-on-surface">{b.book.title}</div>
+                    <div className="text-[11px] text-text-tertiary">ISBN: {b.book.isbn}</div>
+                  </td>
+                  <td className="px-6 py-4 text-text-secondary">{new Date(b.issueDate).toLocaleDateString()}</td>
+                  <td className={`px-6 py-4 ${isOverdue ? 'text-error font-semibold' : 'text-text-secondary'}`}>
+                    {overdueDate.toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isOverdue ? 'bg-error-container text-on-error-container' : 'bg-primary-container text-on-primary-container'}`}>
+                      {isOverdue ? 'Overdue' : 'Active'}
+                    </span>
+                  </td>
+                  {!isMember && (
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => handleRenew(b.id)}
+                          className="p-2 hover:bg-primary-container hover:text-primary rounded-full transition-all text-text-secondary"
+                          title="Renew (Extends 7 days)"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">update</span>
+                        </button>
+                        <button
+                          onClick={() => handleReturn(b.id)}
+                          className="p-2 hover:bg-tertiary-container hover:text-tertiary rounded-full transition-all text-text-secondary"
+                          title="Return Book"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">keyboard_return</span>
+                        </button>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-2xl py-sm align-middle">
-                    <div className="font-medium">{borrow.book.title}</div>
-                    <div className="font-code-mono text-code-mono text-text-tertiary text-[11px]">{borrow.book.isbn}</div>
-                  </td>
-                  <td className="px-2xl py-sm align-middle text-text-secondary">{new Date(borrow.issueDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</td>
-                  <td className={`px-2xl py-sm align-middle ${borrow.status === 'overdue' ? 'text-error font-medium' : 'text-text-secondary'}`}>
-                    {new Date(borrow.dueDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
-                  </td>
-                  <td className="px-2xl py-sm align-middle text-center">
-                    {borrow.status === 'overdue' ? (
-                       <span className="inline-flex items-center px-2 py-1 rounded-full bg-error-container text-on-error-container font-medium text-[11px] gap-1">
-                         <span className="material-symbols-outlined text-[14px]">warning</span>
-                         Overdue ({borrow.daysOverdue}d)
-                       </span>
-                    ) : borrow.status === 'due soon' ? (
-                       <span className="inline-flex items-center px-2 py-1 rounded-full bg-secondary-fixed/50 text-secondary font-medium text-[11px]">
-                         {borrow.daysLeft} Days Left
-                       </span>
-                    ) : (
-                       <span className="inline-flex items-center px-2 py-1 rounded-full bg-surface-container text-primary font-medium text-[11px]">
-                         {borrow.daysLeft} Days Left
-                       </span>
-                    )}
-                  </td>
-                  <td className="px-2xl py-sm align-middle text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="flex justify-end gap-sm">
-                      {borrow.status === 'overdue' && (
-                        <button className="px-3 py-1 bg-surface border border-border-default text-text-secondary hover:text-primary rounded-[6px] text-xs font-medium transition-colors">
-                          Notify
-                        </button>
-                      )}
-                      {borrow.status !== 'overdue' && (
-                        <button className="p-1.5 text-text-secondary hover:text-primary rounded hover:bg-surface-dim transition-colors tooltip-trigger" title="Renew">
-                          <span className="material-symbols-outlined text-[18px]">update</span>
-                        </button>
-                      )}
-                      <button className="p-1.5 text-text-secondary hover:text-tertiary rounded hover:bg-surface-dim transition-colors tooltip-trigger" title="Return">
-                        <span className="material-symbols-outlined text-[18px]">keyboard_return</span>
-                      </button>
-                    </div>
-                  </td>
+                    </td>
+                  )}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination Footer */}
-        <div className="bg-surface border-t border-border-subtle px-2xl py-sm flex items-center justify-between">
-          <span className="text-xs text-text-secondary font-medium">Showing 1 to {mockBorrows.length} of {mockBorrows.length} records</span>
-          <div className="flex items-center gap-xs">
-            <button className="p-1 rounded text-text-tertiary hover:text-primary hover:bg-surface-dim transition-colors disabled:opacity-50" disabled>
-              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-            </button>
-            <button className="p-1 rounded text-text-secondary hover:text-primary hover:bg-surface-dim transition-colors" disabled>
-              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-            </button>
-          </div>
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -3,13 +3,23 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Nav items visible to ALL authenticated roles
-const coreNavItems = [
-  { path: '/dashboard',      icon: 'dashboard',   label: 'Dashboard'   },
-  { path: '/books',          icon: 'menu_book',   label: 'Inventory'   },
-  { path: '/members',        icon: 'group',       label: 'Members'     },
-  { path: '/active-borrows', icon: 'swap_horiz',  label: 'Circulation' },
-  { path: '/reports',        icon: 'analytics',   label: 'Reports'     },
-  { path: '/settings',       icon: 'settings',    label: 'Settings'    },
+const commonNavItems = [
+  { path: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
+  { path: '/books', icon: 'menu_book', label: 'Inventory' },
+];
+
+// Nav items for Librarians and Admins only
+const managementNavItems = [
+  { path: '/members', icon: 'group', label: 'Members' },
+  { path: '/borrow/issue', icon: 'input', label: 'Issue Book' },
+  { path: '/borrow/return', icon: 'output', label: 'Return Book' },
+  { path: '/active-borrows', icon: 'swap_horiz', label: 'Circulation' },
+];
+
+const sharedNavItems = [
+  { path: '/fines', icon: 'payments', label: 'Fines' },
+  { path: '/reports', icon: 'analytics', label: 'Reports' },
+  { path: '/settings', icon: 'settings', label: 'Settings' },
 ];
 
 // Nav items visible ONLY to admin
@@ -21,10 +31,9 @@ const NavItem = ({ path, icon, label }) => (
   <NavLink
     to={path}
     className={({ isActive }) =>
-      `flex items-center gap-md px-md py-sm rounded-lg font-body-base text-body-base transition-colors ${
-        isActive
-          ? 'bg-surface-container-low text-primary'
-          : 'text-text-secondary hover:bg-bg-hover hover:text-primary'
+      `flex items-center gap-md px-md py-sm rounded-lg font-body-base text-body-base transition-colors ${isActive
+        ? 'bg-surface-container-low text-primary'
+        : 'text-text-secondary hover:bg-bg-hover hover:text-primary'
       }`
     }
   >
@@ -37,7 +46,7 @@ const NavItem = ({ path, icon, label }) => (
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isManagement = user?.role === 'admin' || user?.role === 'librarian';
 
   return (
     <aside className="hidden md:flex flex-col h-full border-r border-border-subtle bg-bg-sidebar shadow-sm fixed left-0 top-0 w-[256px] transition-all duration-300 z-50">
@@ -52,19 +61,31 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* New Record CTA */}
-      <div className="p-lg">
-        <button className="w-full bg-primary text-on-primary rounded-lg py-md px-lg font-headline-lg text-headline-lg hover:brand-glow transition-all active:scale-95 flex items-center justify-center gap-sm">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>add</span>
-          New Record
-        </button>
-      </div>
+      {/* New Record CTA - Admin/Librarian only */}
+      {isManagement && (
+        <div className="p-lg">
+          <button className="w-full bg-primary text-on-primary rounded-lg py-md px-lg font-headline-lg text-headline-lg hover:brand-glow transition-all active:scale-95 flex items-center justify-center gap-sm">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>add</span>
+            New Record
+          </button>
+        </div>
+      )}
 
       {/* Main Nav */}
-      <nav className="flex-1 px-lg py-sm overflow-y-auto space-y-xs">
-        {coreNavItems.map((item) => (
+      <nav className={`flex-1 px-lg py-sm overflow-y-auto space-y-xs ${!isManagement ? 'mt-4' : ''}`}>
+        {commonNavItems.map((item) => (
           <NavItem key={item.path} {...item} />
         ))}
+
+        {isManagement && managementNavItems.map((item) => (
+          <NavItem key={item.path} {...item} />
+        ))}
+
+        {sharedNavItems.map((item) => {
+          // Hide reports for members based on user's 403 screenshot
+          if (item.path === '/reports' && !isManagement) return null;
+          return <NavItem key={item.path} {...item} />;
+        })}
 
         {/* Admin-only section */}
         {isAdmin && (
