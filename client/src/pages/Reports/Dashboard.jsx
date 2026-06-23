@@ -64,7 +64,7 @@ const Dashboard = () => {
         <MetricCard title="Total Members" value={data.totalMembers} icon="group" color="primary" />
         <MetricCard title="Active Borrows" value={data.activeBorrows} icon="swap_horiz" color="tertiary-container" />
         <MetricCard title="Overdue Items" value={data.overdueBorrows} icon="warning" color="error" />
-        <MetricCard title="Total Fines" value={`$${data.totalFines?.toFixed(2) || '0.00'}`} icon="payments" color="primary" />
+        <MetricCard title="Total Fines" value={`Rs ${data.totalFines?.toFixed(2) || '0.00'}`} icon="payments" color="primary" />
       </div>
 
       {/* Charts Row */}

@@ -34,7 +34,6 @@ const getMembers = async (req, res) => {
           phone: true,
           membershipId: true,
           status: true,
-          profileImage: true,
           createdAt: true,
           updatedAt: true
         },
@@ -77,7 +76,6 @@ const getMemberById = async (req, res) => {
         phone: true,
         membershipId: true,
         status: true,
-        profileImage: true,
         createdAt: true,
         updatedAt: true
       }
@@ -154,7 +152,7 @@ const updateMember = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. You can only update your own profile.' });
     }
 
-    const { name, phone, profileImage } = req.body;
+    const { name, phone } = req.body;
     
     const member = await prisma.user.findFirst({
       where: { id: req.params.id, role: 'member' }
@@ -168,8 +166,7 @@ const updateMember = async (req, res) => {
       where: { id: req.params.id },
       data: {
         ...(name && { name }),
-        ...(phone && { phone }),
-        ...(profileImage && { profileImage })
+        ...(phone && { phone })
       },
       select: {
         id: true,

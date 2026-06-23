@@ -25,10 +25,9 @@ const MemberCard = ({ member, onViewProfile }) => {
             <CardContent>
                 <Stack spacing={2} alignItems="center">
                     <Avatar
-                        src={member?.profileImage}
                         sx={{ width: 72, height: 72 }}
                     >
-                        <PersonIcon />
+                        {member?.name?.charAt(0).toUpperCase()}
                     </Avatar>
 
                     <Typography variant="h6" fontWeight="bold">

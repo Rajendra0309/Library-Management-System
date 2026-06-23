@@ -126,7 +126,7 @@ const LandingPage = () => {
                     </div>
                     <div className="flex-1 h-24 bg-bg-surface rounded-lg shadow-sm border border-border-subtle p-md flex flex-col justify-between hover:-translate-y-0.5 transition-transform">
                       <div className="h-2.5 bg-surface-container rounded w-16"></div>
-                      <div className="text-2xl font-bold text-on-surface">$85</div>
+                      <div className="text-2xl font-bold text-on-surface">Rs 85</div>
                     </div>
                   </div>
                   {/* Table area */}

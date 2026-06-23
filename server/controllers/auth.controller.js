@@ -141,7 +141,6 @@ const login = async (req, res) => {
         password: true,
         loginAttempts: true,
         lockUntil: true,
-        profileImage: true,
         createdAt: true
       }
     });

@@ -47,6 +47,7 @@ const NavItem = ({ path, icon, label }) => (
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const isManagement = user?.role === 'admin' || user?.role === 'librarian';
+  const isAdmin = user?.role === 'admin';
 
   return (
     <aside className="hidden md:flex flex-col h-full border-r border-border-subtle bg-bg-sidebar shadow-sm fixed left-0 top-0 w-[256px] transition-all duration-300 z-50">

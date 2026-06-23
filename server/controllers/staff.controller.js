@@ -39,7 +39,6 @@ const getStaff = async (req, res) => {
           department: true,
           employeeId: true,
           status: true,
-          profileImage: true,
           createdAt: true
         },
         orderBy: { createdAt: 'desc' },
@@ -88,7 +87,6 @@ const getStaffById = async (req, res) => {
         department: true,
         employeeId: true,
         status: true,
-        profileImage: true,
         securityQuestion: true,
         createdAt: true,
         updatedAt: true

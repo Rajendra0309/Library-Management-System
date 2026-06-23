@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { issueBook } from '../../services/borrowService';
 import api from '../../api/axios'; // For searching members/books
+import { useAuth } from '../../context/AuthContext';
 
 const IssueBook = () => {
     const { user } = useAuth();

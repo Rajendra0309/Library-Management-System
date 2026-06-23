@@ -62,7 +62,7 @@ const ReportDetails = () => {
             </tr>
             <tr className="hover:bg-bg-hover">
               <td className="p-md text-on-surface font-body-sm">Pending Fines</td>
-              <td className="p-md text-on-surface font-body-sm font-semibold">${data.totalFines?.toFixed(2) || '0.00'}</td>
+              <td className="p-md text-on-surface font-body-sm font-semibold">Rs {data.totalFines?.toFixed(2) || '0.00'}</td>
               <td className="p-md text-text-secondary font-body-sm">{new Date(data.date).toLocaleString()}</td>
             </tr>
           </tbody>

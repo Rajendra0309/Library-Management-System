@@ -211,9 +211,9 @@ const Settings = () => {
 
                 {/* Fine Rate */}
                 <div className="flex flex-col gap-xs">
-                  <label className="font-label-xs text-label-xs text-on-surface uppercase text-text-secondary">Overdue Fine Rate ($/Day)</label>
+                  <label className="font-label-xs text-label-xs text-on-surface uppercase text-text-secondary">Overdue Fine Rate (Rs/Day)</label>
                   <div className="relative">
-                    <span className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary font-code-mono">$</span>
+                    <span className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary font-code-mono">Rs </span>
                     <input 
                       className="w-full border border-border-default rounded-md pl-8 pr-md py-2 font-code-mono text-code-mono text-on-surface focus:border-primary focus:ring-[3px] focus:ring-focus-ring outline-none bg-surface-bright transition-all" 
                       min="0" 

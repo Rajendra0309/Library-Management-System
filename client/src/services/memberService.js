@@ -41,7 +41,7 @@ export const createMember = async (memberData) => {
 };
 
 /**
- * Update member details (name, phone, profileImage)
+ * Update member details (name, phone)
  * Access: Librarian, Admin, Self
  * 
  * @param {string} id - Member user ID

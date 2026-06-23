@@ -16,7 +16,6 @@ model User {
   phone          String?
   membershipId   String?   @unique
   status         String    @default("active") // "active", "suspended", "expired"
-  profileImage   String?
   // Staff-specific fields
   department     String?
   employeeId     String?   @unique

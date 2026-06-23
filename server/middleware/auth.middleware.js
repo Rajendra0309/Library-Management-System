@@ -39,7 +39,6 @@ const protect = async (req, res, next) => {
         phone: true,
         membershipId: true,
         status: true,
-        profileImage: true,
         createdAt: true,
         updatedAt: true
       } // Excludes password

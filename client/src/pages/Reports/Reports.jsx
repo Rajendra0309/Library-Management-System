@@ -1,6 +1,37 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, BarChart, Bar } from 'recharts';
+import { getDashboardData } from '../../services/reportService';
+
+const COLORS = ['#5B4FE8', '#20B2AA', '#fea619', '#EF4444', '#8B5CF6'];
 
 const Reports = () => {
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const reportRes = await getDashboardData();
+        setReport(reportRes.data);
+      } catch (error) {
+        console.error("Fetch error", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+      return (
+          <div className="flex-1 w-full flex items-center justify-center min-h-[60vh]">
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+      );
+  }
+
+  const genreData = report?.genreStats ? Object.entries(report.genreStats).map(([name, value]) => ({ name, value })) : [];
+
   return (
     <div className="flex-1 w-full max-w-content-max-width mx-auto p-page-padding flex flex-col gap-4xl">
       {/* Toolbar */}
@@ -29,12 +60,12 @@ const Reports = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-xl">
         <div className="bg-surface rounded-xl p-card-padding shadow-sm border border-border-subtle hover:-translate-y-1 transition-transform">
           <div className="flex justify-between items-start mb-lg">
-            <span className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Total Circulation</span>
+            <span className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Total Books</span>
             <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-[18px]">swap_horiz</span>
+              <span className="material-symbols-outlined text-primary text-[18px]">menu_book</span>
             </div>
           </div>
-          <div className="font-display-3xl text-display-3xl text-on-surface">12,482</div>
+          <div className="font-display-3xl text-display-3xl text-on-surface">{report?.totalBooks || 0}</div>
           <div className="flex items-center gap-xs mt-sm">
             <span className="material-symbols-outlined text-tertiary-container text-[16px]">trending_up</span>
             <span className="font-body-sm text-body-sm text-tertiary-container font-semibold">+14.2%</span>
@@ -49,7 +80,7 @@ const Reports = () => {
               <span className="material-symbols-outlined text-primary text-[18px]">group</span>
             </div>
           </div>
-          <div className="font-display-3xl text-display-3xl text-on-surface">3,851</div>
+          <div className="font-display-3xl text-display-3xl text-on-surface">{report?.totalMembers || 0}</div>
           <div className="flex items-center gap-xs mt-sm">
             <span className="material-symbols-outlined text-tertiary-container text-[16px]">trending_up</span>
             <span className="font-body-sm text-body-sm text-tertiary-container font-semibold">+5.1%</span>
@@ -64,7 +95,7 @@ const Reports = () => {
               <span className="material-symbols-outlined text-on-error-container text-[18px]">warning</span>
             </div>
           </div>
-          <div className="font-display-3xl text-display-3xl text-on-surface">142</div>
+          <div className="font-display-3xl text-display-3xl text-on-surface">{report?.overdueBorrows || 0}</div>
           <div className="flex items-center gap-xs mt-sm">
             <span className="material-symbols-outlined text-error text-[16px]">trending_down</span>
             <span className="font-body-sm text-body-sm text-error font-semibold">-2.4%</span>
@@ -79,7 +110,7 @@ const Reports = () => {
               <span className="material-symbols-outlined text-primary text-[18px]">payments</span>
             </div>
           </div>
-          <div className="font-display-3xl text-display-3xl text-on-surface">$1,240</div>
+          <div className="font-display-3xl text-display-3xl text-on-surface">Rs {report?.totalFines || 0}</div>
           <div className="flex items-center gap-xs mt-sm">
             <span className="material-symbols-outlined text-tertiary-container text-[16px]">trending_up</span>
             <span className="font-body-sm text-body-sm text-tertiary-container font-semibold">+8.9%</span>
@@ -98,66 +129,22 @@ const Reports = () => {
               <span className="material-symbols-outlined text-[20px]">more_vert</span>
             </button>
           </div>
-          <div className="flex-grow min-h-[240px] relative rounded-lg overflow-hidden border border-border-subtle flex items-end" style={{ backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
-            <div className="absolute inset-0 bg-gradient-to-t from-primary-fixed-dim/20 to-transparent"></div>
-            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-              <path d="M0,100 L0,60 Q10,50 20,65 T40,40 T60,55 T80,30 T100,45 L100,100 Z" fill="url(#indigoGradient)" opacity="0.4"></path>
-              <path d="M0,60 Q10,50 20,65 T40,40 T60,55 T80,30 T100,45" fill="none" stroke="#5B4FE8" strokeWidth="2" vectorEffect="non-scaling-stroke"></path>
-              <defs>
-                <linearGradient id="indigoGradient" x1="0%" x2="0%" y1="0%" y2="100%">
-                  <stop offset="0%" stopColor="#5B4FE8"></stop>
-                  <stop offset="100%" stopColor="rgba(91, 79, 232, 0)"></stop>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-        </div>
-
-        {/* 2. Top Titles */}
-        <div className="bg-surface rounded-xl p-card-padding shadow-sm border border-border-subtle col-span-1 flex flex-col hover:-translate-y-1 transition-transform">
-          <div className="flex justify-between items-center mb-lg">
-            <h3 className="font-headline-lg text-headline-lg text-on-surface">Top Titles</h3>
-            <button className="text-text-secondary hover:text-primary transition-colors">
-              <span className="material-symbols-outlined text-[20px]">more_vert</span>
-            </button>
-          </div>
-          <div className="flex-grow flex flex-col gap-md">
-            <div>
-              <div className="flex justify-between text-body-sm font-body-sm text-on-surface mb-xs">
-                <span className="truncate pr-sm">The Midnight Library</span>
-                <span className="font-code-mono text-text-secondary">342</span>
-              </div>
-              <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full" style={{ width: '100%' }}></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-body-sm font-body-sm text-on-surface mb-xs">
-                <span className="truncate pr-sm">Dune</span>
-                <span className="font-code-mono text-text-secondary">289</span>
-              </div>
-              <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
-                <div className="h-full bg-primary/80 rounded-full" style={{ width: '85%' }}></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-body-sm font-body-sm text-on-surface mb-xs">
-                <span className="truncate pr-sm">Project Hail Mary</span>
-                <span className="font-code-mono text-text-secondary">245</span>
-              </div>
-              <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
-                <div className="h-full bg-primary/60 rounded-full" style={{ width: '70%' }}></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-body-sm font-body-sm text-on-surface mb-xs">
-                <span className="truncate pr-sm">1984</span>
-                <span className="font-code-mono text-text-secondary">190</span>
-              </div>
-              <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
-                <div className="h-full bg-primary/40 rounded-full" style={{ width: '55%' }}></div>
-              </div>
-            </div>
+          <div className="flex-grow min-h-[240px] relative rounded-lg border border-border-subtle p-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={report?.borrowingTrends || []}>
+                <defs>
+                  <linearGradient id="colorBorrows" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#5B4FE8" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#5B4FE8" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" stroke="#8884d8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#8884d8" fontSize={12} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                <Area type="monotone" dataKey="borrows" stroke="#5B4FE8" strokeWidth={3} fillOpacity={1} fill="url(#colorBorrows)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
@@ -169,65 +156,32 @@ const Reports = () => {
               <span className="material-symbols-outlined text-[20px]">more_vert</span>
             </button>
           </div>
-          <div className="flex-grow flex items-center justify-center relative min-h-[200px]">
-            <div className="w-40 h-40 rounded-full border-[16px] border-surface-container relative flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-[16px] border-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 50% 50%)', transform: 'rotate(45deg)' }}></div>
-              <div className="absolute inset-0 rounded-full border-[16px] border-secondary-container" style={{ clipPath: 'polygon(50% 50%, 100% 50%, 100% 100%, 0 100%, 0 0)', transform: 'rotate(45deg)' }}></div>
-              <div className="text-center bg-surface w-full h-full rounded-full absolute -inset-[16px] flex flex-col items-center justify-center m-auto shadow-inner" style={{ width: 'calc(100% - 32px)', height: 'calc(100% - 32px)' }}>
-                <span className="font-display-3xl text-display-3xl text-on-surface">12</span>
-                <span className="font-label-xs text-label-xs text-text-secondary uppercase">Genres</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap justify-center gap-sm mt-md">
-            <div className="flex items-center gap-xs"><div className="w-3 h-3 rounded-full bg-primary"></div><span className="font-label-xs text-label-xs text-text-secondary">Fiction</span></div>
-            <div className="flex items-center gap-xs"><div className="w-3 h-3 rounded-full bg-secondary-container"></div><span className="font-label-xs text-label-xs text-text-secondary">Non-Fiction</span></div>
-          </div>
-        </div>
-
-        {/* 4. Fine Collection */}
-        <div className="bg-surface rounded-xl p-card-padding shadow-sm border border-border-subtle col-span-1 lg:col-span-2 xl:col-span-1 flex flex-col hover:-translate-y-1 transition-transform">
-          <div className="flex justify-between items-center mb-lg">
-            <h3 className="font-headline-lg text-headline-lg text-on-surface">Fine Collection</h3>
-            <button className="text-text-secondary hover:text-primary transition-colors">
-              <span className="material-symbols-outlined text-[20px]">more_vert</span>
-            </button>
-          </div>
-          <div className="flex-grow min-h-[200px] flex items-end justify-between gap-sm border-b border-border-subtle pb-xs pt-4xl">
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, i) => (
-              <div key={day} className="w-1/6 flex flex-col justify-end h-full gap-xs">
-                <div className="w-full bg-error/80 rounded-t-sm" style={{ height: `${[20, 10, 30, 5, 15][i]}%` }}></div>
-                <div className="w-full bg-primary rounded-t-sm" style={{ height: `${[40, 60, 30, 80, 50][i]}%` }}></div>
-                <span className="text-center font-label-xs text-label-xs text-text-secondary mt-xs">{day}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-center gap-lg mt-md">
-            <div className="flex items-center gap-xs"><div className="w-3 h-3 rounded-full bg-primary"></div><span className="font-label-xs text-label-xs text-text-secondary">Collected</span></div>
-            <div className="flex items-center gap-xs"><div className="w-3 h-3 rounded-full bg-error/80"></div><span className="font-label-xs text-label-xs text-text-secondary">Outstanding</span></div>
+          <div className="flex-grow flex items-center justify-center relative min-h-[240px]">
+             {genreData.length > 0 ? (
+                <>
+                   <ResponsiveContainer width="100%" height={200}>
+                     <PieChart>
+                       <Pie
+                         data={genreData}
+                         innerRadius={60}
+                         outerRadius={80}
+                         paddingAngle={5}
+                         dataKey="value"
+                       >
+                         {genreData.map((entry, index) => (
+                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                         ))}
+                       </Pie>
+                       <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                     </PieChart>
+                   </ResponsiveContainer>
+                </>
+             ) : (
+                 <div className="text-text-tertiary text-sm">No genre data available</div>
+             )}
           </div>
         </div>
 
-        {/* 5. Member Growth */}
-        <div className="bg-surface rounded-xl p-card-padding shadow-sm border border-border-subtle col-span-1 lg:col-span-1 xl:col-span-1 flex flex-col hover:-translate-y-1 transition-transform">
-          <div className="flex justify-between items-center mb-lg">
-            <h3 className="font-headline-lg text-headline-lg text-on-surface">Member Growth</h3>
-            <button className="text-text-secondary hover:text-primary transition-colors">
-              <span className="material-symbols-outlined text-[20px]">more_vert</span>
-            </button>
-          </div>
-          <div className="flex-grow min-h-[200px] relative border border-border-subtle rounded-lg" style={{ backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
-            <svg className="absolute inset-0 w-full h-full p-4" preserveAspectRatio="none" viewBox="0 0 100 100">
-              <path d="M0,80 L20,75 L40,60 L60,65 L80,40 L100,20" fill="none" stroke="#fea619" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" vectorEffect="non-scaling-stroke"></path>
-              <circle cx="0" cy="80" fill="#ffffff" r="3" stroke="#fea619" strokeWidth="2" vectorEffect="non-scaling-stroke"></circle>
-              <circle cx="20" cy="75" fill="#ffffff" r="3" stroke="#fea619" strokeWidth="2" vectorEffect="non-scaling-stroke"></circle>
-              <circle cx="40" cy="60" fill="#ffffff" r="3" stroke="#fea619" strokeWidth="2" vectorEffect="non-scaling-stroke"></circle>
-              <circle cx="60" cy="65" fill="#ffffff" r="3" stroke="#fea619" strokeWidth="2" vectorEffect="non-scaling-stroke"></circle>
-              <circle cx="80" cy="40" fill="#ffffff" r="3" stroke="#fea619" strokeWidth="2" vectorEffect="non-scaling-stroke"></circle>
-              <circle cx="100" cy="20" fill="#ffffff" r="3" stroke="#fea619" strokeWidth="2" vectorEffect="non-scaling-stroke"></circle>
-            </svg>
-          </div>
-        </div>
       </div>
     </div>
   );

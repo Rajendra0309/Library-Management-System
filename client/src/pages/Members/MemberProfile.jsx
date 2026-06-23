@@ -16,7 +16,7 @@ const MemberProfile = () => {
   const [activeTab, setActiveTab] = useState('active');
 
   const [editMode, setEditMode] = useState(false);
-  const [updatedMember, setUpdatedMember] = useState({ name: '', phone: '', profileImage: '' });
+  const [updatedMember, setUpdatedMember] = useState({ name: '', phone: '' });
   const [updating, setUpdating] = useState(false);
 
   const profileId = id || (currentUser ? currentUser.id : null);
@@ -37,8 +37,7 @@ const MemberProfile = () => {
         setMember(profileData.data);
         setUpdatedMember({
           name: profileData.data.name,
-          phone: profileData.data.phone || '',
-          profileImage: profileData.data.profileImage || ''
+          phone: profileData.data.phone || ''
         });
       }
       try {
@@ -127,13 +126,9 @@ const MemberProfile = () => {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             <div className="relative flex-shrink-0">
-              {member.profileImage ? (
-                <img src={member.profileImage} alt={`${member.name} Avatar`} className="w-24 h-24 rounded-full object-cover ring-4 ring-primary-fixed" />
-              ) : (
-                <div className="w-24 h-24 rounded-full flex items-center justify-center bg-primary-fixed text-primary font-display-3xl ring-4 ring-primary-fixed">
-                  {member.name.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <div className="w-24 h-24 rounded-full flex items-center justify-center bg-primary-fixed text-primary font-display-3xl ring-4 ring-primary-fixed">
+                {member.name.charAt(0).toUpperCase()}
+              </div>
               <div className={`absolute bottom-1 right-1 w-5 h-5 border-2 border-surface rounded-full ${member.status === 'active' ? 'bg-tertiary-fixed-dim' : member.status === 'suspended' ? 'bg-error' : 'bg-secondary'}`}></div>
             </div>
 
@@ -143,8 +138,6 @@ const MemberProfile = () => {
                   <input type="text" name="name" value={updatedMember.name} onChange={handleEditChange}
                     className="w-full font-headline-2xl text-headline-2xl text-on-surface mb-1 bg-surface-bright border border-border-default rounded px-2 py-1 focus:ring-2 focus:ring-primary focus:outline-none" />
                   <input type="text" name="phone" placeholder="Phone" value={updatedMember.phone} onChange={handleEditChange}
-                    className="w-full font-body-sm text-body-sm text-on-surface mb-1 bg-surface-bright border border-border-default rounded px-2 py-1 focus:ring-2 focus:ring-primary focus:outline-none" />
-                  <input type="text" name="profileImage" placeholder="Profile Image URL" value={updatedMember.profileImage} onChange={handleEditChange}
                     className="w-full font-body-sm text-body-sm text-on-surface mb-1 bg-surface-bright border border-border-default rounded px-2 py-1 focus:ring-2 focus:ring-primary focus:outline-none" />
                 </div>
               ) : (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getActiveBorrows, returnBook } from '../../services/borrowService';
+import { useAuth } from '../../context/AuthContext';
 
 const ReturnBook = () => {
     const { user } = useAuth();

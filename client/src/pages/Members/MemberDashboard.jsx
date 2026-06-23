@@ -136,7 +136,7 @@ const MemberDashboard = () => {
             </div>
           </div>
           <div>
-            <span className="font-display-3xl text-display-3xl text-on-background">$0.00</span>
+            <span className="font-display-3xl text-display-3xl text-on-background">Rs 0.00</span>
             <p className="font-body-sm text-body-sm text-text-tertiary mt-1 flex items-center gap-xs">
               <span className="material-symbols-outlined text-[14px]">info</span> Clear account
             </p>

@@ -159,12 +159,9 @@ const MemberList = () => {
                   >
                     <td className="py-3 pl-card-padding pr-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center font-semibold text-sm border border-border-default overflow-hidden flex-shrink-0">
-                          {member.profileImage
-                            ? <img src={member.profileImage} alt={member.name} className="w-full h-full object-cover" />
-                            : <span className="text-primary">{member.name.charAt(0).toUpperCase()}</span>
-                          }
-                        </div>
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary-container text-on-primary-container font-headline-sm text-headline-sm shrink-0 overflow-hidden">
+                            {member.name.charAt(0).toUpperCase()}
+                          </div>
                         <div>
                           <p className="font-semibold text-on-surface">{member.name}</p>
                           <p className="text-text-secondary text-xs">{member.email}</p>
