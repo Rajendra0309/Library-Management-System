@@ -24,7 +24,11 @@ import MemberHistory from './pages/Members/MemberHistory';
 import MemberDashboard from './pages/Members/MemberDashboard';
 import ReservationList from './pages/Reservations/ReservationList';
 import ActiveBorrows from './pages/Borrowing/ActiveBorrows';
+import IssueBook from './pages/Borrowing/IssueBook';
+import ReturnBook from './pages/Borrowing/ReturnBook';
+import FineList from './pages/Fines/FineList';
 import FineManagement from './pages/Fines/FineManagement';
+import FineDetail from './pages/Fines/FineDetail';
 import Reports from './pages/Reports/Reports';
 import Settings from './pages/Settings/Settings';
 import NotFound from './pages/NotFound';
@@ -61,7 +65,10 @@ function App() {
                 <Route path="members/:id/history" element={<MemberHistory />} />
                 <Route path="reservations" element={<ReservationList />} />
                 <Route path="active-borrows" element={<ActiveBorrows />} />
+                <Route path="borrow/issue" element={<IssueBook />} />
+                <Route path="borrow/return" element={<ReturnBook />} />
                 <Route path="fines" element={<FineManagement />} />
+                <Route path="fines/:memberId" element={<FineDetail />} />
                 <Route path="settings" element={<Settings />} />
 
                 {/* Staff routes: admin only */}
