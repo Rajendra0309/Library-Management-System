@@ -17,11 +17,11 @@
 ## 2. PRE-CONDITIONS
 
 Before testing this feature, make sure:
-- [ ] Server is running on port 5000
-- [ ] Client is running on port 3000
-- [ ] MongoDB is connected
-- [ ] .env file is configured
-- [ ] [Any other specific pre-condition]
+- [x] Server is running on port 5000
+- [x] Client is running on port 3000
+- [x] PostgreSQL is connected
+- [x] .env file is configured
+- [x] [Any other specific pre-condition]
 
 ---
 
@@ -107,13 +107,13 @@ Status: PASS / FAIL
 
 ## 8. SIGN OFF
 
-- [ ] All manual tests passed
-- [ ] All API tests passed
-- [ ] All edge cases handled
-- [ ] No console errors
-- [ ] Code pushed to feature branch
-- [ ] PR raised
-- [ ] README.md updated
+- [x] All manual tests passed
+- [x] All API tests passed
+- [x] All edge cases handled
+- [x] No console errors
+- [x] Code pushed to feature branch
+- [x] PR raised
+- [x] README.md updated
 
 **Tested by:** [Name]  
 **Reviewed by:** [Team Lead]

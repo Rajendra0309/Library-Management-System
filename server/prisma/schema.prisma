@@ -35,39 +35,55 @@ model User {
 
   reservations Reservation[]
   borrows      Borrow[]
+  fines        Fine[]
 }
 
 model Book {
-  id              String   @id @default(cuid())
-  title           String
-  author          String
-  coverImage      String?
-  isbn            String   @unique
-  barcode         String?  @unique
-  genre           String[]
-  language        String   @default("English")
-  publisher       String?
-  publishYear     Int?
-  description     String?
-  totalCopies     Int      @default(1)
-  availableCopies Int      @default(0)
-  isEbook         Boolean  @default(false)
-  ebookUrl        String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id String @id @default(cuid())
 
+  // Basic Information
+  title  String
+  author String
+  isbn   String @unique
+
+  // Classification
+  genre       String
+  language    String?
+  publisher   String?
+  publishYear Int?
+
+  // Description
+  description String?
+
+  // Inventory
+  totalCopies     Int @default(1)
+  availableCopies Int @default(1)
+  timesBorrowed   Int @default(0)
+
+  // Digital Assets (AWS S3)
+  coverImage String?
+  ebookUrl   String?
+
+  // Barcode
+  barcode String?
+
+  // Audit Fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
   reservations Reservation[]
   borrows      Borrow[]
 }
 
 model Reservation {
-  id         String   @id @default(cuid())
-  reservedAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  reservedAt DateTime  @default(now())
   expiresAt  DateTime?
-  status     String   @default("pending") // "pending", "fulfilled", "cancelled", "expired"
-  notified   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  status     String    @default("pending") // "pending", "fulfilled", "cancelled", "expired"
+  notified   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   memberId String
   bookId   String
@@ -91,4 +107,38 @@ model Borrow {
 
   member User @relation(fields: [memberId], references: [id])
   book   Book @relation(fields: [bookId], references: [id])
+
+  fines Fine[]
+}
+
+model Fine {
+  id          String    @id @default(cuid())
+  amount      Float
+  daysOverdue Int
+  status      String    @default("pending") // "pending", "paid", "waived"
+  paidAt      DateTime?
+  waivedBy    String?
+  reason      String? // Mandatory if waived
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  memberId String
+  borrowId String
+
+  member User   @relation(fields: [memberId], references: [id])
+  borrow Borrow @relation(fields: [borrowId], references: [id])
+}
+
+model Report {
+  id              String   @id @default(cuid())
+  date            DateTime @default(now())
+  totalBooks      Int
+  totalMembers    Int
+  activeBorrows   Int
+  overdueBorrows  Int
+  totalFines      Float?
+  genreStats      Json?
+  borrowingTrends Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

@@ -4,8 +4,8 @@ import api from '../../api/axios';
 
 // Password validation helpers
 const hasMinLength = (p) => p.length >= 8;
-const hasNumber    = (p) => /\d/.test(p);
-const hasSpecial   = (p) => /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/.test(p);
+const hasNumber = (p) => /\d/.test(p);
+const hasSpecial = (p) => /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/.test(p);
 
 // ─── InputField defined OUTSIDE AddStaff so it never re-mounts on re-render ──
 const InputField = ({ label, name, type = 'text', placeholder, required = false, hint, value, onChange, error }) => (
@@ -25,11 +25,10 @@ const InputField = ({ label, name, type = 'text', placeholder, required = false,
       required={required}
       value={value}
       onChange={onChange}
-      className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${
-        error
-          ? 'border-red-400 focus:border-red-400 bg-red-50'
-          : 'border-border-default focus:border-primary'
-      }`}
+      className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${error
+        ? 'border-red-400 focus:border-red-400 bg-red-50'
+        : 'border-border-default focus:border-primary'
+        }`}
     />
     {error && (
       <p className="mt-1 font-body-sm text-body-sm text-red-500 flex items-center gap-1">
@@ -61,9 +60,9 @@ const AddStaff = () => {
     securityAnswer: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]           = useState(false);
-  const [error, setError]               = useState('');
-  const [fieldErrors, setFieldErrors]   = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const password = formData.password;
 
@@ -78,14 +77,14 @@ const AddStaff = () => {
 
   const validate = () => {
     const errs = {};
-    if (!formData.name.trim())      errs.name  = 'Full name is required.';
-    if (!formData.email.trim())     errs.email = 'Email is required.';
-    if (!hasMinLength(password))    errs.password = 'Password must be at least 8 characters.';
-    else if (!hasNumber(password))  errs.password = 'Password must contain at least one number.';
+    if (!formData.name.trim()) errs.name = 'Full name is required.';
+    if (!formData.email.trim()) errs.email = 'Email is required.';
+    if (!hasMinLength(password)) errs.password = 'Password must be at least 8 characters.';
+    else if (!hasNumber(password)) errs.password = 'Password must contain at least one number.';
     else if (!hasSpecial(password)) errs.password = 'Password must contain at least one special character.';
     if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
     if (!formData.securityQuestion?.trim()) errs.securityQuestion = 'Security question is required.';
-    if (!formData.securityAnswer?.trim())   errs.securityAnswer   = 'Answer is required.';
+    if (!formData.securityAnswer?.trim()) errs.securityAnswer = 'Answer is required.';
     return errs;
   };
 
@@ -101,13 +100,13 @@ const AddStaff = () => {
     setError('');
     try {
       await api.post('/staff', {
-        name:       formData.name,
-        email:      formData.email,
-        password:   formData.password,
-        phone:      formData.phone       || undefined,
-        role:       formData.role,
-        department: formData.department  || undefined,
-        employeeId: formData.employeeId  || undefined,
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone || undefined,
+        role: formData.role,
+        department: formData.department || undefined,
+        employeeId: formData.employeeId || undefined,
         securityQuestion: formData.securityQuestion,
         securityAnswer: formData.securityAnswer
       });
@@ -262,11 +261,10 @@ const AddStaff = () => {
                   value={formData.password}
                   onChange={handleChange}
                   autoComplete="new-password"
-                  className={`w-full rounded-lg border px-3 pr-10 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${
-                    fieldErrors.password
-                      ? 'border-red-400 bg-red-50'
-                      : 'border-border-default focus:border-primary'
-                  }`}
+                  className={`w-full rounded-lg border px-3 pr-10 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${fieldErrors.password
+                    ? 'border-red-400 bg-red-50'
+                    : 'border-border-default focus:border-primary'
+                    }`}
                 />
                 <button
                   type="button"
@@ -289,8 +287,8 @@ const AddStaff = () => {
                 <ul className="mt-2 space-y-1">
                   {[
                     [hasMinLength(password), 'At least 8 characters'],
-                    [hasNumber(password),    'Contains a number'],
-                    [hasSpecial(password),   'Contains a special character']
+                    [hasNumber(password), 'Contains a number'],
+                    [hasSpecial(password), 'Contains a special character']
                   ].map(([ok, label]) => (
                     <li key={label} className="flex items-center gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
                       <span
@@ -323,11 +321,10 @@ const AddStaff = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 autoComplete="new-password"
-                className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${
-                  fieldErrors.confirmPassword
-                    ? 'border-red-400 bg-red-50'
-                    : 'border-border-default focus:border-primary'
-                }`}
+                className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${fieldErrors.confirmPassword
+                  ? 'border-red-400 bg-red-50'
+                  : 'border-border-default focus:border-primary'
+                  }`}
               />
               {fieldErrors.confirmPassword && (
                 <p className="mt-1 font-body-sm text-body-sm text-red-500 flex items-center gap-1">

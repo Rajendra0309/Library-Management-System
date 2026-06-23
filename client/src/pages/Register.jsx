@@ -3,9 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Password validation helpers
-const hasMinLength  = (p) => p.length >= 8;
-const hasNumber     = (p) => /\d/.test(p);
-const hasSpecial    = (p) => /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/.test(p);
+const hasMinLength = (p) => p.length >= 8;
+const hasNumber = (p) => /\d/.test(p);
+const hasSpecial = (p) => /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/.test(p);
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,7 +18,7 @@ const Register = () => {
     securityQuestion: '',
     securityAnswer: ''
   });
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -68,7 +68,7 @@ const Register = () => {
         password: formData.password,
         phone: formData.phone || undefined,
         securityQuestion: formData.securityQuestion.trim(),
-        securityAnswer:   formData.securityAnswer.trim()
+        securityAnswer: formData.securityAnswer.trim()
       });
       setSuccess('Account created successfully! Redirecting to login…');
       setTimeout(() => navigate('/login'), 1500);
@@ -87,7 +87,7 @@ const Register = () => {
         {/* Decorative Blobs */}
         <div className="absolute -top-[20%] -left-[10%] w-[600px] h-[600px] rounded-full bg-primary-fixed opacity-60 blur-3xl mix-blend-multiply"></div>
         <div className="absolute top-[40%] -right-[20%] w-[500px] h-[500px] rounded-full bg-tertiary-fixed opacity-40 blur-3xl mix-blend-multiply"></div>
-        
+
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center text-center max-w-lg">
           <div className="mb-8 p-6 bg-surface rounded-3xl shadow-xl flex items-center justify-center">
@@ -100,7 +100,7 @@ const Register = () => {
           <p className="font-headline-lg text-headline-lg text-primary max-w-md">The next generation library management workspace. Preserve the past, index the future.</p>
         </div>
       </div>
-      
+
       {/* Right Side: Registration Form (45%) */}
       <div className="w-full lg:w-[45%] flex items-center justify-center p-6 sm:p-12 bg-surface z-10 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] relative overflow-y-auto">
         <div className="w-full max-w-[400px]">
@@ -109,7 +109,7 @@ const Register = () => {
             <span className="material-symbols-outlined text-primary text-[32px]">menu_book</span>
             <span className="font-headline-xl text-headline-xl text-primary font-bold">LibraVault</span>
           </div>
-          
+
           {/* Header */}
           <div className="mb-8">
             <h2 className="font-headline-2xl text-headline-2xl mb-2 text-on-surface">Create an Account</h2>
@@ -131,17 +131,17 @@ const Register = () => {
               <p className="font-body-sm text-body-sm text-green-700">{success}</p>
             </div>
           )}
-          
+
           {/* Form */}
           <form className="space-y-5" onSubmit={handleRegister}>
             {/* Full Name */}
             <div>
               <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="name">Full Name</label>
-              <input 
-                className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm" 
+              <input
+                className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm"
                 id="name"
                 name="name"
-                placeholder="Jane Doe" 
+                placeholder="Jane Doe"
                 required
                 type="text"
                 value={formData.name}
@@ -149,17 +149,17 @@ const Register = () => {
                 autoComplete="name"
               />
             </div>
-            
+
             {/* Email */}
             <div>
               <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="email">Email Address</label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-[20px]">mail</span>
-                <input 
-                  className="w-full rounded-lg border border-border-default pl-10 pr-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm" 
+                <input
+                  className="w-full rounded-lg border border-border-default pl-10 pr-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm"
                   id="email"
                   name="email"
-                  placeholder="jane@institution.edu" 
+                  placeholder="jane@institution.edu"
                   required
                   type="email"
                   value={formData.email}
@@ -168,46 +168,46 @@ const Register = () => {
                 />
               </div>
             </div>
-            
+
             {/* Phone */}
             <div>
               <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="phone">Phone Number <span className="normal-case">(optional)</span></label>
-              <input 
-                className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm" 
+              <input
+                className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm"
                 id="phone"
                 name="phone"
-                placeholder="+91 98765 43210" 
+                placeholder="+91 98765 43210"
                 type="tel"
                 value={formData.phone}
                 onChange={handleChange}
                 autoComplete="tel"
               />
             </div>
-            
+
             {/* Password */}
             <div>
               <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="password">Password</label>
               <div className="relative mb-2.5">
-                <input 
-                  className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm" 
+                <input
+                  className="w-full rounded-lg border border-border-default px-3 py-2 text-body-base focus:border-primary focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm"
                   id="password"
                   name="password"
-                  placeholder="••••••••" 
+                  placeholder="••••••••"
                   required
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={handleChange}
                   autoComplete="new-password"
                 />
-                <button 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-on-surface-variant" 
+                <button
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-on-surface-variant"
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   <span className="material-symbols-outlined text-[20px]">{showPassword ? "visibility" : "visibility_off"}</span>
                 </button>
               </div>
-              
+
               {/* Strength Meter */}
               {password.length > 0 && (
                 <>
@@ -224,42 +224,41 @@ const Register = () => {
                   </p>
                 </>
               )}
-              
+
               {/* Checklist */}
               <ul className="font-body-sm text-body-sm text-on-surface-variant space-y-1.5">
                 <li className="flex items-center gap-2">
                   <span className={`material-symbols-outlined text-[16px] ${hasMinLength(password) ? 'text-green-500' : 'text-outline'}`} style={{ fontVariationSettings: hasMinLength(password) ? "'FILL' 1" : "'FILL' 0" }}>
                     {hasMinLength(password) ? 'check_circle' : 'radio_button_unchecked'}
-                  </span> 
+                  </span>
                   At least 8 characters
                 </li>
                 <li className="flex items-center gap-2">
                   <span className={`material-symbols-outlined text-[16px] ${hasNumber(password) ? 'text-green-500' : 'text-outline'}`} style={{ fontVariationSettings: hasNumber(password) ? "'FILL' 1" : "'FILL' 0" }}>
                     {hasNumber(password) ? 'check_circle' : 'radio_button_unchecked'}
-                  </span> 
+                  </span>
                   At least one number
                 </li>
                 <li className="flex items-center gap-2">
                   <span className={`material-symbols-outlined text-[16px] ${hasSpecial(password) ? 'text-green-500' : 'text-outline'}`} style={{ fontVariationSettings: hasSpecial(password) ? "'FILL' 1" : "'FILL' 0" }}>
                     {hasSpecial(password) ? 'check_circle' : 'radio_button_unchecked'}
-                  </span> 
+                  </span>
                   At least one special character
                 </li>
               </ul>
             </div>
-            
+
             {/* Confirm Password */}
             <div>
               <label className="block font-label-xs text-label-xs uppercase tracking-widest text-on-surface-variant mb-1.5" htmlFor="confirmPassword">Confirm Password</label>
-              <input 
-                className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${
-                  formData.confirmPassword && formData.confirmPassword !== formData.password
-                    ? 'border-red-400 focus:border-red-400'
-                    : 'border-border-default focus:border-primary'
-                }`}
+              <input
+                className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${formData.confirmPassword && formData.confirmPassword !== formData.password
+                  ? 'border-red-400 focus:border-red-400'
+                  : 'border-border-default focus:border-primary'
+                  }`}
                 id="confirmPassword"
                 name="confirmPassword"
-                placeholder="••••••••" 
+                placeholder="••••••••"
                 required
                 type={showPassword ? "text" : "password"}
                 value={formData.confirmPassword}
@@ -270,7 +269,7 @@ const Register = () => {
                 <p className="mt-1 font-body-sm text-body-sm text-red-500">Passwords do not match.</p>
               )}
             </div>
-            
+
             {/* ── Security Question ───────────────────────────── */}
             <div className="pt-2 border-t border-border-subtle mt-2">
               <div className="flex items-center gap-2 mb-3">
@@ -320,8 +319,8 @@ const Register = () => {
             {/* Terms */}
             <div className="flex items-start gap-3 pt-2">
               <div className="flex items-center h-5">
-                <input 
-                  className="rounded border-border-default text-primary focus:ring-primary focus:ring-2 h-4 w-4 transition-colors" 
+                <input
+                  className="rounded border-border-default text-primary focus:ring-primary focus:ring-2 h-4 w-4 transition-colors"
                   required
                   type="checkbox"
                   id="terms"
@@ -331,11 +330,11 @@ const Register = () => {
                 I agree to the <a className="text-primary hover:underline font-medium" href="#">Terms of Service</a> and <a className="text-primary hover:underline font-medium" href="#">Privacy Policy</a>.
               </label>
             </div>
-            
+
             {/* Submit Button */}
             <div className="pt-4">
-              <button 
-                className="w-full rounded-lg bg-brand-gradient text-on-primary font-headline-lg text-headline-lg py-3 flex items-center justify-center gap-2 hover:shadow-brand-glow transition-all active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed" 
+              <button
+                className="w-full rounded-lg bg-brand-gradient text-on-primary font-headline-lg text-headline-lg py-3 flex items-center justify-center gap-2 hover:shadow-brand-glow transition-all active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
                 type="submit"
                 disabled={loading}
                 id="register-submit-btn"
@@ -354,7 +353,7 @@ const Register = () => {
               </button>
             </div>
           </form>
-          
+
           {/* Footer Link */}
           <div className="mt-8 text-center border-t border-border-subtle pt-6">
             <p className="font-body-sm text-body-sm text-on-surface-variant">

@@ -100,10 +100,10 @@ const MemberHistory = () => {
               </TableHead>
               <TableBody>
                 {history.map((borrow) => (
-                  <TableRow key={borrow._id} hover sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                    <TableCell sx={{ fontWeight: 600 }}>{borrow.bookId?.title || 'Deleted Book'}</TableCell>
-                    <TableCell>{borrow.bookId?.author || '-'}</TableCell>
-                    <TableCell>{borrow.bookId?.isbn || '-'}</TableCell>
+                  <TableRow key={borrow.id} hover sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                    <TableCell sx={{ fontWeight: 600 }}>{borrow.book?.title || 'Deleted Book'}</TableCell>
+                    <TableCell>{borrow.book?.author || '-'}</TableCell>
+                    <TableCell>{borrow.book?.isbn || '-'}</TableCell>
                     <TableCell>{new Date(borrow.issueDate).toLocaleDateString()}</TableCell>
                     <TableCell>{new Date(borrow.dueDate).toLocaleDateString()}</TableCell>
                     <TableCell>

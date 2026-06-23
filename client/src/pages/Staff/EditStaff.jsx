@@ -20,11 +20,10 @@ const InputField = ({ label, name, type = 'text', placeholder, required = false,
       required={required}
       value={value}
       onChange={onChange}
-      className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${
-        error
-          ? 'border-red-400 focus:border-red-400 bg-red-50'
-          : 'border-border-default focus:border-primary'
-      }`}
+      className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${error
+        ? 'border-red-400 focus:border-red-400 bg-red-50'
+        : 'border-border-default focus:border-primary'
+        }`}
     />
     {error && (
       <p className="mt-1 font-body-sm text-body-sm text-red-500 flex items-center gap-1">
@@ -55,11 +54,11 @@ const EditStaff = () => {
     securityAnswer: ''
   });
   const [originalEmail, setOriginalEmail] = useState('');
-  const [fetchLoading, setFetchLoading]   = useState(true);
-  const [fetchError, setFetchError]       = useState('');
-  const [loading, setLoading]             = useState(false);
-  const [error, setError]                 = useState('');
-  const [fieldErrors, setFieldErrors]     = useState({});
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // ── Fetch existing staff data on mount ────────────────────────────────────
   useEffect(() => {
@@ -67,14 +66,14 @@ const EditStaff = () => {
       setFetchLoading(true);
       try {
         const res = await api.get(`/staff/${id}`);
-        const s   = res.data.data;
+        const s = res.data.data;
         setFormData({
-          name:       s.name       || '',
-          phone:      s.phone      || '',
-          role:       s.role       || 'librarian',
+          name: s.name || '',
+          phone: s.phone || '',
+          role: s.role || 'librarian',
           department: s.department || '',
           employeeId: s.employeeId || '',
-          status:     s.status     || 'active',
+          status: s.status || 'active',
           securityQuestion: s.securityQuestion || '',
           securityAnswer: ''
         });
@@ -116,12 +115,12 @@ const EditStaff = () => {
     setError('');
     try {
       await api.put(`/staff/${id}`, {
-        name:       formData.name,
-        phone:      formData.phone       || undefined,
-        role:       formData.role,
-        department: formData.department  || undefined,
-        employeeId: formData.employeeId  || undefined,
-        status:     formData.status,
+        name: formData.name,
+        phone: formData.phone || undefined,
+        role: formData.role,
+        department: formData.department || undefined,
+        employeeId: formData.employeeId || undefined,
+        status: formData.status,
         securityQuestion: formData.securityQuestion || undefined,
         securityAnswer: formData.securityAnswer || undefined
       });

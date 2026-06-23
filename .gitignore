@@ -64,3 +64,12 @@ Thumbs.db
 
 # AI rule
 AI_RULES.md
+
+# Vite & React specifics
+.vite/
+dist-ssr/
+coverage/
+
+# Data Engineering / Jupyter
+.ipynb_checkpoints/
+*.sqlite3

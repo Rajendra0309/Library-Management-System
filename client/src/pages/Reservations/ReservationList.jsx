@@ -1,67 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { getMemberReservations, cancelReservation } from '../../services/reservationService';
+import { useAuth } from '../../context/AuthContext';
+import { getAllReservations, getMemberReservations, cancelReservation } from '../../services/reservationService';
 
 const ReservationList = () => {
+  const { user: currentUser } = useAuth();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  // Search & Pagination State
+
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage] = useState(10);
 
-  // Get current user information
-  const userJson = localStorage.getItem('user');
-  const currentUser = userJson ? JSON.parse(userJson) : null;
   const isLibrarianOrAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'librarian');
 
+  // ─── Fetch Reservations ─────────────────────────────────────────────────────
   const fetchReservationsData = async () => {
-    if (!currentUser) {
-      setLoading(false);
-      return;
-    }
-
+    if (!currentUser) { setLoading(false); return; }
     try {
       setLoading(true);
       setError('');
-      let data;
-      
-      // Since getAllReservations is not implemented correctly in mock, we'll use a mocked list for Admin
-      // or fetch Member's reservations
-      if (isLibrarianOrAdmin) {
-        // Mock Admin Data
-        data = {
-           success: true,
-           data: [
-             {
-               _id: 'r1',
-               memberId: { name: 'Emma Watson', membershipId: 'MEM-8492' },
-               bookId: { title: 'The Design of Everyday Things', isbn: '978-0465050659' },
-               reservedAt: '2023-10-24T10:00:00Z',
-               status: 'pending',
-               notified: true,
-               queuePosition: 1
-             },
-             {
-               _id: 'r2',
-               memberId: { name: 'Liam Chen', membershipId: 'MEM-7104' },
-               bookId: { title: 'Clean Code', isbn: '978-0132350884' },
-               reservedAt: '2023-10-25T14:30:00Z',
-               status: 'pending',
-               notified: false,
-               queuePosition: 2
-             }
-           ]
-        };
-      } else {
-        // Fetch only own reservations for Member view
-        data = await getMemberReservations(currentUser.id);
-      }
-
-      if (data.success) {
-        setReservations(data.data);
-      }
+      const data = isLibrarianOrAdmin
+        ? await getAllReservations()
+        : await getMemberReservations(currentUser.id);
+      if (data.success) setReservations(data.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch reservations.');
       setReservations([]);
@@ -72,19 +34,19 @@ const ReservationList = () => {
 
   useEffect(() => {
     fetchReservationsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ─── Cancel Reservation ─────────────────────────────────────────────────────
   const handleCancel = async (id) => {
     try {
       setError('');
-      // Optimistically update or use API
       const data = await cancelReservation(id);
-      if (data.success || !isLibrarianOrAdmin) {
-        setReservations(reservations.map(r => r._id === id ? { ...r, status: 'cancelled' } : r));
+      if (data.success) {
+        setReservations(reservations.map(r => r.id === id ? { ...r, status: 'cancelled' } : r));
       }
     } catch (err) {
-      // Mock fallback if API fails
-      setReservations(reservations.map(r => r._id === id ? { ...r, status: 'cancelled' } : r));
+      setError(err.response?.data?.message || 'Failed to cancel reservation.');
     }
   };
 
@@ -101,11 +63,10 @@ const ReservationList = () => {
     );
   }
 
-  // Filter reservations based on search text
   const filteredReservations = reservations.filter((res) => {
-    const titleMatch = res.bookId?.title?.toLowerCase().includes(search.toLowerCase()) || false;
-    const nameMatch = res.memberId?.name?.toLowerCase().includes(search.toLowerCase()) || false;
-    const idMatch = res.memberId?.membershipId?.toLowerCase().includes(search.toLowerCase()) || false;
+    const titleMatch = res.book?.title?.toLowerCase().includes(search.toLowerCase()) || false;
+    const nameMatch  = res.member?.name?.toLowerCase().includes(search.toLowerCase()) || false;
+    const idMatch    = res.member?.membershipId?.toLowerCase().includes(search.toLowerCase()) || false;
     return titleMatch || nameMatch || idMatch;
   });
 
@@ -124,22 +85,21 @@ const ReservationList = () => {
             <span className="material-symbols-outlined text-[16px] text-text-tertiary">chevron_right</span>
             <span className="text-on-surface font-body-sm text-body-sm font-semibold">Reservations</span>
           </div>
-          <h2 className="font-headline-2xl text-headline-2xl text-on-surface">Manage Reservations</h2>
+          <h2 className="font-headline-2xl text-headline-2xl text-on-surface">
+            {isLibrarianOrAdmin ? 'All Reservations' : 'My Reservations'}
+          </h2>
         </div>
         <div className="flex gap-md">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-[20px]">search</span>
-            <input 
-              className="pl-10 pr-4 py-2 bg-surface border border-border-default rounded-md text-body-sm font-body-sm focus:border-primary focus:ring focus:ring-focus-ring outline-none w-64 transition-all" 
-              placeholder="Search reservations..." 
+            <input
+              className="pl-10 pr-4 py-2 bg-surface border border-border-default rounded-md text-body-sm font-body-sm focus:border-primary focus:ring focus:ring-focus-ring outline-none w-64 transition-all"
+              placeholder="Search reservations..."
               type="text"
               value={search}
               onChange={handleSearchChange}
             />
           </div>
-          <button className="px-xl py-2 bg-surface border border-border-default rounded-md text-primary font-body-sm text-body-sm font-semibold hover:bg-bg-hover transition-colors flex items-center gap-sm">
-            <span className="material-symbols-outlined text-[18px]">filter_list</span> Filter
-          </button>
         </div>
       </div>
 
@@ -164,68 +124,76 @@ const ReservationList = () => {
             </thead>
             <tbody className="text-body-sm font-body-sm">
               {loading ? (
-                 <tr><td colSpan={isLibrarianOrAdmin ? 7 : 5} className="py-8 text-center text-text-secondary">Loading reservations...</td></tr>
+                <tr><td colSpan={isLibrarianOrAdmin ? 7 : 5} className="py-8 text-center text-text-secondary">Loading reservations...</td></tr>
               ) : paginatedReservations.length === 0 ? (
-                 <tr><td colSpan={isLibrarianOrAdmin ? 7 : 5} className="py-8 text-center text-text-secondary">No reservations found.</td></tr>
+                <tr><td colSpan={isLibrarianOrAdmin ? 7 : 5} className="py-8 text-center text-text-secondary">
+                  {filteredReservations.length === 0 && reservations.length > 0
+                    ? 'No reservations match your search.'
+                    : 'No reservations found.'}
+                </td></tr>
               ) : (
                 paginatedReservations.map((res) => (
-                  <tr key={res._id} className="border-b border-border-subtle hover:bg-bg-hover transition-all duration-200">
+                  <tr key={res.id} className="border-b border-border-subtle hover:bg-bg-hover transition-all duration-200">
                     {isLibrarianOrAdmin && (
                       <td className="py-md px-md">
                         <div className="flex items-center gap-md">
-                          <div className="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden flex items-center justify-center text-primary font-bold">
-                            {(res.memberId?.name || 'U').charAt(0)}
+                          <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary font-bold text-sm">
+                            {(res.member?.name || 'U').charAt(0)}
                           </div>
                           <div>
-                            <div className="font-semibold text-on-surface">{res.memberId?.name || 'Unknown User'}</div>
-                            <div className="font-code-mono text-code-mono text-text-tertiary text-[12px]">{res.memberId?.membershipId || '-'}</div>
+                            <div className="font-semibold text-on-surface">{res.member?.name || 'Unknown User'}</div>
+                            <div className="font-code-mono text-code-mono text-text-tertiary text-[12px]">{res.member?.membershipId || '-'}</div>
                           </div>
                         </div>
                       </td>
                     )}
                     <td className="py-md px-md">
-                      <div className="font-semibold text-on-surface">{res.bookId?.title || 'Unknown Title'}</div>
-                      <div className="font-code-mono text-code-mono text-text-tertiary text-[12px]">{res.bookId?.isbn || '-'}</div>
+                      <div className="font-semibold text-on-surface">{res.book?.title || 'Unknown Title'}</div>
+                      <div className="font-code-mono text-code-mono text-text-tertiary text-[12px]">{res.book?.isbn || '-'}</div>
                     </td>
-                    <td className="py-md px-md text-on-surface-variant">{new Date(res.reservedAt || res.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                    <td className="py-md px-md text-on-surface-variant">
+                      {new Date(res.reservedAt || res.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
                     <td className="py-md px-md text-center">
-                      <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-surface-container-high text-primary font-semibold text-[12px]">#{res.queuePosition || 1}</span>
+                      <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-surface-container-high text-primary font-semibold text-[12px]">
+                        #{res.queuePosition || 1}
+                      </span>
                     </td>
                     <td className="py-md px-md">
                       {res.status === 'cancelled' ? (
-                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-surface-variant text-text-secondary font-semibold text-[12px]">
-                          Cancelled
-                        </span>
-                      ) : res.status === 'pending' && res.notified ? (
-                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-tertiary-container/10 text-tertiary-container font-semibold text-[12px]">
-                          <div className="w-2 h-2 rounded-full bg-tertiary-container"></div> Ready for Pickup
-                        </span>
-                      ) : res.status === 'pending' ? (
-                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-secondary-container/10 text-secondary font-semibold text-[12px]">
-                          <div className="w-2 h-2 rounded-full bg-secondary"></div> Pending
+                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-surface-variant text-text-secondary font-semibold text-[12px]">Cancelled</span>
+                      ) : res.status === 'expired' ? (
+                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-error-container text-on-error-container font-semibold text-[12px]">Expired</span>
+                      ) : res.status === 'fulfilled' ? (
+                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-semibold text-[12px]">Fulfilled</span>
+                      ) : res.notified ? (
+                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-surface-container-high text-tertiary font-semibold text-[12px]">
+                          <div className="w-2 h-2 rounded-full bg-tertiary"></div> Ready for Pickup
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-primary-fixed text-primary font-semibold text-[12px]">
-                          {res.status.toUpperCase()}
+                          <div className="w-2 h-2 rounded-full bg-primary"></div> Pending
                         </span>
                       )}
                     </td>
                     {isLibrarianOrAdmin && (
                       <td className="py-md px-md text-center">
-                        {res.notified ? (
-                          <span className="material-symbols-outlined text-tertiary-container text-[20px]">check_circle</span>
-                        ) : (
-                          <span className="text-text-tertiary text-[12px] font-semibold">-</span>
-                        )}
+                        {res.notified
+                          ? <span className="material-symbols-outlined text-tertiary text-[20px]">check_circle</span>
+                          : <span className="text-text-tertiary text-[12px] font-semibold">—</span>}
                       </td>
                     )}
                     <td className="py-md px-md text-right">
                       {res.status === 'pending' ? (
-                        <button onClick={() => handleCancel(res._id)} className="text-text-tertiary hover:text-error transition-colors p-sm rounded-md hover:bg-error/10" title="Cancel Reservation">
+                        <button
+                          onClick={() => handleCancel(res.id)}
+                          className="text-text-tertiary hover:text-error transition-colors p-sm rounded-md hover:bg-error-container"
+                          title="Cancel Reservation"
+                        >
                           <span className="material-symbols-outlined text-[20px]">cancel</span>
                         </button>
                       ) : (
-                        <span className="text-text-tertiary text-[12px]">-</span>
+                        <span className="text-text-tertiary text-[12px]">—</span>
                       )}
                     </td>
                   </tr>
@@ -238,13 +206,23 @@ const ReservationList = () => {
         {/* Pagination */}
         <div className="flex items-center justify-between mt-xl pt-md border-t border-border-subtle">
           <div className="text-text-tertiary font-body-sm text-body-sm">
-             Showing {Math.min(page * rowsPerPage + 1, filteredReservations.length)} to {Math.min((page + 1) * rowsPerPage, filteredReservations.length)} of {filteredReservations.length} entries
+            Showing {filteredReservations.length === 0 ? 0 : Math.min(page * rowsPerPage + 1, filteredReservations.length)}
+            {' '}to {Math.min((page + 1) * rowsPerPage, filteredReservations.length)}
+            {' '}of {filteredReservations.length} entries
           </div>
           <div className="flex gap-sm">
-            <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="p-sm rounded-md border border-border-default text-text-tertiary hover:bg-bg-hover disabled:opacity-50">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+              className="p-sm rounded-md border border-border-default text-text-tertiary hover:bg-bg-hover disabled:opacity-50"
+            >
               <span className="material-symbols-outlined text-[20px]">chevron_left</span>
             </button>
-            <button onClick={() => setPage(page + 1)} disabled={(page + 1) * rowsPerPage >= filteredReservations.length} className="p-sm rounded-md border border-border-default text-on-surface hover:bg-bg-hover disabled:opacity-50">
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={(page + 1) * rowsPerPage >= filteredReservations.length}
+              className="p-sm rounded-md border border-border-default text-on-surface hover:bg-bg-hover disabled:opacity-50"
+            >
               <span className="material-symbols-outlined text-[20px]">chevron_right</span>
             </button>
           </div>

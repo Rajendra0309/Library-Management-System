@@ -22,7 +22,11 @@ const protect = async (req, res, next) => {
 
   try {
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_key');
+    if (!process.env.JWT_SECRET) {
+      console.error('CRITICAL: JWT_SECRET is not defined in environment variables.');
+      return res.status(500).json({ success: false, message: 'Server configuration error.' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Add user from payload to request object
     req.user = await prisma.user.findUnique({

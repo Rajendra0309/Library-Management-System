@@ -1,104 +1,73 @@
-# 📚 Library Management System (LMS)
-## CBA Internship Capstone Project
+# Library Management System (LMS)
+## Enterprise Capstone Project Documentation
 
-Welcome to the Library Management System! This is a full-stack web application that digitizes library operations including book management, member management, borrowing, returns, fine calculation, reservations, e-books, recommendations, and analytics reporting.
-
----
-
-## 🚀 Current Project Status
-
-### What is Built So Far
-We have successfully completed **Phase 1: Setup & Foundation**. The following initial setup tasks are complete:
-
-- [x] **Project Folder Structure Setup**
-  - Created standardized directories for `client/`, `server/`, `ai-service/`, `etl-pipeline/`, and `tests/`.
-  - Added `.gitkeep` files to track the folder structure in Git.
-- [x] **Base Documentation Created**
-  - Added `PRD.md` (Product Requirements Document).
-  - Added `TECH_STACK.md` (Tech stack references and approved libraries).
-  - Added standardized test templates and specific module test tracking files in the `tests/` folder.
-- [x] **Version Control Setup**
-  - Configured a comprehensive `.gitignore` file to ensure clean commits (excluding node_modules, Python caches, build artifacts, etc.).
-
-### ✅ Module 1 Complete: Authentication + Staff Management
-**Completed by:** Member 1 (Samarth) | **Date:** 2026-06-17 | **Branch:** `feature/auth-staff`
-
-#### Backend (server/)
-- [x] **Prisma Schema Updated** — Added `loginAttempts`, `lockUntil`, `department`, `employeeId` to `User` model. Migrated via `prisma db push`.
-- [x] **`server/controllers/auth.controller.js`** — `register`, `login` (with lockout), `getMe`, `changePassword`
-- [x] **`server/controllers/staff.controller.js`** — Full CRUD: `getStaff`, `getStaffById`, `createStaff`, `updateStaff`, `deleteStaff`
-- [x] **`server/routes/auth.routes.js`** — `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `PUT /api/auth/change-password`
-- [x] **`server/routes/staff.routes.js`** — All routes under `/api/staff` (admin only)
-- [x] **`server/middleware/role.middleware.js`** — `adminOnly`, `librarianAndAbove`, `allRoles` aliases
-- [x] **`server/server.js`** — Updated to register auth and staff routes
-- [x] **`server/utils/membershipId.js`** — Auto-generates `LMS-YYYY-XXXX` (was already present, verified working)
-- [x] **`server/middleware/auth.middleware.js`** — JWT `protect` + `authorize` (was already present, verified working)
-
-#### Frontend (client/src/)
-- [x] **`context/AuthContext.jsx`** — Global auth state: `login`, `register`, `logout`, `updateUser`, session verification on mount
-- [x] **`components/ProtectedRoute.jsx`** — Checks JWT + role, shows 403 or redirects to `/login`
-- [x] **`pages/Login.jsx`** — Wired to `AuthContext.login()` with error banner, loading state, lockout message
-- [x] **`pages/Register.jsx`** — Wired to `AuthContext.register()` with live password strength meter and validation checklist
-- [x] **`pages/Staff/StaffList.jsx`** — Real API data, search/filter, pagination, delete confirmation modal
-- [x] **`pages/Staff/AddStaff.jsx`** — Create staff form with role/department/employeeId, password validation
-- [x] **`App.jsx`** — Wrapped in `AuthProvider`, routes protected with `ProtectedRoute`, admin-only routes nested
-
-#### Business Rules Verified ✅
-- Password: min 8 chars + 1 number + 1 special character
-- Duplicate email → 409 Conflict
-- Account lockout after 3 failed attempts for 15 minutes
-- JWT expires in 7 days
-- Member cannot access `/api/staff` → 403
-- Admin cannot delete own account → 400
-- Membership ID auto-generated in `LMS-YYYY-XXXX` format
-
-#### Test Results
-All test cases in `tests/AUTH_TEST.md` — **PASS** ✅
+The Library Management System is a comprehensive, full-stack enterprise application designed to digitize library operations. The system encompasses book inventory management, user authentication, reservation queues, fine calculation, content-based AI recommendations, and automated ETL data pipelines.
 
 ---
 
-## 🎯 Next Steps (Phase 2: Core Modules Development)
-The team is now ready to begin parallel development on the core modules:
-
-- **Member 1 (Samarth)**: Authentication + Staff Management (`feature/auth-staff`)
-- **Member 2 (Madhusudhan)**: Book Management + Search & Catalog (`feature/books-search`)
-- **Member 3 (Samrudhi)**: Member Management + Reservation System (`feature/members-reservations`)
-- **Member 4 (Spoorthy)**: Borrowing & Returns + Fine Management (`feature/borrowing-fines`)
-- **Member 5 / Lead (Rajendra)**: Integration + Data Engineering + Cloud + DevOps + Reporting (`feature/integration-ai-cloud`)
+## Table of Contents
+1. [Project Delivery Status](#1-project-delivery-status)
+2. [Technical Architecture](#2-technical-architecture)
+3. [Local Development Setup](#3-local-development-setup)
+4. [Deployment Details](#4-deployment-details)
 
 ---
 
-## 🛠️ Tech Stack Overview
+## 1. Project Delivery Status
 
-- **Frontend**: Vite, React.js, Material-UI, React Router v6, Axios
-- **Backend**: Node.js, Express.js, Prisma ORM, PostgreSQL, JWT
-- **AI Service**: Python, Flask, scikit-learn
-- **ETL Pipeline**: Python, Pandas
-- **Cloud & DevOps**: AWS (EC2, S3, Lambda), Docker Compose, GitHub Actions
+The project has reached 100% completion across all planned development phases.
 
-*For a detailed list of approved libraries and constraints, please carefully read `TECH_STACK.md` before installing any packages.*
+| Phase | Module Description | Primary Developer | Status |
+|---|---|---|---|
+| Phase 1 | Foundation & Folder Structure | Team | Completed |
+| Module 1 | Authentication & Staff Management | Samarth | Completed |
+| Module 2 | Book Management & Search | Madhusudhan | Completed |
+| Module 3 | Member Profiles & Reservations | Samrudhi | Completed |
+| Module 4 | Borrowing Workflows & Fines | Spoorthy | Completed |
+| Module 5 | Integration, AI, ETL & DevOps | Rajendra | Completed |
 
 ---
 
-## 🏃‍♂️ How to Get Started
+## 2. Technical Architecture
 
-1. **Clone the Repository**: Pull the latest code to your local machine.
-2. **Backend Setup**:
-   - Make sure your local PostgreSQL is running.
-   - Inside the `server/` folder, create a `.env` file with:
-     ```env
-     DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/library_db?schema=public"
-     PORT=5000
-     JWT_SECRET="your_secret_key"
-     ```
-   - Run `npm install` inside `server/`.
-   - Run `npx prisma db push` to create the database tables.
-   - Run `npx prisma generate` to generate the client.
-   - Run `npm run dev` to start the backend.
-3. **Frontend Setup**:
-   - Inside the `client/` folder, run `npm install`.
-   - Run `npm run dev` to start the Vite frontend on port 3000.
-4. **Review the Requirements**: Read `PRD.md` to fully understand the system requirements and your specific module.
-5. **Branch Out**: Checkout to your designated feature branch (do not push directly to `main` or `dev`).
-6. **Test-Driven Approach**: Read your module's specific test document in the `tests/` folder.
-7. **Update Progress**: Once a feature is complete, update this README and raise a PR.
+The application is built using a modern microservices approach:
+
+- **Frontend:** React.js, Vite, Material-UI, Recharts
+- **Backend (Core API):** Node.js, Express.js, PostgreSQL (Prisma ORM)
+- **AI Recommendation Service:** Python, Flask, Scikit-learn (TF-IDF Vectorization)
+- **ETL Data Pipeline:** Python, Pandas
+- **Cloud Infrastructure:** AWS ECS Fargate, AWS Lambda, AWS EventBridge, AWS S3, CloudFront
+- **Security:** JWT Authentication, bcrypt password hashing, helmet HTTP headers, rate limiting
+
+---
+
+## 3. Local Development Setup
+
+### 3.1. Database Initialization
+Ensure PostgreSQL is installed and running locally. Create an empty database named `library_db`.
+
+### 3.2. Core API Backend Setup
+1. Navigate to the `server/` directory.
+2. Create a `.env` file containing:
+   ```env
+   DATABASE_URL="postgresql://postgres:password@localhost:5432/library_db?schema=public"
+   PORT=5000
+   JWT_SECRET="your_secure_development_secret"
+   ```
+3. Execute `npm install` to install dependencies.
+4. Execute `npx prisma db push` to synchronize the database schema.
+5. Execute `npx prisma generate` to build the Prisma Client.
+6. Execute `npm run dev` to start the Node.js API.
+
+### 3.3. Frontend Setup
+1. Navigate to the `client/` directory.
+2. Execute `npm install`.
+3. Execute `npm run dev` to start the Vite development server.
+
+---
+
+## 4. Deployment Details
+
+The system is configured for automated CI/CD deployment via GitHub Actions to an AWS Enterprise Architecture. All static assets and media uploads are routed through Amazon S3 and CloudFront. 
+
+For comprehensive deployment instructions, AWS configuration steps, and serverless Lambda scheduling, please refer to the `docs/Deployment_Guide.md` file.

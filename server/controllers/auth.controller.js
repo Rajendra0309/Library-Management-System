@@ -5,8 +5,8 @@ const prisma = require('../prisma/client');
 const { generateMembershipId } = require('../utils/membershipId');
 
 const MAX_LOGIN_ATTEMPTS = 3;
-const LOCK_DURATION_MS   = 15 * 60 * 1000; // 15 minutes
-const OTP_EXPIRY_MS      = 10 * 60 * 1000; // 10 minutes
+const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 
 /** Generate a random 6-digit numeric OTP */
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -77,7 +77,7 @@ const register = async (req, res) => {
         status: 'active',
         membershipId,
         securityQuestion: securityQuestion.trim(),
-        securityAnswer:   hashedAnswer
+        securityAnswer: hashedAnswer
       },
       select: {
         id: true,
@@ -392,8 +392,8 @@ const verifySecurityAnswer = async (req, res) => {
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        resetOtp:        otpHash,
-        resetOtpExpiry:  new Date(Date.now() + OTP_EXPIRY_MS)
+        resetOtp: otpHash,
+        resetOtpExpiry: new Date(Date.now() + OTP_EXPIRY_MS)
       }
     });
 
@@ -494,9 +494,9 @@ const resetPassword = async (req, res) => {
     await prisma.user.update({
       where: { id: decoded.id },
       data: {
-        password:      hashedPassword,
+        password: hashedPassword,
         loginAttempts: 0,       // clear any lockout
-        lockUntil:     null
+        lockUntil: null
       }
     });
 

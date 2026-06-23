@@ -24,18 +24,34 @@ app.use(express.json());
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
-// Module 1: Auth + Staff Management
+// // Module 1: Auth + Staff Management
 const authRoutes = require('./routes/auth.routes');
 const staffRoutes = require('./routes/staff.routes');
 
-// Module 3: Members + Reservations
+// // Module 3: Members + Reservations
 const memberRoutes = require('./routes/member.routes');
 const reservationRoutes = require('./routes/reservation.routes');
+const bookRoutes = require('./routes/book.routes');
+const aiRoutes = require('./routes/ai.routes');
+const reportRoutes = require('./routes/report.routes');
+const borrowRoutes = require('./routes/borrow.routes');
+const fineRoutes = require('./routes/fine.routes');
+
+
+// // -----------s3 route---------------------------
+// const s3 = require("./config/s3");
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/reservations', reservationRoutes);
+app.use('/api/books', bookRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/borrow', borrowRoutes);
+app.use('/api/fines', fineRoutes);
+
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -46,10 +62,14 @@ app.get('/', (req, res) => {
   });
 });
 
+
+
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found.' });
 });
+
+
 
 const PORT = process.env.PORT || 5000;
 
