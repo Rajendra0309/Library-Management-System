@@ -32,6 +32,7 @@ services:
       AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
     ports:
       - "5000:5000"
+      - "5555:5555"
     depends_on:
       db:
         condition: service_healthy
