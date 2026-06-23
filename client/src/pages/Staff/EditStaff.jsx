@@ -21,8 +21,8 @@ const InputField = ({ label, name, type = 'text', placeholder, required = false,
       value={value}
       onChange={onChange}
       className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${error
-          ? 'border-red-400 focus:border-red-400 bg-red-50'
-          : 'border-border-default focus:border-primary'
+        ? 'border-red-400 focus:border-red-400 bg-red-50'
+        : 'border-border-default focus:border-primary'
         }`}
     />
     {error && (
@@ -49,7 +49,9 @@ const EditStaff = () => {
     role: 'librarian',
     department: '',
     employeeId: '',
-    status: 'active'
+    status: 'active',
+    securityQuestion: '',
+    securityAnswer: ''
   });
   const [originalEmail, setOriginalEmail] = useState('');
   const [fetchLoading, setFetchLoading] = useState(true);
@@ -71,7 +73,9 @@ const EditStaff = () => {
           role: s.role || 'librarian',
           department: s.department || '',
           employeeId: s.employeeId || '',
-          status: s.status || 'active'
+          status: s.status || 'active',
+          securityQuestion: s.securityQuestion || '',
+          securityAnswer: ''
         });
         setOriginalEmail(s.email || '');
       } catch (err) {
@@ -95,6 +99,7 @@ const EditStaff = () => {
   const validate = () => {
     const errs = {};
     if (!formData.name.trim()) errs.name = 'Full name is required.';
+    if (!formData.securityQuestion?.trim()) errs.securityQuestion = 'Security question is required.';
     return errs;
   };
 
@@ -115,7 +120,9 @@ const EditStaff = () => {
         role: formData.role,
         department: formData.department || undefined,
         employeeId: formData.employeeId || undefined,
-        status: formData.status
+        status: formData.status,
+        securityQuestion: formData.securityQuestion || undefined,
+        securityAnswer: formData.securityAnswer || undefined
       });
       navigate('/staff', { state: { successMsg: `"${formData.name}" updated successfully.` } });
     } catch (err) {
@@ -298,6 +305,33 @@ const EditStaff = () => {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+        {/* ── Section: Security Question ────────────────────────── */}
+        <div className="p-6 border-b border-border-subtle">
+          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-5 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-xl">shield</span>
+            Account Recovery
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <InputField
+              label="Security Question"
+              name="securityQuestion"
+              placeholder="e.g. My dog's name is?"
+              value={formData.securityQuestion}
+              onChange={handleChange}
+              error={fieldErrors.securityQuestion}
+              hint="Required for password recovery."
+            />
+            <InputField
+              label="New Answer"
+              name="securityAnswer"
+              placeholder="Leave blank to keep existing"
+              value={formData.securityAnswer}
+              onChange={handleChange}
+              error={fieldErrors.securityAnswer}
+              hint="Type a new answer to change it."
+            />
           </div>
         </div>
 

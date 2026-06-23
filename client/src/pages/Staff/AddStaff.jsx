@@ -26,8 +26,8 @@ const InputField = ({ label, name, type = 'text', placeholder, required = false,
       value={value}
       onChange={onChange}
       className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${error
-          ? 'border-red-400 focus:border-red-400 bg-red-50'
-          : 'border-border-default focus:border-primary'
+        ? 'border-red-400 focus:border-red-400 bg-red-50'
+        : 'border-border-default focus:border-primary'
         }`}
     />
     {error && (
@@ -55,7 +55,9 @@ const AddStaff = () => {
     phone: '',
     role: 'librarian',
     department: '',
-    employeeId: ''
+    employeeId: '',
+    securityQuestion: '',
+    securityAnswer: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -81,6 +83,8 @@ const AddStaff = () => {
     else if (!hasNumber(password)) errs.password = 'Password must contain at least one number.';
     else if (!hasSpecial(password)) errs.password = 'Password must contain at least one special character.';
     if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
+    if (!formData.securityQuestion?.trim()) errs.securityQuestion = 'Security question is required.';
+    if (!formData.securityAnswer?.trim()) errs.securityAnswer = 'Answer is required.';
     return errs;
   };
 
@@ -102,7 +106,9 @@ const AddStaff = () => {
         phone: formData.phone || undefined,
         role: formData.role,
         department: formData.department || undefined,
-        employeeId: formData.employeeId || undefined
+        employeeId: formData.employeeId || undefined,
+        securityQuestion: formData.securityQuestion,
+        securityAnswer: formData.securityAnswer
       });
       navigate('/staff', { state: { successMsg: `Staff member "${formData.name}" added successfully.` } });
     } catch (err) {
@@ -256,8 +262,8 @@ const AddStaff = () => {
                   onChange={handleChange}
                   autoComplete="new-password"
                   className={`w-full rounded-lg border px-3 pr-10 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${fieldErrors.password
-                      ? 'border-red-400 bg-red-50'
-                      : 'border-border-default focus:border-primary'
+                    ? 'border-red-400 bg-red-50'
+                    : 'border-border-default focus:border-primary'
                     }`}
                 />
                 <button
@@ -316,8 +322,8 @@ const AddStaff = () => {
                 onChange={handleChange}
                 autoComplete="new-password"
                 className={`w-full rounded-lg border px-3 py-2 text-body-base focus:ring-2 focus:ring-focus-ring outline-none transition-all shadow-sm ${fieldErrors.confirmPassword
-                    ? 'border-red-400 bg-red-50'
-                    : 'border-border-default focus:border-primary'
+                  ? 'border-red-400 bg-red-50'
+                  : 'border-border-default focus:border-primary'
                   }`}
               />
               {fieldErrors.confirmPassword && (
@@ -327,6 +333,36 @@ const AddStaff = () => {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* ── Section: Security Question ────────────────────────── */}
+        <div className="p-6 border-b border-border-subtle">
+          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-5 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-xl">shield</span>
+            Account Recovery
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <InputField
+              label="Security Question"
+              name="securityQuestion"
+              placeholder="e.g. My dog's name is?"
+              required
+              value={formData.securityQuestion}
+              onChange={handleChange}
+              error={fieldErrors.securityQuestion}
+              hint="Used to recover password."
+            />
+            <InputField
+              label="Answer"
+              name="securityAnswer"
+              placeholder="One-word answer"
+              required
+              value={formData.securityAnswer}
+              onChange={handleChange}
+              error={fieldErrors.securityAnswer}
+              hint="Case-insensitive."
+            />
           </div>
         </div>
 
