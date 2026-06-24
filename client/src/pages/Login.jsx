@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -8,9 +8,13 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // If user was redirected from a protected route, send them back there after login
   const from = location.state?.from?.pathname || '/dashboard';

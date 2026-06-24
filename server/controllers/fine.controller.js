@@ -48,6 +48,7 @@ exports.getMemberFines = async (req, res) => {
         const fines = await prisma.fine.findMany({
             where: { memberId },
             include: {
+                member: { select: { name: true, email: true, membershipId: true } },
                 borrow: { include: { book: { select: { title: true } } } },
             },
             orderBy: { createdAt: "desc" },

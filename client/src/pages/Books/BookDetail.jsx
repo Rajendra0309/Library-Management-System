@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link,useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
+import PdfViewer from '../../components/PdfViewer';
+
 const BookDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [ebookUrl, setEbookUrl] = useState(null);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
  
   useEffect(() => {
     fetchBook();
@@ -25,11 +29,8 @@ const BookDetail = () => {
   const handleReadEbook = async () => {
     try {
       const res = await api.get(`/books/${id}/ebook`);
-
-      window.open(
-        res.data.ebookUrl,
-        "_blank"
-      );
+      setEbookUrl(res.data.ebookUrl);
+      setShowPdfViewer(true);
     } catch (error) {
       alert("Ebook not available");
     }
@@ -94,7 +95,7 @@ const BookDetail = () => {
             )}
             <div className="aspect-[3/4] w-full bg-surface-container-low rounded-lg overflow-hidden relative border border-border-subtle">
               {book.coverImage ? (
-                <img className="w-full h-full object-cover" src={book.coverImage} alt={`Cover for ${book.title}`} />
+                <img onContextMenu={(e) => e.preventDefault()} className="w-full h-full object-cover" src={book.coverImage} alt={`Cover for ${book.title}`} />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                    <span className="material-symbols-outlined text-outline-variant text-6xl">menu_book</span>
@@ -261,6 +262,10 @@ const BookDetail = () => {
           </table>
         </div>
       </div>
+
+      {showPdfViewer && ebookUrl && (
+        <PdfViewer url={ebookUrl} title={book.title} onClose={() => setShowPdfViewer(false)} />
+      )}
     </div>
   );
 };

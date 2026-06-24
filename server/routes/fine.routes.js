@@ -12,8 +12,8 @@ router.use(protect);
 // Get all fines - Librarian/Admin only
 router.get('/', authorize('librarian', 'admin'), fineController.getFines);
 
-// Get fine summary - Admin only
-router.get('/summary', authorize('admin'), fineController.getFineSummary);
+// Get fine summary - Admin/Librarian
+router.get('/summary', authorize('admin', 'librarian'), fineController.getFineSummary);
 
 // Get fines for a specific member
 router.get('/:memberId', fineController.getMemberFines);

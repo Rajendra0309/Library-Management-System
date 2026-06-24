@@ -29,7 +29,8 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION:-us-east-1}
-      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      CRON_SECRET_KEY: ${CRON_SECRET_KEY:-dummy_secret}
     ports:
       - "5000:5000"
       - "5555:5555"

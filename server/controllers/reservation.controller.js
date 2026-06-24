@@ -153,7 +153,7 @@ const createReservation = async (req, res) => {
       data: reservation
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -187,7 +187,7 @@ const getMemberReservations = async (req, res) => {
       data: reservations
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -231,7 +231,7 @@ const cancelReservation = async (req, res) => {
       data: updatedReservation
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -264,7 +264,7 @@ const getReservationQueue = async (req, res) => {
       data: queue
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -290,7 +290,7 @@ const getAllReservations = async (req, res) => {
       data: reservations
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 

@@ -19,9 +19,17 @@ router.post(
   '/register',
   [
     body('name').trim().notEmpty().withMessage('Name is required.'),
-    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.'),
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.')
+      .custom((value) => {
+        const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
+        const domain = value.split('@')[1]?.toLowerCase();
+        if (!domain) return false;
+        if (allowedDomains.includes(domain)) return true;
+        if (domain.endsWith('.ac.in') || domain.endsWith('.edu.in')) return true;
+        throw new Error('Only standard email providers or Indian college domains (.ac.in, .edu.in) are allowed.');
+      }),
     passwordRules,
-    body('phone').optional().isMobilePhone().withMessage('Please provide a valid phone number.')
+    body('phone').optional().matches(/^\+[1-9]\d{1,14}$/).withMessage('Please provide a valid phone number with country code (e.g., +91).')
   ],
   register
 );

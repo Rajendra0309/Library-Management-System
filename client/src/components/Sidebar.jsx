@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Nav items visible to ALL authenticated roles
@@ -45,6 +45,7 @@ const NavItem = ({ path, icon, label }) => (
 );
 
 const Sidebar = () => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isManagement = user?.role === 'admin' || user?.role === 'librarian';
   const isAdmin = user?.role === 'admin';
@@ -65,7 +66,9 @@ const Sidebar = () => {
       {/* New Record CTA - Admin/Librarian only */}
       {isManagement && (
         <div className="p-lg">
-          <button className="w-full bg-primary text-on-primary rounded-lg py-md px-lg font-headline-lg text-headline-lg hover:brand-glow transition-all active:scale-95 flex items-center justify-center gap-sm">
+          <button 
+            onClick={() => navigate('/books/add')}
+            className="w-full bg-primary text-on-primary rounded-lg py-md px-lg font-headline-lg text-headline-lg hover:brand-glow transition-all active:scale-95 flex items-center justify-center gap-sm">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>add</span>
             New Record
           </button>

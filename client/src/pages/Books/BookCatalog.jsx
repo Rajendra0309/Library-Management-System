@@ -188,7 +188,7 @@ const BookCatalog = () => {
           <div key={book.id} className="bg-bg-surface rounded-[14px] border border-border-subtle overflow-hidden relative group hover:-translate-y-1 hover:border-border-default hover:shadow-md transition-all duration-300 flex flex-col h-full">
             <div className={`aspect-[3/4] bg-surface-variant relative overflow-hidden ${!book.coverUrl ? 'flex items-center justify-center' : ''}`}>
               {book.coverImage ? (
-                <img alt={`Book cover for ${book.title}`} className="w-full h-full object-cover" src={book.coverImage} />
+                <img onContextMenu={(e) => e.preventDefault()} alt={`Book cover for ${book.title}`} className="w-full h-full object-cover" src={book.coverImage} />
               ) : (
                 <span className="material-symbols-outlined text-outline-variant text-6xl">menu_book</span>
               )}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Password validation helpers
@@ -12,7 +12,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone: '+91 ',
     password: '',
     confirmPassword: '',
     securityQuestion: '',
@@ -22,8 +22,12 @@ const Register = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const password = formData.password;
   const strengthScore = [hasMinLength(password), hasNumber(password), hasSpecial(password)].filter(Boolean).length;
@@ -41,6 +45,12 @@ const Register = () => {
     setSuccess('');
 
     // Client-side validation
+    const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
+    const emailDomain = formData.email.split('@')[1]?.toLowerCase();
+    if (emailDomain && !allowedDomains.includes(emailDomain) && !emailDomain.endsWith('.ac.in') && !emailDomain.endsWith('.edu.in')) {
+      return setError('Only standard email providers or Indian college domains (.ac.in, .edu.in) are allowed.');
+    }
+
     if (!hasMinLength(password)) {
       return setError('Password must be at least 8 characters long.');
     }
@@ -66,7 +76,7 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        phone: formData.phone || undefined,
+        phone: formData.phone.trim() === '+91' ? undefined : formData.phone.replace(/\s+/g, ''),
         securityQuestion: formData.securityQuestion.trim(),
         securityAnswer: formData.securityAnswer.trim()
       });

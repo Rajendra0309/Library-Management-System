@@ -145,7 +145,7 @@ exports.createBook = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
   
@@ -232,7 +232,7 @@ exports.getBooks = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
@@ -267,7 +267,7 @@ exports.getBookById = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
@@ -462,7 +462,7 @@ exports.updateBook = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
@@ -561,7 +561,7 @@ exports.deleteBook = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
@@ -619,7 +619,7 @@ exports.searchBooks = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
@@ -675,7 +675,7 @@ exports.getEbookUrl = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };

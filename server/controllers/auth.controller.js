@@ -289,14 +289,39 @@ const changePassword = async (req, res) => {
       });
     }
 
+    // Verify against current password
+    const isSameAsCurrent = await bcrypt.compare(newPassword, user.password);
+    if (isSameAsCurrent) {
+      return res.status(400).json({ success: false, message: 'New password cannot be the same as the current password.' });
+    }
+
+    // Verify against password history
+    const history = await prisma.passwordHistory.findMany({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 3
+    });
+
+    for (const record of history) {
+      const match = await bcrypt.compare(newPassword, record.hash);
+      if (match) {
+        return res.status(400).json({ success: false, message: 'New password cannot be the same as any of your last 3 passwords.' });
+      }
+    }
+
     // Hash new password
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data: { password: hashedPassword }
-    });
+    await prisma.$transaction([
+      prisma.passwordHistory.create({
+        data: { userId: req.user.id, hash: hashedPassword }
+      }),
+      prisma.user.update({
+        where: { id: req.user.id },
+        data: { password: hashedPassword, passwordChangedAt: new Date() }
+      })
+    ]);
 
     return res.status(200).json({
       success: true,
@@ -486,18 +511,50 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid reset token.' });
     }
 
+    // Get user to check current password
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    // Verify against current password
+    const isSameAsCurrent = await bcrypt.compare(newPassword, user.password);
+    if (isSameAsCurrent) {
+      return res.status(400).json({ success: false, message: 'New password cannot be the same as the current password.' });
+    }
+
+    // Verify against password history
+    const history = await prisma.passwordHistory.findMany({
+      where: { userId: decoded.id },
+      orderBy: { createdAt: 'desc' },
+      take: 3
+    });
+
+    for (const record of history) {
+      const match = await bcrypt.compare(newPassword, record.hash);
+      if (match) {
+        return res.status(400).json({ success: false, message: 'New password cannot be the same as any of your last 3 passwords.' });
+      }
+    }
+
     // Hash and save new password
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await prisma.user.update({
-      where: { id: decoded.id },
-      data: {
-        password: hashedPassword,
-        loginAttempts: 0,       // clear any lockout
-        lockUntil: null
-      }
-    });
+    await prisma.$transaction([
+      prisma.passwordHistory.create({
+        data: { userId: decoded.id, hash: hashedPassword }
+      }),
+      prisma.user.update({
+        where: { id: decoded.id },
+        data: {
+          password: hashedPassword,
+          passwordChangedAt: new Date(),
+          loginAttempts: 0,       // clear any lockout
+          lockUntil: null
+        }
+      })
+    ]);
 
     return res.status(200).json({
       success: true,

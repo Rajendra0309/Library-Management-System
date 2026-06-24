@@ -30,11 +30,13 @@ model User {
   resetOtpExpiry   DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  passwordChangedAt DateTime?
 
 
   reservations Reservation[]
   borrows      Borrow[]
   fines        Fine[]
+  passwordHistory PasswordHistory[]
 }
 
 model Book {
@@ -108,6 +110,15 @@ model Borrow {
   book   Book @relation(fields: [bookId], references: [id])
 
   fines Fine[]
+}
+
+model PasswordHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  hash      String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Fine {

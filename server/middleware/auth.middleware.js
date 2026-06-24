@@ -39,6 +39,7 @@ const protect = async (req, res, next) => {
         phone: true,
         membershipId: true,
         status: true,
+        passwordChangedAt: true,
         createdAt: true,
         updatedAt: true
       } // Excludes password
@@ -46,6 +47,14 @@ const protect = async (req, res, next) => {
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'User associated with token no longer exists.' });
+    }
+
+    // Check if user changed password after the token was issued
+    if (req.user.passwordChangedAt) {
+      const changedTimestamp = parseInt(req.user.passwordChangedAt.getTime() / 1000, 10);
+      if (decoded.iat < changedTimestamp) {
+        return res.status(401).json({ success: false, message: 'User recently changed password! Please log in again.' });
+      }
     }
 
     next();
