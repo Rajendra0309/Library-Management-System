@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { X, Sun, Moon, RotateCw, Maximize, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-// Set up the worker for react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Set up the worker for react-pdf using unpkg with .js extension instead of .mjs which often fails
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const PdfViewer = ({ url, title, onClose }) => {
   const [numPages, setNumPages] = useState(null);
@@ -96,117 +98,134 @@ const PdfViewer = ({ url, title, onClose }) => {
     <div 
       ref={viewerRef} 
       onMouseMove={handleMouseMove}
-      className="fixed inset-0 z-[100] flex flex-col bg-black antialiased overflow-hidden"
+      className="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-sm antialiased overflow-hidden"
     >
       {/* Top Bar */}
-      <div className={`absolute top-0 left-0 w-full flex items-center justify-between px-6 py-4 bg-surface shadow-sm z-20 transition-transform duration-300 ${isControlsVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+      <div className={`absolute top-0 left-0 w-full flex items-center justify-between px-6 py-4 bg-background/90 backdrop-blur-md border-b shadow-sm z-20 transition-transform duration-300 ${isControlsVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="flex items-center gap-4">
-          <button 
+          <Button 
+            variant="ghost" 
+            size="icon"
             onClick={onClose}
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant text-on-surface-variant transition-colors"
+            className="rounded-full bg-muted/50 hover:bg-destructive/10 hover:text-destructive"
           >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-          <h2 className="font-headline-sm text-headline-sm text-on-surface truncate max-w-[200px] md:max-w-md">{title || "Secure Reader"}</h2>
+            <X className="h-5 w-5" />
+          </Button>
+          <h2 className="font-semibold text-foreground truncate max-w-[200px] md:max-w-md">{title || "Secure Reader"}</h2>
         </div>
         
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Controls: Reading Mode, Rotate, Fullscreen */}
-          <button 
+          <Button 
+            variant="ghost"
+            size="icon"
             onClick={() => setIsSepiaMode(!isSepiaMode)}
             title="Reading Mode"
-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${isSepiaMode ? 'bg-primary/20 text-primary' : 'text-on-surface hover:bg-surface-variant'}`}
+            className={`rounded-full ${isSepiaMode ? 'bg-primary/20 text-primary' : ''}`}
           >
-            <span className="material-symbols-outlined text-[20px]">light_mode</span>
-          </button>
-          <button 
+            {isSepiaMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+          <Button 
+            variant="ghost"
+            size="icon"
             onClick={rotate}
             title="Rotate"
-            className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant transition-colors"
+            className="rounded-full"
           >
-            <span className="material-symbols-outlined text-[20px]">rotate_right</span>
-          </button>
-          <button 
+            <RotateCw className="h-5 w-5" />
+          </Button>
+          <Button 
+            variant="ghost"
+            size="icon"
             onClick={toggleFullscreen}
             title="Fullscreen"
-            className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant transition-colors hidden sm:flex"
+            className="rounded-full hidden sm:flex"
           >
-            <span className="material-symbols-outlined text-[20px]">fullscreen</span>
-          </button>
+            <Maximize className="h-5 w-5" />
+          </Button>
 
-          <div className="w-px h-6 bg-border-default mx-1 hidden sm:block"></div>
+          <div className="w-px h-6 bg-border mx-1 hidden sm:block"></div>
 
           {/* Zoom */}
-          <div className="flex items-center bg-surface-variant rounded-lg p-1">
-            <button 
+          <div className="flex items-center bg-muted/50 rounded-lg p-1 border">
+            <Button 
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-md"
               onClick={() => setScale(s => Math.max(0.5, s - 0.1))}
-              className="w-8 h-8 flex items-center justify-center text-on-surface hover:bg-surface rounded-md transition-colors"
             >
-              <span className="material-symbols-outlined text-[20px]">remove</span>
-            </button>
-            <span className="px-3 font-label-md text-label-md text-on-surface w-16 text-center">
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="px-3 text-sm font-medium text-foreground w-16 text-center tabular-nums">
               {Math.round(scale * 100)}%
             </span>
-            <button 
+            <Button 
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-md"
               onClick={() => setScale(s => Math.min(3, s + 0.1))}
-              className="w-8 h-8 flex items-center justify-center text-on-surface hover:bg-surface rounded-md transition-colors"
             >
-              <span className="material-symbols-outlined text-[20px]">add</span>
-            </button>
+              <ZoomIn className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className={`flex-1 w-full h-full overflow-auto flex justify-center p-8 select-none transition-colors ${isSepiaMode ? 'bg-[#1a1a1a]' : 'bg-black'} cursor-default`}>
+      <div className={`flex-1 w-full h-full overflow-auto flex justify-center p-8 select-none transition-colors ${isSepiaMode ? 'bg-[#1a1a1a]' : 'bg-transparent'} cursor-default`}>
         <Document
           file={url}
           onLoadSuccess={onDocumentLoadSuccess}
           loading={
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-primary">
-              <span className="material-symbols-outlined animate-spin text-[40px]">progress_activity</span>
-              <p className="font-headline-sm">Loading document...</p>
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-primary mt-[20vh]">
+              <Loader2 className="h-12 w-12 animate-spin" />
+              <p className="font-medium">Loading document...</p>
             </div>
           }
           error={
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-error">
-              <span className="material-symbols-outlined text-[40px]">error</span>
-              <p className="font-headline-sm">Failed to load document.</p>
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-destructive mt-[20vh]">
+              <AlertCircle className="h-12 w-12" />
+              <p className="font-medium">Failed to load document.</p>
+              <Button variant="outline" onClick={onClose}>Close Viewer</Button>
             </div>
           }
         >
-          <Page 
-            pageNumber={pageNumber} 
-            scale={scale} 
-            rotate={rotation}
-            renderTextLayer={false} 
-            renderAnnotationLayer={false}
-            className={`shadow-xl transition-all duration-300 ${isSepiaMode ? 'sepia-[.4] hue-rotate-[-10deg] brightness-95' : ''}`}
-          />
+          {numPages && (
+            <Page 
+              pageNumber={pageNumber} 
+              scale={scale} 
+              rotate={rotation}
+              renderTextLayer={false} 
+              renderAnnotationLayer={false}
+              className={`shadow-2xl transition-all duration-300 ${isSepiaMode ? 'sepia-[.4] hue-rotate-[-10deg] brightness-95' : ''}`}
+            />
+          )}
         </Document>
       </div>
 
       {/* Bottom Bar (Pagination) */}
-      <div className={`absolute bottom-0 left-0 w-full flex items-center justify-center gap-6 px-6 py-4 bg-surface shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-20 transition-transform duration-300 ${isControlsVisible ? 'translate-y-0' : 'translate-y-full'}`}>
-        <button
-          type="button"
+      <div className={`absolute bottom-0 left-0 w-full flex items-center justify-center gap-6 px-6 py-4 bg-background/90 backdrop-blur-md border-t shadow-sm z-20 transition-transform duration-300 ${isControlsVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+        <Button
+          variant="outline"
+          size="icon"
           disabled={pageNumber <= 1}
           onClick={previousPage}
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-on-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors shadow-sm"
+          className="h-10 w-10 rounded-full shadow-sm"
         >
-          <span className="material-symbols-outlined">chevron_left</span>
-        </button>
-        <p className="font-body-lg text-body-lg text-on-surface w-32 text-center">
-          Page <span className="font-semibold">{pageNumber || (numPages ? 1 : '--')}</span> of <span className="font-semibold">{numPages || '--'}</span>
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <p className="text-sm font-medium text-foreground w-32 text-center tabular-nums">
+          Page <span className="font-bold">{pageNumber || (numPages ? 1 : '--')}</span> of <span className="font-bold">{numPages || '--'}</span>
         </p>
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="icon"
           disabled={pageNumber >= numPages}
           onClick={nextPage}
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-on-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors shadow-sm"
+          className="h-10 w-10 rounded-full shadow-sm"
         >
-          <span className="material-symbols-outlined">chevron_right</span>
-        </button>
+          <ChevronRight className="h-5 w-5" />
+        </Button>
       </div>
     </div>
   );

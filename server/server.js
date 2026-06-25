@@ -36,7 +36,7 @@ const aiRoutes = require('./routes/ai.routes');
 const reportRoutes = require('./routes/report.routes');
 const borrowRoutes = require('./routes/borrow.routes');
 const fineRoutes = require('./routes/fine.routes');
-
+const configRoutes = require('./routes/config.routes');
 
 // // -----------s3 route---------------------------
 // const s3 = require("./config/s3");
@@ -51,6 +51,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/borrow', borrowRoutes);
 app.use('/api/fines', fineRoutes);
+app.use('/api/config', configRoutes);
 
 
 // ─── Health Check ────────────────────────────────────────────────────────────

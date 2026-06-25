@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getMembers, createMember, updateMemberStatus } from '../../services/memberService';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Search, Plus, User, MoreVertical, Eye, Ban, CheckCircle2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const MemberList = () => {
   const navigate = useNavigate();
@@ -86,208 +96,235 @@ const MemberList = () => {
 
   if (!isAuthorized) {
     return (
-      <div className="max-w-content-max-width mx-auto px-page-padding py-4xl">
-        <div className="p-4 bg-error-container text-on-error-container rounded-lg">
-          You are not authorized to view this page. Please log in as an Admin or Librarian.
-        </div>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+        <Alert variant="destructive">
+          <Ban className="h-4 w-4" />
+          <AlertTitle>Unauthorized</AlertTitle>
+          <AlertDescription>You are not authorized to view this page. Please log in as an Admin or Librarian.</AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
-    <div className="max-w-content-max-width mx-auto px-page-padding py-4xl w-full">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 w-full">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-4xl gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
         <div>
-          <h1 className="font-display-4xl text-display-4xl text-on-surface mb-2">Members</h1>
-          <p className="font-body-base text-body-base text-text-secondary">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Members</h1>
+          <p className="text-muted-foreground">
             Manage library members and their circulation status.
-            <span className="font-semibold text-on-surface ml-1">{totalCount} total</span>
+            <span className="font-semibold text-foreground ml-1">{totalCount} total</span>
           </p>
         </div>
-        <button
-          onClick={() => setOpenAddDialog(true)}
-          className="bg-primary text-on-primary font-body-sm text-body-sm px-6 py-2.5 rounded-lg hover:opacity-90 active:scale-[0.97] transition-all flex items-center justify-center space-x-2"
-        >
-          <span className="material-symbols-outlined text-sm">add</span>
-          <span className="font-semibold">Register Member</span>
-        </button>
+        <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Register Member
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Register New Member</DialogTitle>
+            </DialogHeader>
+            {addError && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertDescription>{addError}</AlertDescription>
+              </Alert>
+            )}
+            <form onSubmit={handleAddMemberSubmit} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  required
+                  value={newMember.name}
+                  onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                  placeholder="John Doe"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={newMember.email}
+                  onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                  placeholder="john@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={newMember.password}
+                  onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={newMember.phone}
+                  onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                  placeholder="+1 (555) 000-0000"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={() => setOpenAddDialog(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={adding}>
+                  {adding ? 'Registering...' : 'Register Member'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {error && (
-        <div className="p-4 bg-error-container text-on-error-container rounded-lg mb-4">{error}</div>
+        <Alert variant="destructive" className="mb-6">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* Search Bar */}
-      <div className="bg-bg-surface shadow-sm border border-border-default rounded-xl p-4 mb-xl flex flex-col lg:flex-row justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm">search</span>
-          <input
-            className="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-border-default rounded-md font-body-sm text-body-sm focus:outline-none focus:border-primary transition-all placeholder-text-tertiary"
-            placeholder="Search by name, email, or Membership ID..."
-            type="text"
-            value={search}
-            onChange={handleSearchChange}
-          />
-        </div>
-      </div>
+      <Card className="mb-8">
+        <CardContent className="p-4 flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9 w-full md:max-w-md"
+              placeholder="Search by name, email, or Membership ID..."
+              value={search}
+              onChange={handleSearchChange}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Data Table */}
-      <div className="bg-bg-surface shadow-sm border border-border-default rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border-default bg-surface-container-lowest">
-                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-card-padding font-semibold">Member</th>
-                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-4 font-semibold hidden md:table-cell">Membership ID</th>
-                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-4 font-semibold">Status</th>
-                <th className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest py-3 px-4 font-semibold hidden lg:table-cell">Joined</th>
-                <th className="py-3 px-card-padding text-right"></th>
-              </tr>
-            </thead>
-            <tbody className="font-body-sm text-body-sm divide-y divide-border-subtle">
-              {loading ? (
-                <tr><td colSpan="5" className="text-center py-8 text-text-secondary">Loading members...</td></tr>
-              ) : members.length === 0 ? (
-                <tr><td colSpan="5" className="text-center py-8 text-text-secondary">No members found.</td></tr>
-              ) : (
-                members.map((member) => (
-                  <tr
-                    key={member.id}
-                    className="group hover:bg-bg-hover transition-colors cursor-pointer"
-                    onClick={() => navigate(`/members/${member.id}`)}
-                  >
-                    <td className="py-3 pl-card-padding pr-4">
-                      <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary-container text-on-primary-container font-headline-sm text-headline-sm shrink-0 overflow-hidden">
-                            {member.name.charAt(0).toUpperCase()}
-                          </div>
-                        <div>
-                          <p className="font-semibold text-on-surface">{member.name}</p>
-                          <p className="text-text-secondary text-xs">{member.email}</p>
-                        </div>
+      <Card className="overflow-hidden">
+        <Table>
+          <TableHeader className="bg-muted/50">
+            <TableRow>
+              <TableHead className="w-[300px] font-semibold text-xs uppercase tracking-wider">Member</TableHead>
+              <TableHead className="font-semibold text-xs uppercase tracking-wider hidden md:table-cell">Membership ID</TableHead>
+              <TableHead className="font-semibold text-xs uppercase tracking-wider">Status</TableHead>
+              <TableHead className="font-semibold text-xs uppercase tracking-wider hidden lg:table-cell">Joined</TableHead>
+              <TableHead className="text-right"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  Loading members...
+                </TableCell>
+              </TableRow>
+            ) : members.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No members found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              members.map((member) => (
+                <TableRow
+                  key={member.id}
+                  className="cursor-pointer group"
+                  onClick={() => navigate(`/members/${member.id}`)}
+                >
+                  <TableCell>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary font-bold shrink-0">
+                        {member.name.charAt(0).toUpperCase()}
                       </div>
-                    </td>
-                    <td className="py-3 px-4 hidden md:table-cell">
-                      <span className="font-code-mono text-code-mono text-text-secondary bg-surface-container-low px-2 py-1 rounded">
-                        {member.membershipId || '—'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                        member.status === 'active' ? 'bg-tertiary-fixed text-on-tertiary-fixed' :
-                        member.status === 'suspended' ? 'bg-error-container text-on-error-container' :
-                        'bg-secondary-fixed text-on-secondary-fixed'
-                      }`}>
-                        {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-text-secondary hidden lg:table-cell">
-                      {new Date(member.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                    </td>
-                    <td className="py-3 pr-card-padding text-right">
-                      <div className="flex items-center justify-end space-x-1">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); navigate(`/members/${member.id}`); }}
-                          className="p-1.5 rounded-md hover:bg-surface-variant text-text-secondary hover:text-primary transition-colors"
-                          title="View Profile"
-                        >
-                          <span className="material-symbols-outlined text-sm">visibility</span>
-                        </button>
+                      <div>
+                        <p className="font-semibold text-foreground">{member.name}</p>
+                        <p className="text-muted-foreground text-sm">{member.email}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell font-mono text-sm">
+                    {member.membershipId || '—'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={member.status === 'active' ? 'default' : member.status === 'suspended' ? 'destructive' : 'secondary'}>
+                      {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground hidden lg:table-cell">
+                    {new Date(member.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/members/${member.id}`); }}>
+                          <Eye className="mr-2 h-4 w-4" /> View Profile
+                        </DropdownMenuItem>
                         {currentUser.role === 'admin' && (
-                          <button
+                          <DropdownMenuItem 
                             onClick={(e) => { e.stopPropagation(); handleToggleStatus(member.id, member.status); }}
-                            className={`p-1.5 rounded-md hover:bg-surface-variant transition-colors ${member.status === 'active' ? 'text-error' : 'text-tertiary'}`}
-                            title={member.status === 'active' ? 'Suspend' : 'Activate'}
+                            className={member.status === 'active' ? 'text-destructive focus:text-destructive' : ''}
                           >
-                            <span className="material-symbols-outlined text-sm">
-                              {member.status === 'active' ? 'block' : 'check_circle'}
-                            </span>
-                          </button>
+                            {member.status === 'active' ? (
+                              <><Ban className="mr-2 h-4 w-4" /> Suspend Member</>
+                            ) : (
+                              <><CheckCircle2 className="mr-2 h-4 w-4" /> Activate Member</>
+                            )}
+                          </DropdownMenuItem>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
 
         {/* Pagination */}
-        <div className="px-card-padding py-3 border-t border-border-default bg-surface-container-lowest flex items-center justify-between">
-          <p className="font-body-sm text-body-sm text-text-secondary">
-            Showing <span className="font-medium text-on-surface">{totalCount === 0 ? 0 : page * rowsPerPage + 1}</span>
-            {' '}to <span className="font-medium text-on-surface">{Math.min((page + 1) * rowsPerPage, totalCount)}</span>
-            {' '}of <span className="font-medium text-on-surface">{totalCount}</span> members
+        <div className="px-6 py-4 border-t bg-muted/20 flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-medium text-foreground">{totalCount === 0 ? 0 : page * rowsPerPage + 1}</span>
+            {' '}to <span className="font-medium text-foreground">{Math.min((page + 1) * rowsPerPage, totalCount)}</span>
+            {' '}of <span className="font-medium text-foreground">{totalCount}</span> members
           </p>
           <div className="flex space-x-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0}
-              className="px-3 py-1.5 border border-border-default rounded-md text-text-secondary hover:bg-bg-hover disabled:opacity-50 bg-bg-surface font-body-sm text-body-sm transition-colors"
-            >Previous</button>
-            <button
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage(page + 1)}
               disabled={(page + 1) * rowsPerPage >= totalCount}
-              className="px-3 py-1.5 border border-border-default rounded-md text-on-surface hover:bg-bg-hover disabled:opacity-50 bg-bg-surface font-body-sm text-body-sm transition-colors"
-            >Next</button>
+            >
+              Next
+            </Button>
           </div>
         </div>
-      </div>
-
-      {/* Add Member Modal */}
-      {openAddDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-surface rounded-xl p-6 w-full max-w-md shadow-xl border border-border-default">
-            <h2 className="font-headline-2xl text-headline-2xl text-on-surface mb-4">Register New Member</h2>
-            {addError && (
-              <div className="p-3 bg-error-container text-on-error-container rounded-lg mb-4 text-sm">{addError}</div>
-            )}
-            <form onSubmit={handleAddMemberSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-label-xs font-label-xs uppercase tracking-widest text-text-secondary mb-1">Full Name *</label>
-                  <input type="text" required value={newMember.name}
-                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary outline-none bg-surface"
-                    placeholder="e.g. Jane Smith" />
-                </div>
-                <div>
-                  <label className="block text-label-xs font-label-xs uppercase tracking-widest text-text-secondary mb-1">Email *</label>
-                  <input type="email" required value={newMember.email}
-                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
-                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary outline-none bg-surface"
-                    placeholder="jane@example.com" />
-                </div>
-                <div>
-                  <label className="block text-label-xs font-label-xs uppercase tracking-widest text-text-secondary mb-1">Password *</label>
-                  <input type="password" required value={newMember.password}
-                    onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
-                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary outline-none bg-surface"
-                    placeholder="Min. 8 characters" />
-                </div>
-                <div>
-                  <label className="block text-label-xs font-label-xs uppercase tracking-widest text-text-secondary mb-1">Phone</label>
-                  <input type="tel" value={newMember.phone}
-                    onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
-                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:border-primary outline-none bg-surface"
-                    placeholder="9876543210" />
-                </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <button type="button" disabled={adding}
-                    onClick={() => { setOpenAddDialog(false); setAddError(''); setNewMember({ name: '', email: '', password: '', phone: '' }); }}
-                    className="px-4 py-2 text-text-secondary hover:bg-bg-hover rounded-lg text-sm transition-colors">Cancel</button>
-                  <button type="submit" disabled={adding}
-                    className="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm hover:opacity-90 transition-all disabled:opacity-60">
-                    {adding ? 'Registering...' : 'Register Member'}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      </Card>
     </div>
   );
 };

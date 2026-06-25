@@ -1,6 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getFines, getFineSummary, getMemberFines, payFine, waiveFine } from '../../services/fineService';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Card, CardContent } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Skeleton } from '../../components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
+import { Textarea } from "../../components/ui/textarea";
+import { 
+  AlertCircle, 
+  Download,
+  IndianRupee,
+  Clock,
+  HandHeart,
+  ChevronDown,
+  Info,
+  Check,
+  X
+} from 'lucide-react';
 
 const FineManagement = () => {
   const { user } = useAuth();
@@ -23,7 +49,7 @@ const FineManagement = () => {
       if (isMember) {
         const res = await getMemberFines(user.id);
         setFines(res.data);
-        setSummary([]); // Members don't see total library summary
+        setSummary([]);
       } else {
         const statusParam = filter === 'All Statuses' ? '' : filter.toLowerCase();
         const [finesRes, summaryRes] = await Promise.all([
@@ -81,229 +107,276 @@ const FineManagement = () => {
   const waivedCount = summary.find(s => s.status === 'waived')?._count.id || 0;
 
   return (
-    <div className="flex-1 w-full max-w-content-max-width mx-auto p-page-padding">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-10 max-w-7xl mx-auto">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-lg mb-4xl">
-        <div>
-          <h2 className="font-display-3xl text-display-3xl text-on-surface mb-sm">Fine Management</h2>
-          <p className="font-body-base text-body-base text-text-secondary">Track, collect, and manage member financial obligations.</p>
-        </div>
-        <div className="flex gap-md">
-          <button className="flex items-center gap-xs px-md py-sm rounded-lg border border-border-default text-primary bg-bg-surface hover:-translate-y-[2px] hover:shadow-md transition-all duration-200 font-body-sm text-body-sm">
-            <span className="material-symbols-outlined text-[18px]">download</span> Export
-          </button>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-2">
+        <PageHeader 
+            title="Fine Management" 
+            description={isMember ? "Track and manage your financial obligations." : "Track, collect, and manage member financial obligations."}
+            className="mb-0"
+        />
+        {!isMember && (
+          <Button variant="outline" className="shadow-sm">
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
+        )}
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* KPI Bento Grid - Only for Admin/Librarian */}
       {!isMember && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-xl mb-4xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Total Collected */}
-          <div className="bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle hover:-translate-y-[3px] hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-lg opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-6xl text-tertiary-container">account_balance</span>
+          <Card className="relative overflow-hidden group border-muted-foreground/20">
+            <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <IndianRupee className="h-32 w-32" />
             </div>
-            <h3 className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest mb-sm">Total Collected</h3>
-            <div className="flex items-baseline gap-sm mb-lg">
-              <span className="font-display-4xl text-display-4xl text-on-surface">Rs {paidAmount}</span>
-              <span className="font-body-sm text-body-sm text-tertiary-container flex items-center"><span className="material-symbols-outlined text-[14px]">arrow_upward</span> Lifetime</span>
-            </div>
-            <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
-              <div className="bg-tertiary-container h-full rounded-full w-[100%]"></div>
-            </div>
-          </div>
+            <CardContent className="p-6">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Total Collected</h3>
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className="text-4xl font-bold text-foreground">₹{paidAmount}</span>
+                <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Lifetime</span>
+              </div>
+              <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full w-full"></div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Pending Fines */}
-          <div className="bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle hover:-translate-y-[3px] hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-lg opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-6xl text-secondary-container">pending_actions</span>
+          <Card className="relative overflow-hidden group border-muted-foreground/20">
+            <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity text-destructive">
+              <Clock className="h-32 w-32" />
             </div>
-            <h3 className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest mb-sm">Pending Fines</h3>
-            <div className="flex items-baseline gap-sm mb-lg">
-              <span className="font-display-4xl text-display-4xl text-on-surface">Rs {pendingAmount}</span>
-              <span className="font-body-sm text-body-sm text-error flex items-center">Action Required</span>
-            </div>
-            <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
-              <div className="bg-secondary-container h-full rounded-full w-[45%]"></div>
-            </div>
-          </div>
+            <CardContent className="p-6">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Pending Fines</h3>
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className="text-4xl font-bold text-foreground">₹{pendingAmount}</span>
+                <span className="text-sm font-medium text-destructive">Action Required</span>
+              </div>
+              <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+                <div className="bg-destructive h-full rounded-full w-[45%]"></div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Waived */}
-          <div className="bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle hover:-translate-y-[3px] hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-lg opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-6xl text-text-tertiary">waving_hand</span>
+          <Card className="relative overflow-hidden group border-muted-foreground/20">
+            <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <HandHeart className="h-32 w-32" />
             </div>
-            <h3 className="font-label-xs text-label-xs text-text-secondary uppercase tracking-widest mb-sm">Waived (YTD)</h3>
-            <div className="flex items-baseline gap-sm mb-lg">
-              <span className="font-display-4xl text-display-4xl text-on-surface">Rs {waivedAmount}</span>
-              <span className="font-body-sm text-body-sm text-text-tertiary flex items-center">{waivedCount} items</span>
-            </div>
-            <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
-              <div className="bg-outline-variant h-full rounded-full w-[15%]"></div>
-            </div>
-          </div>
+            <CardContent className="p-6">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Waived (YTD)</h3>
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className="text-4xl font-bold text-foreground">₹{waivedAmount}</span>
+                <span className="text-sm font-medium text-muted-foreground">{waivedCount} items</span>
+              </div>
+              <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+                <div className="bg-muted-foreground/30 h-full rounded-full w-[15%]"></div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {error && <div className="p-4 bg-error-container text-on-error-container rounded-lg mb-6 flex items-center gap-2">
-        <span className="material-symbols-outlined">error</span>
-        {error}
-      </div>}
-
       {/* Detailed Table Section */}
-      <div className="bg-bg-surface rounded-xl shadow-sm border border-border-subtle overflow-hidden">
-        <div className="px-card-padding py-lg border-b border-border-subtle flex flex-col sm:flex-row justify-between items-start sm:items-center gap-md">
-          <h3 className="font-headline-lg text-headline-lg text-on-surface">Recent Fine Activity</h3>
-          <div className="flex items-center gap-sm">
+      <Card>
+        <div className="px-6 py-5 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h3 className="text-lg font-semibold text-foreground">Recent Fine Activity</h3>
+          {!isMember && (
             <div className="relative">
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="appearance-none bg-bg-page border border-border-default rounded-md pl-md pr-xl py-xs font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                className="appearance-none flex h-9 w-[160px] items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="All Statuses">All Statuses</option>
                 <option value="Pending">Pending</option>
                 <option value="Paid">Paid</option>
                 <option value="Waived">Waived</option>
               </select>
-              <span className="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none text-[18px]">expand_more</span>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             </div>
-          </div>
+          )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border-subtle bg-surface-bright">
-                <th className="px-card-padding py-md font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Member ID & Name</th>
-                <th className="px-card-padding py-md font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Book & Reason</th>
-                <th className="px-card-padding py-md font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Amount</th>
-                <th className="px-card-padding py-md font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Status</th>
-                <th className="px-card-padding py-md font-label-xs text-label-xs text-text-secondary uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="font-body-sm text-body-sm">
-              {loading ? (
-                <tr><td colSpan="5" className="text-center py-20">Loading fines...</td></tr>
-              ) : fines.length === 0 ? (
-                <tr><td colSpan="5" className="text-center py-20 text-text-tertiary">No fine records found.</td></tr>
-              ) : fines.map(fine => (
-                <tr key={fine.id} className="border-b border-border-subtle hover:bg-bg-hover transition-colors">
-                  <td className="px-card-padding py-md">
-                    <div className="flex items-center gap-md">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-headline-sm text-headline-sm shrink-0 ${fine.status === 'paid' ? 'bg-tertiary-container text-on-tertiary-container' :
-                        fine.status === 'waived' ? 'bg-surface-variant text-on-surface-variant' :
-                          'bg-primary-container text-on-primary-container'
-                        }`}>
-                        {fine.member.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-on-surface">{fine.member.name}</div>
-                        <div className="font-code-mono text-[10px] text-text-tertiary uppercase">{fine.member.membershipId}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-card-padding py-md">
-                    <div className="text-on-surface font-medium truncate max-w-[200px]">{fine.borrow.book.title}</div>
-                    <div className="text-[11px] text-text-secondary">Overdue {fine.daysOverdue} days</div>
-                  </td>
-                  <td className={`px-card-padding py-md font-bold ${fine.status === 'waived' ? 'line-through text-text-tertiary' : 'text-on-surface'}`}>
-                    Rs {fine.amount}
-                  </td>
-                  <td className="px-card-padding py-md">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-label-xs text-[10px] font-bold uppercase tracking-wider ${fine.status === 'paid' ? 'bg-tertiary-fixed text-on-tertiary-fixed' :
-                      fine.status === 'waived' ? 'bg-surface-variant text-on-surface-variant' :
-                        'bg-secondary-fixed text-on-secondary-fixed'
-                      }`}>
-                      {fine.status}
-                    </span>
-                  </td>
-                  <td className="px-card-padding py-md text-right">
-                    {fine.status === 'pending' ? (
-                      <div className="flex justify-end gap-2 text-xs">
-                        {isMember ? (
-                          <span className="text-warning italic font-medium flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[14px]">info</span>
-                            Visit Desk to Pay
-                          </span>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => handlePay(fine.id)}
-                              className="px-3 py-1 rounded-md text-primary hover:bg-primary-container/20 transition-colors font-bold border border-primary/20"
-                            >
-                              Mark Paid
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedFineId(fine.id);
-                                setShowWaiveModal(true);
-                              }}
-                              className="px-3 py-1 rounded-md text-text-secondary hover:bg-bg-hover transition-colors border border-border-default md:block hidden"
-                            >
-                              Waive
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-text-tertiary italic text-xs">Resolved</span>
-                    )}
-                  </td>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-muted/50 border-b">
+                  {!isMember && <th className="px-6 py-4 font-medium text-muted-foreground uppercase tracking-wider text-[11px]">Member ID & Name</th>}
+                  <th className="px-6 py-4 font-medium text-muted-foreground uppercase tracking-wider text-[11px]">Book & Details</th>
+                  <th className="px-6 py-4 font-medium text-muted-foreground uppercase tracking-wider text-[11px]">Amount</th>
+                  <th className="px-6 py-4 font-medium text-muted-foreground uppercase tracking-wider text-[11px]">Status</th>
+                  <th className="px-6 py-4 font-medium text-muted-foreground uppercase tracking-wider text-[11px] text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y">
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      {!isMember && (
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                            <div>
+                              <Skeleton className="h-4 w-32 mb-2" />
+                              <Skeleton className="h-3 w-20" />
+                            </div>
+                          </div>
+                        </td>
+                      )}
+                      <td className="px-6 py-4">
+                        <Skeleton className="h-4 w-48 mb-2" />
+                        <Skeleton className="h-3 w-32" />
+                      </td>
+                      <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></td>
+                      <td className="px-6 py-4 text-right">
+                        <Skeleton className="h-8 w-24 ml-auto" />
+                      </td>
+                    </tr>
+                  ))
+                ) : fines.length === 0 ? (
+                  <tr>
+                    <td colSpan={isMember ? 4 : 5} className="text-center py-16">
+                      <div className="flex flex-col items-center justify-center">
+                        <Check className="h-10 w-10 text-emerald-500 mb-4 bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-full" />
+                        <h3 className="text-lg font-medium text-foreground">No fines found</h3>
+                        <p className="text-sm text-muted-foreground mt-1">There are no fine records matching the current criteria.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : fines.map(fine => {
+                    
+                  let statusVariant = "secondary";
+                  let statusClass = "";
+                  
+                  if (fine.status === 'paid') {
+                      statusClass = "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400";
+                  } else if (fine.status === 'pending') {
+                      statusVariant = "destructive";
+                  }
 
-        <div className="px-card-padding py-md border-t border-border-subtle bg-bg-surface flex justify-between items-center text-body-sm text-text-secondary">
-          <span>{fines.length} entries found</span>
-          <div className="flex gap-xs">
-            <button className="p-1 rounded hover:bg-primary-container/20 text-text-tertiary disabled:opacity-30" disabled><span className="material-symbols-outlined text-[18px]">chevron_left</span></button>
-            <button className="w-8 h-8 rounded bg-primary text-on-primary font-bold text-xs transition-all shadow-sm">1</button>
-            <button className="p-1 rounded hover:bg-primary-container/20 text-text-tertiary disabled:opacity-30" disabled><span className="material-symbols-outlined text-[18px]">chevron_right</span></button>
+                  return (
+                    <tr key={fine.id} className="hover:bg-muted/50 transition-colors group">
+                      {!isMember && (
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs shrink-0 ${
+                              fine.status === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                              fine.status === 'waived' ? 'bg-muted text-muted-foreground' :
+                              'bg-destructive/10 text-destructive'
+                            }`}>
+                              {fine.member.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-foreground group-hover:text-primary transition-colors">{fine.member.name}</div>
+                              <div className="font-mono text-xs text-muted-foreground mt-0.5">{fine.member.membershipId}</div>
+                            </div>
+                          </div>
+                        </td>
+                      )}
+                      <td className="px-6 py-4">
+                        <div className="text-foreground font-medium truncate max-w-[250px] group-hover:text-primary transition-colors">{fine.borrow.book.title}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">Overdue {fine.daysOverdue} days</div>
+                      </td>
+                      <td className={`px-6 py-4 font-bold text-base ${fine.status === 'waived' ? 'line-through text-muted-foreground font-normal' : 'text-foreground'}`}>
+                        ₹{fine.amount}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge 
+                            variant={statusVariant} 
+                            className={statusClass}
+                        >
+                          {fine.status}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {fine.status === 'pending' ? (
+                          <div className="flex justify-end gap-2">
+                            {isMember ? (
+                              <span className="text-amber-600 dark:text-amber-500 italic font-medium flex items-center gap-1.5 text-xs bg-amber-50 dark:bg-amber-950/50 px-3 py-1.5 rounded-full">
+                                <Info className="h-3.5 w-3.5" />
+                                Visit Desk to Pay
+                              </span>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handlePay(fine.id)}
+                                >
+                                  Mark Paid
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="hidden md:flex"
+                                  onClick={() => {
+                                    setSelectedFineId(fine.id);
+                                    setShowWaiveModal(true);
+                                  }}
+                                >
+                                  Waive
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground italic text-xs flex justify-end items-center gap-1">
+                            {fine.status === 'waived' ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                            Resolved
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Waive Modal */}
-      {showWaiveModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl border border-border-default transform transition-all scale-100">
-            <div className="flex items-center gap-3 mb-4 text-warning">
-              <span className="material-symbols-outlined text-3xl">warning</span>
-              <h2 className="font-display-xl text-headline-xl">Waive Fine</h2>
+      <Dialog open={showWaiveModal} onOpenChange={setShowWaiveModal}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Waive Fine</DialogTitle>
+                <DialogDescription>
+                    Please provide a reason for waiving this fine. This action will be logged.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="my-2">
+                <Textarea
+                    placeholder="Enter reason..."
+                    value={waiveReason}
+                    onChange={(e) => setWaiveReason(e.target.value)}
+                    className="min-h-[100px]"
+                />
             </div>
-            <p className="text-text-secondary mb-6 text-sm leading-relaxed">
-              Are you sure you want to waive this fine? This action is permanent and requires a valid reason for auditing purposes.
-            </p>
-            <textarea
-              className="w-full border border-border-default rounded-xl p-4 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none min-h-[120px] transition-all bg-bg-page"
-              placeholder="Enter mandatory reason..."
-              value={waiveReason}
-              onChange={(e) => setWaiveReason(e.target.value)}
-            />
-            <div className="flex justify-end gap-3 mt-8">
-              <button
-                onClick={() => {
-                  setShowWaiveModal(false);
-                  setWaiveReason('');
-                }}
-                className="px-6 py-2.5 text-text-secondary hover:bg-bg-hover rounded-xl transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={!waiveReason}
-                onClick={handleWaive}
-                className="px-8 py-2.5 bg-primary text-on-primary rounded-xl font-bold hover:shadow-brand-glow disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Confirm Waive
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                    variant="outline"
+                    onClick={() => setShowWaiveModal(false)}
+                >
+                    Cancel
+                </Button>
+                <Button
+                    disabled={!waiveReason}
+                    onClick={handleWaive}
+                >
+                    Confirm Waive
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

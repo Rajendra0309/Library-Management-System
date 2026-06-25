@@ -2,8 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { getDashboardData } from '../services/reportService';
 import { getActiveBorrows } from '../services/borrowService';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Skeleton } from '../components/ui/skeleton';
+import { 
+  BookOpen, 
+  Users, 
+  ArrowRightLeft, 
+  Banknote, 
+  TrendingUp, 
+  TrendingDown, 
+  AlertTriangle,
+  MoreHorizontal
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const COLORS = ['#5B4FE8', '#20B2AA', '#fea619', '#EF4444', '#8B5CF6'];
+const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 const AdminDashboard = () => {
   const [report, setReport] = useState(null);
@@ -29,233 +46,313 @@ const AdminDashboard = () => {
   }, []);
 
   if (loading) {
-      return (
-          <div className="p-page-padding max-w-[1360px] mx-auto flex items-center justify-center min-h-[60vh]">
-              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
-      );
+    return (
+      <div className="space-y-6">
+        <PageHeader 
+          title="Dashboard Overview" 
+          description="Real-time metrics and recent activity for the LibraVault ecosystem."
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <Card className="lg:col-span-8 h-[400px]">
+             <CardHeader><Skeleton className="h-6 w-40" /></CardHeader>
+             <CardContent><Skeleton className="h-full w-full" /></CardContent>
+          </Card>
+          <Card className="lg:col-span-4 h-[400px]">
+             <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+             <CardContent><Skeleton className="h-full w-full rounded-full" /></CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   // Format genre stats for pie chart
   const genreData = report?.genreStats ? Object.entries(report.genreStats).map(([name, value]) => ({ name, value })) : [];
 
   return (
-    <div className="p-page-padding max-w-[1360px] mx-auto space-y-4xl">
-      {/* Header */}
-      <div>
-        <h2 className="font-display-4xl text-display-4xl text-on-surface">Dashboard Overview</h2>
-        <p className="font-body-base text-body-base text-text-secondary mt-xs">Real-time metrics and recent activity for the LibraVault ecosystem.</p>
-      </div>
+    <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+      <PageHeader 
+        title="Dashboard Overview" 
+        description="Real-time metrics and recent activity for the LibraVault ecosystem."
+      />
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-xl">
-        <div className="bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle hover-lift relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-lg">
-            <div>
-              <p className="font-label-xs text-label-xs text-text-secondary uppercase">Total Books</p>
-              <h3 className="font-display-3xl text-display-3xl text-on-surface mt-xs">{report?.totalBooks || 0}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Books</CardTitle>
+            <div className="w-8 h-8 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <BookOpen className="w-4 h-4" />
             </div>
-            <div className="w-10 h-10 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>menu_book</span>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold tracking-tight text-foreground">{report?.totalBooks || 0}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 border-transparent rounded-sm px-1 font-mono">
+                <TrendingUp className="w-3 h-3 mr-1" /> +5.2%
+              </Badge>
+              <span className="text-xs text-muted-foreground">vs last month</span>
             </div>
-          </div>
-          <div className="flex items-center gap-sm">
-            <span className="inline-flex items-center gap-1 font-label-xs text-label-xs text-tertiary-container bg-tertiary-fixed-dim/20 px-2 py-1 rounded-full">
-              <span className="material-symbols-outlined text-[14px]">trending_up</span> +5.2%
-            </span>
-            <span className="font-body-sm text-body-sm text-text-tertiary">vs last month</span>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle hover-lift relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-lg">
-            <div>
-              <p className="font-label-xs text-label-xs text-text-secondary uppercase">Active Members</p>
-              <h3 className="font-display-3xl text-display-3xl text-on-surface mt-xs">{report?.totalMembers || 0}</h3>
+        <Card className="relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Members</CardTitle>
+            <div className="w-8 h-8 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <Users className="w-4 h-4" />
             </div>
-            <div className="w-10 h-10 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold tracking-tight text-foreground">{report?.totalMembers || 0}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 border-transparent rounded-sm px-1 font-mono">
+                <TrendingUp className="w-3 h-3 mr-1" /> +1.8%
+              </Badge>
+              <span className="text-xs text-muted-foreground">vs last month</span>
             </div>
-          </div>
-          <div className="flex items-center gap-sm">
-            <span className="inline-flex items-center gap-1 font-label-xs text-label-xs text-tertiary-container bg-tertiary-fixed-dim/20 px-2 py-1 rounded-full">
-              <span className="material-symbols-outlined text-[14px]">trending_up</span> +1.8%
-            </span>
-            <span className="font-body-sm text-body-sm text-text-tertiary">vs last month</span>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle hover-lift relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-lg">
-            <div>
-              <p className="font-label-xs text-label-xs text-text-secondary uppercase">Active Borrows</p>
-              <h3 className="font-display-3xl text-display-3xl text-on-surface mt-xs">{report?.activeBorrows || 0}</h3>
+        <Card className="relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent pointer-events-none" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Borrows</CardTitle>
+            <div className="w-8 h-8 rounded-md bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+              <ArrowRightLeft className="w-4 h-4" />
             </div>
-            <div className="w-10 h-10 rounded-lg bg-error-container text-error flex items-center justify-center">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>swap_horiz</span>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold tracking-tight text-foreground">{report?.activeBorrows || 0}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="bg-rose-100 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-400 border-transparent rounded-sm px-1 font-mono">
+                <TrendingDown className="w-3 h-3 mr-1" /> -2.4%
+              </Badge>
+              <span className="text-xs text-muted-foreground">vs last month</span>
             </div>
-          </div>
-          <div className="flex items-center gap-sm">
-            <span className="inline-flex items-center gap-1 font-label-xs text-label-xs text-error bg-error-container/50 px-2 py-1 rounded-full">
-              <span className="material-symbols-outlined text-[14px]">trending_down</span> -2.4%
-            </span>
-            <span className="font-body-sm text-body-sm text-text-tertiary">vs last month</span>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle hover-lift relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-lg">
-            <div>
-              <p className="font-label-xs text-label-xs text-text-secondary uppercase">Revenue (Fines)</p>
-              <h3 className="font-display-3xl text-display-3xl text-on-surface mt-xs">Rs {report?.totalFines || 0}</h3>
+        <Card className="relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Revenue (Fines)</CardTitle>
+            <div className="w-8 h-8 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Banknote className="w-4 h-4" />
             </div>
-            <div className="w-10 h-10 rounded-lg bg-[#fef3c7] text-[#f59e0b] flex items-center justify-center">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold tracking-tight text-foreground">₹ {report?.totalFines || 0}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 border-transparent rounded-sm px-1 font-mono">
+                <TrendingUp className="w-3 h-3 mr-1" /> +12.5%
+              </Badge>
+              <span className="text-xs text-muted-foreground">vs last month</span>
             </div>
-          </div>
-          <div className="flex items-center gap-sm">
-            <span className="inline-flex items-center gap-1 font-label-xs text-label-xs text-tertiary-container bg-tertiary-fixed-dim/20 px-2 py-1 rounded-full">
-              <span className="material-symbols-outlined text-[14px]">trending_up</span> +12.5%
-            </span>
-            <span className="font-body-sm text-body-sm text-text-tertiary">vs last month</span>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-xl">
-        <div className="lg:col-span-8 bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle flex flex-col">
-          <div className="flex justify-between items-center mb-lg">
-            <h3 className="font-headline-xl text-headline-xl text-on-surface">Borrowing Activity</h3>
-            <div className="flex gap-2">
-              <button className="px-md py-xs text-body-sm font-body-sm text-text-secondary hover:bg-bg-hover rounded-md transition-colors">1W</button>
-              <button className="px-md py-xs text-body-sm font-body-sm bg-surface-container-low text-primary rounded-md shadow-sm">1M</button>
-              <button className="px-md py-xs text-body-sm font-body-sm text-text-secondary hover:bg-bg-hover rounded-md transition-colors">1Y</button>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <Card className="lg:col-span-8 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between pb-6">
+            <div className="space-y-1">
+              <CardTitle>Borrowing Activity</CardTitle>
+              <CardDescription>Monthly borrowing trends across all categories</CardDescription>
             </div>
-          </div>
-          <div className="flex-1 relative min-h-[300px] w-full mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={report?.borrowingTrends || []}>
-                <defs>
-                  <linearGradient id="colorBorrows" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5B4FE8" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#5B4FE8" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" stroke="#8884d8" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#8884d8" fontSize={12} tickLine={false} axisLine={false} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                <Area type="monotone" dataKey="borrows" stroke="#5B4FE8" strokeWidth={3} fillOpacity={1} fill="url(#colorBorrows)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+            <div className="flex items-center bg-muted rounded-md p-1">
+              <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground">1W</Button>
+              <Button variant="secondary" size="sm" className="h-7 text-xs px-2 shadow-sm">1M</Button>
+              <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground">1Y</Button>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 pb-4">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={report?.borrowingTrends || []} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorBorrows" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dx={-10} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      borderRadius: '8px', 
+                      border: '1px solid hsl(var(--border))',
+                      backgroundColor: 'hsl(var(--background))', 
+                      color: 'hsl(var(--foreground))',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+                    }} 
+                  />
+                  <Area type="monotone" dataKey="borrows" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#colorBorrows)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="lg:col-span-4 bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle flex flex-col">
-          <div className="flex justify-between items-center mb-lg">
-            <h3 className="font-headline-xl text-headline-xl text-on-surface">Genre Distribution</h3>
-            <button className="text-text-secondary hover:text-primary transition-colors">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>more_horiz</span>
-            </button>
-          </div>
-          <div className="flex-1 relative min-h-[250px] w-full flex flex-col items-center justify-center">
+        <Card className="lg:col-span-4 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between pb-6">
+            <div className="space-y-1">
+              <CardTitle>Genre Distribution</CardTitle>
+              <CardDescription>Breakdown by category</CardDescription>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col items-center justify-center pb-6">
              {genreData.length > 0 ? (
                  <>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={genreData}
-                          innerRadius={60}
-                          outerRadius={80}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {genreData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex flex-wrap justify-center gap-2 mt-4">
+                    <div className="h-[220px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={genreData}
+                            innerRadius={70}
+                            outerRadius={95}
+                            paddingAngle={3}
+                            dataKey="value"
+                            stroke="hsl(var(--background))"
+                            strokeWidth={2}
+                          >
+                            {genreData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{ 
+                              borderRadius: '8px', 
+                              border: '1px solid hsl(var(--border))', 
+                              backgroundColor: 'hsl(var(--background))',
+                              color: 'hsl(var(--foreground))',
+                              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+                            }} 
+                            itemStyle={{ color: 'hsl(var(--foreground))' }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-3 mt-6">
                         {genreData.map((entry, index) => (
-                            <div key={entry.name} className="flex items-center gap-1 text-xs text-text-secondary">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                            <div key={entry.name} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                                 {entry.name}
                             </div>
                         ))}
                     </div>
                  </>
              ) : (
-                 <div className="text-text-tertiary text-sm">No genre data available</div>
+                 <div className="text-muted-foreground text-sm flex flex-col items-center justify-center h-full">
+                    <PieChart className="w-12 h-12 mb-2 text-muted-foreground/30" />
+                    No genre data available
+                 </div>
              )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-xl">
-        <div className="bg-bg-surface rounded-xl shadow-sm border border-border-subtle overflow-hidden flex flex-col">
-          <div className="p-card-padding border-b border-border-subtle flex justify-between items-center">
-            <h3 className="font-headline-xl text-headline-xl text-on-surface">Recent Borrows</h3>
-            <a className="text-primary font-body-sm text-body-sm hover:underline" href="/active-borrows">View All</a>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface-container-lowest border-b border-border-subtle">
-                  <th className="py-md px-lg font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Book Title</th>
-                  <th className="py-md px-lg font-label-xs text-label-xs text-text-secondary uppercase tracking-widest">Member ID</th>
-                  <th className="py-md px-lg font-label-xs text-label-xs text-text-secondary uppercase tracking-widest text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="font-body-sm text-body-sm divide-y divide-border-subtle">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <Card className="xl:col-span-2 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle>Recent Borrows</CardTitle>
+              <CardDescription>Latest borrowing activity</CardDescription>
+            </div>
+            <Button variant="link" asChild className="text-primary pr-0">
+              <Link to="/active-borrows">View All</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="pl-6">Book Title</TableHead>
+                  <TableHead>Member ID</TableHead>
+                  <TableHead className="text-right pr-6">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {recentBorrows.length > 0 ? recentBorrows.map((row) => (
-                  <tr key={row.id} className="hover:bg-bg-hover transition-colors group cursor-pointer">
-                    <td className="py-md px-lg">
-                      <div className="font-headline-lg text-headline-lg text-on-surface group-hover:text-primary transition-colors truncate max-w-[200px]">{row.book?.title}</div>
-                      <div className="text-text-tertiary">{row.book?.author}</div>
-                    </td>
-                    <td className="py-md px-lg font-code-mono text-code-mono text-text-secondary">{row.member?.membershipId}</td>
-                    <td className="py-md px-lg text-right">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full bg-surface-container-high text-primary font-label-xs text-label-xs">{row.status}</span>
-                    </td>
-                  </tr>
+                  <TableRow key={row.id} className="hover:bg-muted/50 cursor-pointer">
+                    <TableCell className="pl-6 py-3">
+                      <div className="font-medium text-foreground truncate max-w-[250px]">{row.book?.title}</div>
+                      <div className="text-xs text-muted-foreground">{row.book?.author}</div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground py-3">
+                      {row.member?.membershipId}
+                    </TableCell>
+                    <TableCell className="text-right pr-6 py-3">
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-transparent font-normal">
+                        {row.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
                 )) : (
-                    <tr>
-                        <td colSpan="3" className="py-8 text-center text-text-tertiary">No recent borrows</td>
-                    </tr>
+                  <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                      No recent borrows
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
-        <div className="bg-bg-surface p-card-padding rounded-xl shadow-sm border border-border-subtle flex flex-col">
-          <div className="flex justify-between items-center mb-lg">
-            <h3 className="font-headline-xl text-headline-xl text-on-surface">Overdue Alerts</h3>
-            <span className="bg-error-container text-error font-label-xs text-label-xs px-2 py-1 rounded-full">{report?.overdueBorrows || 0} Critical</span>
-          </div>
-          <div className="space-y-md flex-1 overflow-y-auto pr-sm custom-scrollbar">
-            {/* Keeping dummy alerts as we don't have an endpoint for specific overdue alerts yet, but updated to look active */}
-            <div className="flex items-start gap-md p-md rounded-lg border border-error/20 bg-error-container/10 hover:bg-error-container/20 transition-colors">
-              <div className="w-10 h-10 rounded-full bg-error-container flex items-center justify-center shrink-0 text-error">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-headline-lg text-headline-lg text-on-surface truncate">1984</p>
-                <p className="font-body-sm text-body-sm text-text-secondary">MBR-2210 · George Orwell</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="font-label-xs text-label-xs text-error font-bold">14 Days Late</p>
+        <Card className="xl:col-span-1 flex flex-col border-rose-200 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/10">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <div className="space-y-1">
+              <CardTitle className="text-rose-900 dark:text-rose-400">Overdue Alerts</CardTitle>
+              <CardDescription className="text-rose-600/70 dark:text-rose-400/70">Requires immediate attention</CardDescription>
+            </div>
+            <Badge variant="destructive" className="bg-rose-500">
+              {report?.overdueBorrows || 0} Critical
+            </Badge>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col">
+            <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+              {/* Dummy alert to show styling */}
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-rose-200 dark:border-rose-800/50 bg-white dark:bg-rose-950/30 hover:border-rose-300 dark:hover:border-rose-700/50 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-foreground truncate">1984</p>
+                  <p className="text-xs text-muted-foreground">MBR-2210 · George Orwell</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-bold text-rose-600 dark:text-rose-400">14 Days Late</p>
+                </div>
               </div>
             </div>
-          </div>
-          <button className="w-full mt-md py-sm border border-border-default rounded-lg text-primary font-body-sm text-body-sm hover:bg-surface-container-low transition-colors">
+            <Button variant="outline" className="w-full mt-4 border-rose-200 text-rose-700 hover:bg-rose-100 dark:border-rose-800/50 dark:text-rose-400 dark:hover:bg-rose-900/30">
               Notify All Overdue
-          </button>
-        </div>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

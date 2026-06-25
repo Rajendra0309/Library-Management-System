@@ -1,8 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import theme from './theme';
-import { AuthProvider } from './context/AuthContext';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
@@ -20,13 +18,11 @@ import AddBook from './pages/Books/AddBook';
 import EditBook from './pages/Books/EditBook';
 import MemberList from './pages/Members/MemberList';
 import MemberProfile from './pages/Members/MemberProfile';
-import MemberHistory from './pages/Members/MemberHistory';
 import MemberDashboard from './pages/Members/MemberDashboard';
 import ReservationList from './pages/Reservations/ReservationList';
 import ActiveBorrows from './pages/Borrowing/ActiveBorrows';
 import IssueBook from './pages/Borrowing/IssueBook';
 import ReturnBook from './pages/Borrowing/ReturnBook';
-import FineList from './pages/Fines/FineList';
 import FineManagement from './pages/Fines/FineManagement';
 import FineDetail from './pages/Fines/FineDetail';
 import Reports from './pages/Reports/Reports';
@@ -38,54 +34,63 @@ import StaffList from './pages/Staff/StaffList';
 import AddStaff from './pages/Staff/AddStaff';
 import EditStaff from './pages/Staff/EditStaff';
 
+const DashboardRouter = () => {
+  const { user } = useAuth();
+  if (!user) return null;
+  if (user.role === 'member') {
+    return <MemberDashboard />;
+  }
+  return <AdminDashboard />;
+};
+
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            {/* Protected: any authenticated user */}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<Layout />}>
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="books" element={<BookCatalog />} />
-                <Route path="books/:id" element={<BookDetail />} />
+          {/* Protected: any authenticated user */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              <Route path="dashboard" element={<DashboardRouter />} />
+              <Route path="books" element={<BookCatalog />} />
+              <Route path="books/:id" element={<BookDetail />} />
+              <Route path="settings" element={<Settings />} />
+
+              {/* Management routes: admin and librarian */}
+              <Route element={<ProtectedRoute roles={['admin', 'librarian']} />}>
                 <Route path="books/add" element={<AddBook />} />
                 <Route path="books/edit/:id" element={<EditBook />} />
                 <Route path="member-dashboard" element={<MemberDashboard />} />
                 <Route path="members" element={<MemberList />} />
                 <Route path="members/:id" element={<MemberProfile />} />
-                <Route path="members/:id/history" element={<MemberHistory />} />
                 <Route path="reservations" element={<ReservationList />} />
                 <Route path="active-borrows" element={<ActiveBorrows />} />
                 <Route path="borrow/issue" element={<IssueBook />} />
                 <Route path="borrow/return" element={<ReturnBook />} />
                 <Route path="fines" element={<FineManagement />} />
                 <Route path="fines/:memberId" element={<FineDetail />} />
-                <Route path="settings" element={<Settings />} />
-
-                {/* Staff routes: admin only */}
-                <Route element={<ProtectedRoute roles={['admin']} />}>
-                  <Route path="staff" element={<StaffList />} />
-                  <Route path="staff/add" element={<AddStaff />} />
-                  <Route path="staff/edit/:id" element={<EditStaff />} />
-                  <Route path="reports" element={<Reports />} />
-                </Route>
-
-                <Route path="*" element={<NotFound />} />
               </Route>
+
+              {/* Staff routes: admin only */}
+              <Route element={<ProtectedRoute roles={['admin']} />}>
+                <Route path="staff" element={<StaffList />} />
+                <Route path="staff/add" element={<AddStaff />} />
+                <Route path="staff/edit/:id" element={<EditStaff />} />
+                <Route path="reports" element={<Reports />} />
+              </Route>
+
+              <Route path="*" element={<NotFound />} />
             </Route>
-          </Routes>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+          </Route>
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

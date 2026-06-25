@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Logo from '../components/ui/Logo';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Loader2, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -40,88 +46,85 @@ const Login = () => {
   };
 
   return (
-    <div className="bg-bg-page text-on-surface font-body-base antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex">
+    <div className="min-h-screen flex selection:bg-primary/20">
       {/* Left: Brand Illustration (55%) */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-surface-container-high items-center justify-center">
-        {/* Abstract Background Blobs */}
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary-fixed rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse"></div>
-          <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-secondary-fixed rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-tertiary-fixed rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '4s' }}></div>
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-muted items-center justify-center">
+        {/* Abstract Background */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
         {/* Glassmorphism Container for Illustration */}
-        <div className="relative z-10 w-full max-w-lg p-12 backdrop-blur-md bg-bg-surface/40 border border-bg-surface/60 rounded-[24px] shadow-xl text-center">
-          <div className="flex justify-center mb-8">
-            <span className="material-symbols-outlined text-[120px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-              library_books
-            </span>
+        <div className="relative z-10 w-full max-w-lg p-12 backdrop-blur-md bg-background/40 border rounded-[24px] shadow-2xl text-center">
+          <div className="flex items-center justify-center mb-8 relative">
+            <Link 
+              to="/" 
+              className="absolute -top-6 left-0 flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back to Home
+            </Link>
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+              <Logo className="h-12 w-12" />
+            </div>
           </div>
-          <h2 className="font-display-4xl text-display-4xl text-on-surface mb-4">Institutional Access</h2>
-          <p className="font-body-base text-body-base text-text-secondary max-w-md mx-auto">
+          <h2 className="text-4xl font-bold tracking-tight mb-4">Institutional Access</h2>
+          <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
             The intelligent workspace for modern library management. Secure, structured, and deliberate.
           </p>
         </div>
       </div>
 
       {/* Right: Login Form (45%) */}
-      <div className="w-full lg:w-[45%] flex flex-col justify-center px-page-padding sm:px-12 md:px-24 bg-bg-surface relative z-10 shadow-[-20px_0_40px_rgba(0,0,0,0.03)]">
+      <div className="w-full lg:w-[45%] flex flex-col justify-center px-6 sm:px-12 md:px-24 bg-background relative z-10 shadow-2xl">
         <div className="w-full max-w-md mx-auto">
-          {/* Brand Logo */}
-          <div className="mb-12 flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary text-3xl">menu_book</span>
-            <span className="font-display-3xl text-display-3xl font-bold text-primary tracking-tight">LibraVault</span>
-          </div>
+          {/* Mobile Back Link */}
+          <Link 
+            to="/" 
+            className="lg:hidden flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-8"
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Back to Home
+          </Link>
 
-          <div className="mb-8">
-            <h1 className="font-headline-2xl text-headline-2xl text-on-surface mb-2">Welcome back</h1>
-            <p className="font-body-base text-body-base text-text-secondary">Please enter your credentials to access your workspace.</p>
+          <div className="mb-10">
+            <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back</h1>
+            <p className="text-muted-foreground">Please enter your credentials to access your workspace.</p>
           </div>
 
           {/* Error Banner */}
           {error && (
-            <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
-              <span className="material-symbols-outlined text-red-500 text-xl mt-0.5 flex-shrink-0">error</span>
-              <p className="font-body-sm text-body-sm text-red-700">{error}</p>
-            </div>
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <form className="space-y-6" onSubmit={handleLogin}>
-            {/* Email Input */}
-            <div>
-              <label className="block font-label-xs text-label-xs text-on-surface mb-2 uppercase" htmlFor="email">Email Address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="material-symbols-outlined text-text-tertiary text-xl">mail</span>
-                </div>
-                <input
-                  className="block w-full pl-10 pr-3 py-3 border border-border-default rounded-[6px] bg-bg-surface text-on-surface font-body-base focus:border-primary focus:ring-0 transition-colors"
-                  id="email"
-                  name="email"
-                  placeholder="name@institution.edu"
-                  required
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  autoComplete="email"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                name="email"
+                placeholder="name@institution.edu"
+                required
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                autoComplete="email"
+              />
             </div>
 
-            {/* Password Input */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block font-label-xs text-label-xs text-on-surface uppercase" htmlFor="password">Password</label>
-                <Link to="/forgot-password" className="font-body-sm text-body-sm text-primary hover:underline">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password">Password</Label>
+                <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline underline-offset-4">
                   Forgot Password?
                 </Link>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="material-symbols-outlined text-text-tertiary text-xl">lock</span>
-                </div>
-                <input
-                  className="block w-full pl-10 pr-10 py-3 border border-border-default rounded-[6px] bg-bg-surface text-on-surface font-body-base focus:border-primary focus:ring-0 transition-colors"
+                <Input
                   id="password"
                   name="password"
                   placeholder="••••••••"
@@ -130,42 +133,40 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   autoComplete="current-password"
+                  className="pr-10"
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <button
-                    className="text-text-tertiary hover:text-on-surface focus:outline-none transition-colors"
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    <span className="material-symbols-outlined text-xl">
-                      {showPassword ? "visibility" : "visibility_off"}
-                    </span>
-                  </button>
-                </div>
+                <button
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground focus:outline-none"
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
-            {/* Submit Button */}
-            <button
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-[10px] text-on-primary bg-primary brand-glow font-headline-lg text-headline-lg transition-all duration-150 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
-              type="submit"
+            <Button 
+              type="submit" 
+              className="w-full h-11 text-base font-medium"
               disabled={loading}
-              id="login-submit-btn"
             >
               {loading ? (
                 <>
-                  <span className="material-symbols-outlined text-xl animate-spin">progress_activity</span>
-                  Signing in…
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
                 </>
               ) : (
                 'Sign in to Workspace'
               )}
-            </button>
+            </Button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-border-subtle text-center">
-            <p className="font-body-sm text-body-sm text-text-secondary">
-              Don't have an account? <Link to="/register" className="text-primary font-medium hover:underline">Register now</Link>
+          <div className="mt-8 pt-8 border-t text-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-primary font-semibold hover:underline underline-offset-4">
+                Register now
+              </Link>
             </p>
           </div>
         </div>

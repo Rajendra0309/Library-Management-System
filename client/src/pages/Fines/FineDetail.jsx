@@ -1,6 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getMemberFines, payFine, waiveFine } from '../../services/fineService';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Card, CardContent } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Skeleton } from '../../components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
+import { Textarea } from "../../components/ui/textarea";
+import { 
+  ArrowLeft,
+  AlertCircle
+} from 'lucide-react';
 
 const FineDetail = () => {
     const { memberId } = useParams();
@@ -57,105 +76,153 @@ const FineDetail = () => {
     const isAdmin = user.role === 'admin';
 
     return (
-        <div className="max-w-content-max-width mx-auto px-page-padding py-4xl w-full">
-            <div className="flex items-center gap-4 mb-8">
-                <button onClick={() => navigate('/fines')} className="p-2 rounded-full hover:bg-bg-hover transition-colors">
-                    <span className="material-symbols-outlined">arrow_back</span>
-                </button>
-                <h1 className="font-display-3xl text-display-3xl text-on-surface">Member Fine Details</h1>
+        <div className="space-y-6 animate-in fade-in duration-500 pb-10 max-w-7xl mx-auto">
+            <div className="flex items-center gap-4 mb-2">
+                <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => navigate('/fines')}
+                >
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <PageHeader 
+                    title="Member Fine Details" 
+                    description="View and manage fines for this specific member."
+                    className="mb-0 border-0"
+                />
             </div>
 
-            {error && <div className="p-4 bg-error-container text-on-error-container rounded-lg mb-4">{error}</div>}
+            {error && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
 
-            <div className="bg-bg-surface rounded-xl border border-border-default shadow-sm overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-surface-container-low border-b border-border-subtle">
-                        <tr>
-                            <th className="px-6 py-3 font-label-xs uppercase tracking-widest text-text-secondary font-semibold">Book Title</th>
-                            <th className="px-6 py-3 font-label-xs uppercase tracking-widest text-text-secondary font-semibold">Amount</th>
-                            <th className="px-6 py-3 font-label-xs uppercase tracking-widest text-text-secondary font-semibold">Status</th>
-                            <th className="px-6 py-3 font-label-xs uppercase tracking-widest text-text-secondary font-semibold text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border-subtle">
-                        {loading ? (
-                            <tr><td colSpan="4" className="text-center py-8 text-text-secondary">Loading details...</td></tr>
-                        ) : fines.length === 0 ? (
-                            <tr><td colSpan="4" className="text-center py-8 text-text-secondary">No fines found for this member.</td></tr>
-                        ) : fines.map(fine => (
-                            <tr key={fine.id} className="hover:bg-bg-hover transition-colors">
-                                <td className="px-6 py-4">
-                                    <div className="font-semibold">{fine.borrow.book.title}</div>
-                                    <div className="text-xs text-text-tertiary">Due: {new Date(fine.borrow.dueDate).toLocaleDateString()} · Overdue {fine.daysOverdue} days</div>
-                                </td>
-                                <td className="px-6 py-4 font-bold">Rs {fine.amount}</td>
-                                <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 rounded-full text-[11px] font-bold ${fine.status === 'paid' ? 'bg-tertiary-fixed text-tertiary-container' :
-                                            fine.status === 'waived' ? 'bg-surface-variant text-on-surface-variant' :
-                                                'bg-secondary-fixed text-on-secondary-fixed'
-                                        }`}>
-                                        {fine.status.toUpperCase()}
-                                    </span>
-                                    {fine.status === 'waived' && <div className="text-[10px] text-text-tertiary mt-1 italic">Reason: {fine.reason}</div>}
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    {fine.status === 'pending' && (
-                                        <div className="flex justify-end gap-3">
-                                            <button
-                                                onClick={() => handlePay(fine.id)}
-                                                className="px-3 py-1 bg-tertiary-container text-on-tertiary rounded shadow hover:shadow-brand-glow transition-all font-semibold text-xs"
-                                            >
-                                                Pay
-                                            </button>
-                                            {isAdmin && (
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedFineId(fine.id);
-                                                        setShowWaiveModal(true);
-                                                    }}
-                                                    className="px-3 py-1 border border-border-default rounded text-text-secondary hover:bg-surface-dim hover:text-error transition-all font-semibold text-xs"
-                                                >
-                                                    Waive
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <Card>
+                <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-muted/50 border-b">
+                                <tr>
+                                    <th className="px-6 py-4 font-medium text-muted-foreground uppercase tracking-wider text-[11px]">Book Title</th>
+                                    <th className="px-6 py-4 font-medium text-muted-foreground uppercase tracking-wider text-[11px]">Amount</th>
+                                    <th className="px-6 py-4 font-medium text-muted-foreground uppercase tracking-wider text-[11px]">Status</th>
+                                    <th className="px-6 py-4 font-medium text-muted-foreground uppercase tracking-wider text-[11px] text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {loading ? (
+                                    Array.from({ length: 3 }).map((_, i) => (
+                                        <tr key={i}>
+                                            <td className="px-6 py-4"><Skeleton className="h-4 w-48 mb-2" /><Skeleton className="h-3 w-32" /></td>
+                                            <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
+                                            <td className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></td>
+                                            <td className="px-6 py-4 text-right"><Skeleton className="h-8 w-32 ml-auto" /></td>
+                                        </tr>
+                                    ))
+                                ) : fines.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="4" className="text-center py-16 text-muted-foreground">
+                                            No fines found for this member.
+                                        </td>
+                                    </tr>
+                                ) : fines.map(fine => {
+                                    let statusVariant = "secondary";
+                                    let statusClass = "";
+                                    
+                                    if (fine.status === 'paid') {
+                                        statusClass = "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400";
+                                    } else if (fine.status === 'pending') {
+                                        statusVariant = "destructive";
+                                    }
 
-            {showWaiveModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-bg-surface rounded-xl p-8 max-w-md w-full shadow-2xl">
-                        <h2 className="font-headline-xl mb-4">Waive Fine</h2>
-                        <p className="text-text-secondary mb-6 text-sm">Please provide a reason for waiving this fine. This action will be logged.</p>
-                        <textarea
-                            className="w-full border border-border-default rounded-lg p-3 text-sm focus:border-primary outline-none min-h-[100px]"
+                                    return (
+                                        <tr key={fine.id} className="hover:bg-muted/50 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <div className="font-semibold text-foreground group-hover:text-primary transition-colors">{fine.borrow.book.title}</div>
+                                                <div className="text-xs text-muted-foreground mt-0.5">
+                                                    Due: {new Date(fine.borrow.dueDate).toLocaleDateString()} · Overdue {fine.daysOverdue} days
+                                                </div>
+                                            </td>
+                                            <td className={`px-6 py-4 font-bold text-base ${fine.status === 'waived' ? 'line-through text-muted-foreground font-normal' : 'text-foreground'}`}>
+                                                ₹{fine.amount}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <Badge variant={statusVariant} className={statusClass}>
+                                                    {fine.status.toUpperCase()}
+                                                </Badge>
+                                                {fine.status === 'waived' && (
+                                                    <div className="text-[10px] text-muted-foreground mt-1.5 italic">Reason: {fine.reason}</div>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                {fine.status === 'pending' && (
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handlePay(fine.id)}
+                                                        >
+                                                            Pay
+                                                        </Button>
+                                                        {isAdmin && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    setSelectedFineId(fine.id);
+                                                                    setShowWaiveModal(true);
+                                                                }}
+                                                                className="hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30"
+                                                            >
+                                                                Waive
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Dialog open={showWaiveModal} onOpenChange={setShowWaiveModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Waive Fine</DialogTitle>
+                        <DialogDescription>
+                            Please provide a reason for waiving this fine. This action will be logged.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="my-2">
+                        <Textarea
                             placeholder="Enter reason..."
                             value={waiveReason}
                             onChange={(e) => setWaiveReason(e.target.value)}
+                            className="min-h-[100px]"
                         />
-                        <div className="flex justify-end gap-3 mt-6">
-                            <button
-                                onClick={() => setShowWaiveModal(false)}
-                                className="px-4 py-2 text-text-secondary hover:bg-bg-hover rounded"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                disabled={!waiveReason}
-                                onClick={handleWaive}
-                                className="px-4 py-2 bg-primary text-on-primary rounded font-bold hover:shadow-brand-glow disabled:opacity-50"
-                            >
-                                Confirm Waive
-                            </button>
-                        </div>
                     </div>
-                </div>
-            )}
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowWaiveModal(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={!waiveReason}
+                            onClick={handleWaive}
+                        >
+                            Confirm Waive
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

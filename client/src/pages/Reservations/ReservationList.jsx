@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getAllReservations, getMemberReservations, cancelReservation } from '../../services/reservationService';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Search, ChevronRight, Ban, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 const ReservationList = () => {
   const { user: currentUser } = useAuth();
@@ -57,8 +64,12 @@ const ReservationList = () => {
 
   if (!currentUser) {
     return (
-      <div className="flex-1 w-full max-w-content-max-width mx-auto p-page-padding">
-        <div className="p-4 bg-error-container text-on-error-container rounded-lg">Please log in to view reservations.</div>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 w-full">
+        <Alert variant="destructive">
+          <Ban className="h-4 w-4" />
+          <AlertTitle>Unauthorized</AlertTitle>
+          <AlertDescription>Please log in to view reservations.</AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -76,26 +87,25 @@ const ReservationList = () => {
   );
 
   return (
-    <div className="flex-1 w-full max-w-content-max-width mx-auto p-page-padding">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 w-full">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-xl mb-4xl">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
         <div>
-          <div className="flex items-center gap-sm mb-xs">
-            <span className="text-text-tertiary font-body-sm text-body-sm">Circulation</span>
-            <span className="material-symbols-outlined text-[16px] text-text-tertiary">chevron_right</span>
-            <span className="text-on-surface font-body-sm text-body-sm font-semibold">Reservations</span>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-muted-foreground text-sm">Circulation</span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <span className="text-foreground text-sm font-semibold">Reservations</span>
           </div>
-          <h2 className="font-headline-2xl text-headline-2xl text-on-surface">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
             {isLibrarianOrAdmin ? 'All Reservations' : 'My Reservations'}
           </h2>
         </div>
-        <div className="flex gap-md">
+        <div className="flex gap-4">
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-[20px]">search</span>
-            <input
-              className="pl-10 pr-4 py-2 bg-surface border border-border-default rounded-md text-body-sm font-body-sm focus:border-primary focus:ring focus:ring-focus-ring outline-none w-64 transition-all"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9 w-full md:w-64"
               placeholder="Search reservations..."
-              type="text"
               value={search}
               onChange={handleSearchChange}
             />
@@ -104,130 +114,142 @@ const ReservationList = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-error-container text-on-error-container rounded-lg mb-6">{error}</div>
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* Table Container */}
-      <div className="bg-surface rounded-xl shadow-sm border border-border-subtle overflow-hidden p-card-padding">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border-subtle">
-                {isLibrarianOrAdmin && <th className="pb-md font-label-xs text-label-xs text-text-tertiary uppercase tracking-widest px-md">Member</th>}
-                <th className="pb-md font-label-xs text-label-xs text-text-tertiary uppercase tracking-widest px-md">Book</th>
-                <th className="pb-md font-label-xs text-label-xs text-text-tertiary uppercase tracking-widest px-md">Reserved Date</th>
-                <th className="pb-md font-label-xs text-label-xs text-text-tertiary uppercase tracking-widest px-md text-center">Queue</th>
-                <th className="pb-md font-label-xs text-label-xs text-text-tertiary uppercase tracking-widest px-md">Status</th>
-                {isLibrarianOrAdmin && <th className="pb-md font-label-xs text-label-xs text-text-tertiary uppercase tracking-widest px-md text-center">Notified</th>}
-                <th className="pb-md font-label-xs text-label-xs text-text-tertiary uppercase tracking-widest px-md text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="text-body-sm font-body-sm">
-              {loading ? (
-                <tr><td colSpan={isLibrarianOrAdmin ? 7 : 5} className="py-8 text-center text-text-secondary">Loading reservations...</td></tr>
-              ) : paginatedReservations.length === 0 ? (
-                <tr><td colSpan={isLibrarianOrAdmin ? 7 : 5} className="py-8 text-center text-text-secondary">
+      <Card className="overflow-hidden">
+        <Table>
+          <TableHeader className="bg-muted/50">
+            <TableRow>
+              {isLibrarianOrAdmin && <TableHead className="font-semibold text-xs uppercase tracking-wider">Member</TableHead>}
+              <TableHead className="font-semibold text-xs uppercase tracking-wider">Book</TableHead>
+              <TableHead className="font-semibold text-xs uppercase tracking-wider">Reserved Date</TableHead>
+              <TableHead className="font-semibold text-xs uppercase tracking-wider text-center">Queue</TableHead>
+              <TableHead className="font-semibold text-xs uppercase tracking-wider">Status</TableHead>
+              {isLibrarianOrAdmin && <TableHead className="font-semibold text-xs uppercase tracking-wider text-center">Notified</TableHead>}
+              <TableHead className="font-semibold text-xs uppercase tracking-wider text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={isLibrarianOrAdmin ? 7 : 5} className="py-8 text-center text-muted-foreground">
+                  Loading reservations...
+                </TableCell>
+              </TableRow>
+            ) : paginatedReservations.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={isLibrarianOrAdmin ? 7 : 5} className="py-8 text-center text-muted-foreground">
                   {filteredReservations.length === 0 && reservations.length > 0
                     ? 'No reservations match your search.'
                     : 'No reservations found.'}
-                </td></tr>
-              ) : (
-                paginatedReservations.map((res) => (
-                  <tr key={res.id} className="border-b border-border-subtle hover:bg-bg-hover transition-all duration-200">
-                    {isLibrarianOrAdmin && (
-                      <td className="py-md px-md">
-                        <div className="flex items-center gap-md">
-                          <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary font-bold text-sm">
-                            {(res.member?.name || 'U').charAt(0)}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-on-surface">{res.member?.name || 'Unknown User'}</div>
-                            <div className="font-code-mono text-code-mono text-text-tertiary text-[12px]">{res.member?.membershipId || '-'}</div>
-                          </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedReservations.map((res) => (
+                <TableRow key={res.id}>
+                  {isLibrarianOrAdmin && (
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
+                          {(res.member?.name || 'U').charAt(0)}
                         </div>
-                      </td>
+                        <div>
+                          <div className="font-semibold text-foreground">{res.member?.name || 'Unknown User'}</div>
+                          <div className="font-mono text-muted-foreground text-xs">{res.member?.membershipId || '-'}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                  )}
+                  <TableCell>
+                    <div className="font-semibold text-foreground">{res.book?.title || 'Unknown Title'}</div>
+                    <div className="font-mono text-muted-foreground text-xs">{res.book?.isbn || '-'}</div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(res.reservedAt || res.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="outline" className="font-semibold text-primary bg-primary/5">
+                      #{res.queuePosition || 1}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {res.status === 'cancelled' ? (
+                      <Badge variant="secondary">Cancelled</Badge>
+                    ) : res.status === 'expired' ? (
+                      <Badge variant="destructive">Expired</Badge>
+                    ) : res.status === 'fulfilled' ? (
+                      <Badge variant="default" className="bg-green-600 hover:bg-green-700">Fulfilled</Badge>
+                    ) : res.notified ? (
+                      <Badge variant="outline" className="text-orange-500 border-orange-500/50 bg-orange-500/10">
+                        Ready for Pickup
+                      </Badge>
+                    ) : (
+                      <Badge variant="default">
+                        Pending
+                      </Badge>
                     )}
-                    <td className="py-md px-md">
-                      <div className="font-semibold text-on-surface">{res.book?.title || 'Unknown Title'}</div>
-                      <div className="font-code-mono text-code-mono text-text-tertiary text-[12px]">{res.book?.isbn || '-'}</div>
-                    </td>
-                    <td className="py-md px-md text-on-surface-variant">
-                      {new Date(res.reservedAt || res.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </td>
-                    <td className="py-md px-md text-center">
-                      <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-surface-container-high text-primary font-semibold text-[12px]">
-                        #{res.queuePosition || 1}
-                      </span>
-                    </td>
-                    <td className="py-md px-md">
-                      {res.status === 'cancelled' ? (
-                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-surface-variant text-text-secondary font-semibold text-[12px]">Cancelled</span>
-                      ) : res.status === 'expired' ? (
-                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-error-container text-on-error-container font-semibold text-[12px]">Expired</span>
-                      ) : res.status === 'fulfilled' ? (
-                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-semibold text-[12px]">Fulfilled</span>
-                      ) : res.notified ? (
-                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-surface-container-high text-tertiary font-semibold text-[12px]">
-                          <div className="w-2 h-2 rounded-full bg-tertiary"></div> Ready for Pickup
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-primary-fixed text-primary font-semibold text-[12px]">
-                          <div className="w-2 h-2 rounded-full bg-primary"></div> Pending
-                        </span>
-                      )}
-                    </td>
-                    {isLibrarianOrAdmin && (
-                      <td className="py-md px-md text-center">
-                        {res.notified
-                          ? <span className="material-symbols-outlined text-tertiary text-[20px]">check_circle</span>
-                          : <span className="text-text-tertiary text-[12px] font-semibold">—</span>}
-                      </td>
+                  </TableCell>
+                  {isLibrarianOrAdmin && (
+                    <TableCell className="text-center">
+                      {res.notified
+                        ? <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
+                        : <span className="text-muted-foreground font-semibold">—</span>}
+                    </TableCell>
+                  )}
+                  <TableCell className="text-right">
+                    {res.status === 'pending' ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleCancel(res.id)}
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        title="Cancel Reservation"
+                      >
+                        <Ban className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
                     )}
-                    <td className="py-md px-md text-right">
-                      {res.status === 'pending' ? (
-                        <button
-                          onClick={() => handleCancel(res.id)}
-                          className="text-text-tertiary hover:text-error transition-colors p-sm rounded-md hover:bg-error-container"
-                          title="Cancel Reservation"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">cancel</span>
-                        </button>
-                      ) : (
-                        <span className="text-text-tertiary text-[12px]">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between mt-xl pt-md border-t border-border-subtle">
-          <div className="text-text-tertiary font-body-sm text-body-sm">
-            Showing {filteredReservations.length === 0 ? 0 : Math.min(page * rowsPerPage + 1, filteredReservations.length)}
-            {' '}to {Math.min((page + 1) * rowsPerPage, filteredReservations.length)}
-            {' '}of {filteredReservations.length} entries
+        <div className="px-6 py-4 border-t bg-muted/20 flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing <span className="font-medium text-foreground">{filteredReservations.length === 0 ? 0 : Math.min(page * rowsPerPage + 1, filteredReservations.length)}</span>
+            {' '}to <span className="font-medium text-foreground">{Math.min((page + 1) * rowsPerPage, filteredReservations.length)}</span>
+            {' '}of <span className="font-medium text-foreground">{filteredReservations.length}</span> entries
           </div>
-          <div className="flex gap-sm">
-            <button
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0}
-              className="p-sm rounded-md border border-border-default text-text-tertiary hover:bg-bg-hover disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[20px]">chevron_left</span>
-            </button>
-            <button
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage(page + 1)}
               disabled={(page + 1) * rowsPerPage >= filteredReservations.length}
-              className="p-sm rounded-md border border-border-default text-on-surface hover:bg-bg-hover disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-            </button>
+              Next
+            </Button>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

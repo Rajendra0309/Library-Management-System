@@ -1,7 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../api/axios';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  User, 
+  Bell, 
+  Palette, 
+  Settings as SettingsIcon,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Moon,
+  Sun
+} from 'lucide-react';
 
 const Settings = () => {
-  const [activeTab, setActiveTab] = useState('libraryConfig');
+  const { user } = useAuth();
+  const isManagement = user?.role === 'admin' || user?.role === 'librarian';
+
+  const [activeTab, setActiveTab] = useState(isManagement ? 'libraryConfig' : 'profile');
 
   // Library Config State
   const [loanPeriod, setLoanPeriod] = useState(14);
@@ -12,320 +34,290 @@ const Settings = () => {
   const [preDueReminders, setPreDueReminders] = useState(true);
   const [enforceFineCaps, setEnforceFineCaps] = useState(false);
 
+  // Status state
+  const [loading, setLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  // UI State
+  const [themeMode, setThemeMode] = useState(localStorage.getItem('themeMode') || 'light');
+  const [notifications, setNotifications] = useState(JSON.parse(localStorage.getItem('notifications')) || [true, true, true]);
+
+  useEffect(() => {
+    if (isManagement) {
+      setLoading(true);
+      api.get('/config').then(res => {
+        if (res.data) {
+          setLoanPeriod(res.data.loanPeriod);
+          setMaxBorrows(res.data.maxBorrows);
+          setFineRate(res.data.fineRate);
+          setReservationExpiry(res.data.reservationExpiry);
+          setAutoRenew(res.data.autoRenew);
+          setPreDueReminders(res.data.preDueReminders);
+          setEnforceFineCaps(res.data.enforceFineCaps);
+        }
+      }).catch(console.error).finally(() => setLoading(false));
+    }
+  }, [isManagement]);
+
+  const handleSave = async () => {
+    setSaveLoading(true);
+    setMessage(null);
+    try {
+      if (activeTab === 'appearance') {
+        localStorage.setItem('themeMode', themeMode);
+        document.documentElement.className = themeMode === 'dark' ? 'dark' : '';
+        setMessage({ type: 'success', text: 'Appearance settings saved.' });
+      } else if (activeTab === 'notifications') {
+        localStorage.setItem('notifications', JSON.stringify(notifications));
+        setMessage({ type: 'success', text: 'Notification settings saved.' });
+      } else if (activeTab === 'libraryConfig') {
+        await api.put('/config', {
+          loanPeriod, maxBorrows, fineRate, reservationExpiry, autoRenew, preDueReminders, enforceFineCaps
+        });
+        setMessage({ type: 'success', text: 'Library configuration saved successfully.' });
+      } else {
+        setMessage({ type: 'success', text: 'Profile changes saved locally.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to save settings.' });
+    } finally {
+      setSaveLoading(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
   const tabs = [
-    { id: 'profile', icon: 'person', label: 'Profile' },
-    { id: 'notifications', icon: 'notifications', label: 'Notifications' },
-    { id: 'appearance', icon: 'palette', label: 'Appearance' },
-    { id: 'libraryConfig', icon: 'tune', label: 'Library Config' },
+    { id: 'profile', icon: User, label: 'Profile' },
+    { id: 'notifications', icon: Bell, label: 'Notifications' },
+    { id: 'appearance', icon: Palette, label: 'Appearance' },
   ];
+  if (isManagement) tabs.push({ id: 'libraryConfig', icon: SettingsIcon, label: 'Library Config' });
 
   return (
-    <div className="flex-1 max-w-content-max-width w-full mx-auto p-page-padding flex gap-4xl flex-col md:flex-row">
-      {/* Settings Sub-Navigation Sidebar */}
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 w-full flex flex-col md:flex-row gap-8">
+      {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 shrink-0">
-        <nav className="flex flex-col gap-xs sticky top-24">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-md px-md py-3 rounded-lg font-body-sm text-body-sm transition-all w-full text-left ${
-                activeTab === tab.id
-                  ? 'bg-surface-tint/10 text-primary-container font-semibold'
-                  : 'text-on-surface-variant hover:bg-bg-hover hover:text-primary'
-              }`}
-            >
-              <span 
-                className="material-symbols-outlined text-[20px]" 
-                style={{ fontVariationSettings: activeTab === tab.id ? "'FILL' 1" : "'FILL' 0" }}
+        <h2 className="text-2xl font-bold tracking-tight mb-6">Settings</h2>
+        <nav className="flex flex-col gap-1 sticky top-8">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setMessage(null);
+                }}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full text-left ${
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
               >
-                {tab.icon}
-              </span>
-              {tab.label}
-            </button>
-          ))}
+                <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                {tab.label}
+              </button>
+            );
+          })}
         </nav>
       </aside>
 
-      {/* Settings Content Canvas */}
-      <div className="flex-1 flex flex-col gap-4xl">
-        <div className="flex justify-between items-start">
+      {/* Main Content Area */}
+      <div className="flex-1 max-w-3xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="font-headline-2xl text-headline-2xl text-on-surface mb-xs">
+            <h3 className="text-2xl font-bold tracking-tight">
               {tabs.find(t => t.id === activeTab)?.label}
-            </h2>
-            <p className="font-body-sm text-body-sm text-text-secondary">
-              {activeTab === 'libraryConfig' && 'Manage global rules, loan limits, and system behaviors for the institution.'}
+            </h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              {activeTab === 'libraryConfig' && 'Manage global rules, loan limits, and system behaviors.'}
               {activeTab === 'profile' && 'Update your personal details and public profile information.'}
               {activeTab === 'notifications' && 'Choose what updates you want to receive and how you receive them.'}
               {activeTab === 'appearance' && 'Customize the look and feel of your dashboard.'}
             </p>
           </div>
-          <div className="flex gap-sm">
-            <button className="bg-surface hover:bg-bg-hover border border-border-default text-primary font-body-sm text-body-sm px-4 py-2 rounded-lg transition-all active:scale-[0.97]">
-                Discard Changes
-            </button>
-            <button className="bg-primary-container text-on-primary font-body-sm text-body-sm px-4 py-2 rounded-lg hover:shadow-[0_4px_14px_0_rgba(91,79,232,0.39)] transition-all active:scale-[0.97]">
-                Save Changes
-            </button>
-          </div>
+          <Button onClick={handleSave} disabled={loading || saveLoading}>
+            {saveLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Changes'}
+          </Button>
         </div>
+
+        {message && (
+          <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className={`mb-6 ${message.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : ''}`}>
+            {message.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4 text-green-600" />}
+            <AlertDescription>{message.text}</AlertDescription>
+          </Alert>
+        )}
 
         {/* Profile Tab */}
         {activeTab === 'profile' && (
-          <section className="bg-surface rounded-xl shadow-sm border border-border-subtle p-card-padding flex flex-col gap-xl">
-            <div className="flex items-center gap-xl border-b border-border-subtle pb-xl">
-              <div className="w-20 h-20 rounded-full bg-brand-gradient text-white flex items-center justify-center text-2xl font-bold shadow-md">
-                LV
-              </div>
-              <div className="flex gap-sm">
-                <button className="bg-surface-container-low border border-border-default px-4 py-2 rounded-md text-sm font-semibold hover:bg-bg-hover transition-colors">Change Avatar</button>
-                <button className="text-error hover:bg-error-container/50 px-4 py-2 rounded-md text-sm transition-colors">Remove</button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
-              <div className="flex flex-col gap-xs">
-                <label className="font-label-xs text-label-xs uppercase text-text-secondary">Full Name</label>
-                <input type="text" defaultValue="Librarian Admin" className="border border-border-default rounded-md px-md py-2 text-sm focus:border-primary focus:ring-1 focus:ring-focus-ring outline-none bg-surface-bright" />
-              </div>
-              <div className="flex flex-col gap-xs">
-                <label className="font-label-xs text-label-xs uppercase text-text-secondary">Email Address</label>
-                <input type="email" defaultValue="admin@libravault.io" className="border border-border-default rounded-md px-md py-2 text-sm focus:border-primary focus:ring-1 focus:ring-focus-ring outline-none bg-surface-bright" />
-              </div>
-              <div className="flex flex-col gap-xs">
-                <label className="font-label-xs text-label-xs uppercase text-text-secondary">Role</label>
-                <input type="text" disabled defaultValue="Administrator" className="border border-border-default rounded-md px-md py-2 text-sm bg-surface-container-low text-text-secondary cursor-not-allowed" />
-              </div>
-            </div>
-          </section>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Information</CardTitle>
+                <CardDescription>Update your personal details here.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center gap-6 pb-6 border-b">
+                  <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center text-2xl font-bold">
+                    {user?.name?.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-semibold">{user?.name}</h4>
+                    <p className="text-muted-foreground capitalize">{user?.role}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Full Name</Label>
+                    <Input defaultValue={user?.name} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email Address</Label>
+                    <Input disabled defaultValue={user?.email} className="bg-muted text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground">Email addresses cannot be changed.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
-          <section className="bg-surface rounded-xl shadow-sm border border-border-subtle p-card-padding">
-            <h3 className="font-headline-lg text-headline-lg text-on-surface mb-xl border-b border-border-subtle pb-md">Email Notifications</h3>
-            <div className="flex flex-col gap-xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Notifications</CardTitle>
+              <CardDescription>Configure how you want to be notified.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
               {[
                 { title: 'New Member Registrations', desc: 'Get notified when a new user signs up.' },
                 { title: 'Overdue Alerts', desc: 'Receive daily summaries of items that are overdue.' },
                 { title: 'System Updates', desc: 'Announcements about new features and maintenance.' }
               ].map((item, idx) => (
-                <React.Fragment key={idx}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col gap-1 pr-md">
-                      <span className="font-headline-lg text-[16px] text-on-surface">{item.title}</span>
-                      <span className="font-body-sm text-[13px] text-text-secondary">{item.desc}</span>
-                    </div>
-                    <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                      <input type="checkbox" defaultChecked className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-outline-variant z-10 transition-all duration-300" />
-                      <label className="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer transition-colors duration-300"></label>
-                    </div>
+                <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0 last:pb-0">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">{item.title}</Label>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
                   </div>
-                  {idx < 2 && <div className="h-px w-full bg-border-subtle"></div>}
-                </React.Fragment>
+                  <Switch 
+                    checked={notifications[idx]} 
+                    onCheckedChange={(checked) => {
+                      const newN = [...notifications];
+                      newN[idx] = checked;
+                      setNotifications(newN);
+                    }}
+                  />
+                </div>
               ))}
-            </div>
-          </section>
+            </CardContent>
+          </Card>
         )}
 
         {/* Appearance Tab */}
         {activeTab === 'appearance' && (
-          <section className="bg-surface rounded-xl shadow-sm border border-border-subtle p-card-padding">
-            <h3 className="font-headline-lg text-headline-lg text-on-surface mb-xl border-b border-border-subtle pb-md">Theme Preferences</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
-              <div className="border-2 border-primary rounded-xl p-md flex flex-col gap-sm cursor-pointer relative overflow-hidden group">
-                <div className="absolute top-2 right-2 material-symbols-outlined text-primary text-[20px]">check_circle</div>
-                <div className="h-24 bg-white border border-gray-200 rounded flex gap-2 p-2">
-                  <div className="w-1/4 bg-gray-100 rounded"></div>
-                  <div className="w-3/4 bg-blue-50 rounded"></div>
-                </div>
-                <span className="font-semibold text-center mt-2">Light Mode</span>
-              </div>
-              <div className="border border-border-default rounded-xl p-md flex flex-col gap-sm cursor-pointer hover:border-text-secondary transition-colors group opacity-60">
-                <div className="h-24 bg-gray-900 border border-gray-700 rounded flex gap-2 p-2">
-                  <div className="w-1/4 bg-gray-800 rounded"></div>
-                  <div className="w-3/4 bg-blue-900/30 rounded"></div>
-                </div>
-                <span className="font-semibold text-center mt-2">Dark Mode (Coming Soon)</span>
-              </div>
-              <div className="border border-border-default rounded-xl p-md flex flex-col gap-sm cursor-pointer hover:border-text-secondary transition-colors group">
-                <div className="h-24 bg-gradient-to-br from-white to-gray-900 border border-gray-300 rounded flex gap-2 p-2 items-center justify-center">
-                  <span className="material-symbols-outlined text-3xl text-gray-400">desktop_windows</span>
-                </div>
-                <span className="font-semibold text-center mt-2">System Sync</span>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Library Config Tab (Original Content) */}
-        {activeTab === 'libraryConfig' && (
-          <>
-            {/* Core Rules Card */}
-            <section className="bg-surface rounded-xl shadow-sm border border-border-subtle p-card-padding">
-              <h3 className="font-headline-lg text-headline-lg text-on-surface mb-xl border-b border-border-subtle pb-md">Circulation Rules</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
-                {/* Loan Period */}
-                <div className="flex flex-col gap-xs">
-                  <label className="font-label-xs text-label-xs text-on-surface uppercase text-text-secondary">Standard Loan Period (Days)</label>
-                  <div className="flex items-center border border-border-default rounded-md focus-within:border-primary focus-within:ring-[3px] focus-within:ring-focus-ring overflow-hidden bg-surface-bright">
-                    <button 
-                      className="px-sm py-2 text-text-secondary hover:bg-bg-hover hover:text-primary transition-colors border-r border-border-default active:bg-surface-dim" 
-                      onClick={() => setLoanPeriod(Math.max(1, loanPeriod - 1))}
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">remove</span>
-                    </button>
-                    <input 
-                      className="w-full text-center border-none focus:ring-0 font-code-mono text-code-mono text-on-surface bg-transparent outline-none" 
-                      min="1" 
-                      type="number" 
-                      value={loanPeriod}
-                      onChange={(e) => setLoanPeriod(parseInt(e.target.value) || 0)}
-                    />
-                    <button 
-                      className="px-sm py-2 text-text-secondary hover:bg-bg-hover hover:text-primary transition-colors border-l border-border-default active:bg-surface-dim" 
-                      onClick={() => setLoanPeriod(loanPeriod + 1)}
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">add</span>
-                    </button>
+          <Card>
+            <CardHeader>
+              <CardTitle>Theme Preferences</CardTitle>
+              <CardDescription>Select a theme for the dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button 
+                  onClick={() => setThemeMode('light')} 
+                  className={`flex flex-col items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                    themeMode === 'light' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <div className="w-full h-24 bg-white border rounded-md p-2 flex gap-2 shadow-sm">
+                    <div className="w-1/4 bg-gray-100 rounded-sm"></div>
+                    <div className="flex-1 bg-gray-50 rounded-sm"></div>
                   </div>
-                  <p className="font-body-sm text-[12px] text-text-tertiary mt-1">Default duration for physical materials.</p>
-                </div>
-
-                {/* Max Borrows */}
-                <div className="flex flex-col gap-xs">
-                  <label className="font-label-xs text-label-xs text-on-surface uppercase text-text-secondary">Max Concurrent Borrows</label>
-                  <div className="relative">
-                    <input 
-                      className="w-full border border-border-default rounded-md px-md py-2 font-code-mono text-code-mono text-on-surface focus:border-primary focus:ring-[3px] focus:ring-focus-ring outline-none bg-surface-bright transition-all" 
-                      min="1" 
-                      type="number" 
-                      value={maxBorrows}
-                      onChange={(e) => setMaxBorrows(parseInt(e.target.value) || 0)}
-                    />
-                    <span className="absolute right-md top-1/2 -translate-y-1/2 text-text-tertiary material-symbols-outlined text-[20px]">book_4</span>
+                  <div className="flex items-center gap-2 font-medium">
+                    <Sun className="h-4 w-4" /> Light Mode
                   </div>
-                  <p className="font-body-sm text-[12px] text-text-tertiary mt-1">Maximum items a member can hold simultaneously.</p>
-                </div>
-
-                {/* Fine Rate */}
-                <div className="flex flex-col gap-xs">
-                  <label className="font-label-xs text-label-xs text-on-surface uppercase text-text-secondary">Overdue Fine Rate (Rs/Day)</label>
-                  <div className="relative">
-                    <span className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary font-code-mono">Rs </span>
-                    <input 
-                      className="w-full border border-border-default rounded-md pl-8 pr-md py-2 font-code-mono text-code-mono text-on-surface focus:border-primary focus:ring-[3px] focus:ring-focus-ring outline-none bg-surface-bright transition-all" 
-                      min="0" 
-                      step="0.05" 
-                      type="number" 
-                      value={fineRate}
-                      onChange={(e) => setFineRate(parseFloat(e.target.value) || 0)}
-                    />
+                </button>
+                
+                <button 
+                  onClick={() => setThemeMode('dark')} 
+                  className={`flex flex-col items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                    themeMode === 'dark' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <div className="w-full h-24 bg-slate-950 border border-slate-800 rounded-md p-2 flex gap-2 shadow-sm">
+                    <div className="w-1/4 bg-slate-800 rounded-sm"></div>
+                    <div className="flex-1 bg-slate-900 rounded-sm"></div>
                   </div>
-                  <p className="font-body-sm text-[12px] text-text-tertiary mt-1">Applied daily per overdue item.</p>
-                </div>
-
-                {/* Reservation Expiry */}
-                <div className="flex flex-col gap-xs">
-                  <label className="font-label-xs text-label-xs text-on-surface uppercase text-text-secondary">Reservation Hold Expiry (Hours)</label>
-                  <div className="relative">
-                    <select 
-                      className="w-full border border-border-default rounded-md px-md py-2 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-[3px] focus:ring-focus-ring outline-none bg-surface-bright transition-all appearance-none cursor-pointer"
-                      value={reservationExpiry}
-                      onChange={(e) => setReservationExpiry(parseInt(e.target.value))}
-                    >
-                      <option value="24">24 Hours (1 Day)</option>
-                      <option value="48">48 Hours (2 Days)</option>
-                      <option value="72">72 Hours (3 Days)</option>
-                      <option value="168">168 Hours (1 Week)</option>
-                    </select>
-                    <span className="absolute right-md top-1/2 -translate-y-1/2 text-text-tertiary material-symbols-outlined pointer-events-none text-[20px]">expand_more</span>
+                  <div className="flex items-center gap-2 font-medium">
+                    <Moon className="h-4 w-4" /> Dark Mode
                   </div>
-                  <p className="font-body-sm text-[12px] text-text-tertiary mt-1">Time before an unclaimed hold is released.</p>
-                </div>
-              </div>
-            </section>
-
-            {/* System Behaviors Card */}
-            <section className="bg-surface rounded-xl shadow-sm border border-border-subtle p-card-padding">
-              <h3 className="font-headline-lg text-headline-lg text-on-surface mb-xl border-b border-border-subtle pb-md">System Behaviors & Alerts</h3>
-              <div className="flex flex-col gap-xl">
-                {/* Toggle Item 1 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-1 pr-md">
-                    <span className="font-headline-lg text-[16px] text-on-surface">Auto-Renew Eligible Items</span>
-                    <span className="font-body-sm text-[13px] text-text-secondary">Automatically renew items on due date if no pending holds exist.</span>
-                  </div>
-                  <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input 
-                      type="checkbox" 
-                      name="toggle" 
-                      className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-outline-variant z-10 transition-all duration-300"
-                      checked={autoRenew}
-                      onChange={(e) => setAutoRenew(e.target.checked)}
-                    />
-                    <label className="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer transition-colors duration-300"></label>
-                  </div>
-                </div>
-
-                <div className="h-px w-full bg-border-subtle"></div>
-
-                {/* Toggle Item 2 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-1 pr-md">
-                    <span className="font-headline-lg text-[16px] text-on-surface">Send Pre-due Reminders</span>
-                    <span className="font-body-sm text-[13px] text-text-secondary">Email members 48 hours before an item is due.</span>
-                  </div>
-                  <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input 
-                      type="checkbox" 
-                      name="toggle" 
-                      className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-outline-variant z-10 transition-all duration-300"
-                      checked={preDueReminders}
-                      onChange={(e) => setPreDueReminders(e.target.checked)}
-                    />
-                    <label className="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer transition-colors duration-300"></label>
-                  </div>
-                </div>
-
-                <div className="h-px w-full bg-border-subtle"></div>
-
-                {/* Toggle Item 3 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-1 pr-md">
-                    <span className="font-headline-lg text-[16px] text-on-surface">Enforce Fine Caps</span>
-                    <span className="font-body-sm text-[13px] text-text-secondary">Stop accruing fines when they reach the replacement value of the item.</span>
-                  </div>
-                  <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input 
-                      type="checkbox" 
-                      name="toggle" 
-                      className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-outline-variant z-10 transition-all duration-300"
-                      checked={enforceFineCaps}
-                      onChange={(e) => setEnforceFineCaps(e.target.checked)}
-                    />
-                    <label className="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer transition-colors duration-300"></label>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Danger Zone */}
-            <section className="bg-error-container/20 rounded-xl border border-error/20 p-card-padding mt-4xl">
-              <h3 className="font-headline-lg text-headline-lg text-on-error-container mb-md">Danger Zone</h3>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mb-xl">Actions here can result in data loss or significant operational disruption.</p>
-              <div className="flex items-center justify-between p-md border border-error/30 rounded-lg bg-surface">
-                <div className="flex flex-col gap-1">
-                  <span className="font-headline-lg text-[14px] text-on-surface font-semibold">Purge Inactive Members</span>
-                  <span className="font-body-sm text-[12px] text-text-secondary">Remove accounts inactive for over 5 years with no pending fines.</span>
-                </div>
-                <button className="bg-surface hover:bg-error-container/50 border border-error text-error font-body-sm text-body-sm px-4 py-2 rounded-lg transition-all active:scale-[0.97]">
-                    Initiate Purge
                 </button>
               </div>
-            </section>
-          </>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Library Config Tab */}
+        {activeTab === 'libraryConfig' && isManagement && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Circulation Rules</CardTitle>
+                <CardDescription>Configure limits and periods for borrowing.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Standard Loan Period (Days)</Label>
+                  <Input type="number" value={loanPeriod} onChange={e => setLoanPeriod(Number(e.target.value))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Concurrent Borrows</Label>
+                  <Input type="number" value={maxBorrows} onChange={e => setMaxBorrows(Number(e.target.value))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Overdue Fine Rate (Rs/Day)</Label>
+                  <Input type="number" step="0.01" value={fineRate} onChange={e => setFineRate(Number(e.target.value))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Reservation Expiry (Hours)</Label>
+                  <Input type="number" value={reservationExpiry} onChange={e => setReservationExpiry(Number(e.target.value))} />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>System Behaviors & Alerts</CardTitle>
+                <CardDescription>Configure automated system actions.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between py-2 border-b">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Auto-Renew Eligible Items</Label>
+                    <p className="text-sm text-muted-foreground">Automatically renew items that have no holds.</p>
+                  </div>
+                  <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
+                </div>
+                <div className="flex items-center justify-between py-2 border-b">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Send Pre-due Reminders</Label>
+                    <p className="text-sm text-muted-foreground">Notify members 2 days before items are due.</p>
+                  </div>
+                  <Switch checked={preDueReminders} onCheckedChange={setPreDueReminders} />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Enforce Fine Caps</Label>
+                    <p className="text-sm text-muted-foreground">Stop accruing fines once they exceed the item's value.</p>
+                  </div>
+                  <Switch checked={enforceFineCaps} onCheckedChange={setEnforceFineCaps} />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

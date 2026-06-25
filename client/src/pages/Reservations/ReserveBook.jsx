@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import {
-  Button,
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogActions,
-  Typography,
-  Alert,
-  Box,
-  CircularProgress
-} from '@mui/material';
-import { BookmarkAdd as ReserveIcon } from '@mui/icons-material';
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { BookmarkPlus, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import api from '../../api/axios';
 
 /**
@@ -80,73 +79,73 @@ const ReserveBook = ({ book, onReservationCreated }) => {
 
   if (!isReservable) {
     return (
-      <Button
-        variant="contained"
-        disabled
-        startIcon={<ReserveIcon />}
-        size="small"
-      >
+      <Button disabled variant="secondary" className="gap-2">
+        <BookmarkPlus className="h-4 w-4" />
         In Stock
       </Button>
     );
   }
 
   return (
-    <Box>
-      <Button
-        variant="contained"
-        color="secondary"
-        startIcon={<ReserveIcon />}
-        onClick={handleOpen}
-        size="medium"
-        sx={{
-          background: 'linear-gradient(45deg, #ec4899 30%, #f43f5e 90%)',
-          boxShadow: '0 3px 5px 2px rgba(236, 72, 153, .3)',
-        }}
+    <>
+      <Button 
+        onClick={handleOpen} 
+        className="gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-md hover:shadow-lg transition-all"
       >
+        <BookmarkPlus className="h-4 w-4" />
         Reserve Book
       </Button>
 
-      <Dialog 
-        open={open} 
-        onClose={handleClose}
-        PaperProps={{ sx: { background: '#1e293b', width: 400 } }}
-      >
-        <DialogTitle sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
-          Reserve Book
-        </DialogTitle>
-        
-        <DialogContent sx={{ pt: 1 }}>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reserve Book</DialogTitle>
+          </DialogHeader>
           
-          {!success && (
-            <Typography variant="body1" color="text.primary">
-              All copies of <strong>"{book.title}"</strong> are currently borrowed. 
-              Do you want to join the reservation queue? 
-              You will be notified by email once a copy becomes available.
-            </Typography>
-          )}
-        </DialogContent>
-        
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={handleClose} color="inherit" disabled={loading}>
-            Cancel
-          </Button>
-          {!success && (
-            <Button 
-              onClick={handleReserve} 
-              variant="contained" 
-              color="secondary"
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : undefined}
-            >
-              {loading ? 'Processing...' : 'Confirm Reservation'}
+          <div className="py-4">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {success && (
+              <Alert className="mb-4 bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900">
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
+            
+            {!success && (
+              <DialogDescription className="text-base text-foreground">
+                All copies of <strong className="font-semibold">"{book.title}"</strong> are currently borrowed. 
+                Do you want to join the reservation queue? 
+                You will be notified by email once a copy becomes available.
+              </DialogDescription>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
+              Cancel
             </Button>
-          )}
-        </DialogActions>
+            {!success && (
+              <Button 
+                onClick={handleReserve} 
+                disabled={loading}
+                className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white"
+              >
+                {loading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                ) : (
+                  'Confirm Reservation'
+                )}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
-    </Box>
+    </>
   );
 };
 

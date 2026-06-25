@@ -1,7 +1,7 @@
-# Library Management System (LMS)
-## Enterprise Capstone Project Documentation
+# LibraVault (Library Management System)
+## Modern Enterprise Library Infrastructure
 
-The Library Management System is a comprehensive, full-stack enterprise application designed to digitize library operations. The system encompasses book inventory management, user authentication, reservation queues, fine calculation, content-based AI recommendations, and automated ETL data pipelines.
+LibraVault is a premium, full-stack enterprise SaaS application designed to revolutionize institutional library operations. Built with a stunning modern UI, the platform unifies book inventory management, member portals, role-based workflows, automated fine calculation, content-based AI recommendations, and scheduled ETL analytics pipelines into a single, cohesive workspace.
 
 ---
 
