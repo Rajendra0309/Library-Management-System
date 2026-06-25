@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { X, Sun, Moon, RotateCw, Maximize, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Set up the worker for react-pdf using unpkg with .js extension instead of .mjs which often fails
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Set up the worker for react-pdf using unpkg with .mjs extension
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const PdfViewer = ({ url, title, onClose }) => {
   const [numPages, setNumPages] = useState(null);
@@ -94,7 +95,7 @@ const PdfViewer = ({ url, title, onClose }) => {
     }
   };
 
-  return (
+  const viewer = (
     <div 
       ref={viewerRef} 
       onMouseMove={handleMouseMove}
@@ -229,6 +230,8 @@ const PdfViewer = ({ url, title, onClose }) => {
       </div>
     </div>
   );
+
+  return createPortal(viewer, document.body);
 };
 
 export default PdfViewer;

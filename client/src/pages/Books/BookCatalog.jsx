@@ -97,7 +97,7 @@ const BookCatalog = () => {
           <div className="flex items-center gap-2">
             <div className="hidden md:flex bg-muted p-1 rounded-lg">
               <Button
-                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setViewMode('grid')}
@@ -105,7 +105,7 @@ const BookCatalog = () => {
                 <LayoutGrid className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setViewMode('list')}
@@ -210,9 +210,9 @@ const BookCatalog = () => {
                 <h3 className="font-semibold text-foreground line-clamp-2 leading-tight mb-1 group-hover:text-primary transition-colors">{book.title}</h3>
                 <p className="text-sm text-muted-foreground line-clamp-1 mb-4">{book.author}</p>
                 
-                <div className="mt-auto pt-3 border-t flex justify-between items-center text-xs text-muted-foreground font-mono">
-                  <span>ISBN {book.isbn}</span>
-                  <span className={book.availableCopies > 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-rose-600 dark:text-rose-400 font-medium'}>
+                <div className="mt-auto pt-3 border-t flex flex-wrap gap-2 justify-between items-center text-xs text-muted-foreground font-mono">
+                  <span className="truncate max-w-[120px]" title={book.isbn}>ISBN {book.isbn}</span>
+                  <span className={`whitespace-nowrap ${book.availableCopies > 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-rose-600 dark:text-rose-400 font-medium'}`}>
                     {book.availableCopies} available
                   </span>
                 </div>
@@ -283,24 +283,7 @@ const BookCatalog = () => {
         </div>
       )}
 
-      {/* Pagination (Static UI as per original) */}
-      {filteredBooks.length > 0 && (
-        <div className="flex justify-center items-center gap-2 pt-6">
-          <Button variant="outline" size="icon" disabled className="h-8 w-8">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-1">
-            <Button variant="default" size="sm" className="h-8 w-8 p-0">1</Button>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">2</Button>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">3</Button>
-            <span className="text-muted-foreground mx-1">...</span>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">12</Button>
-          </div>
-          <Button variant="outline" size="icon" className="h-8 w-8">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      {/* Pagination removed as requested */}
     </div>
   );
 };

@@ -57,6 +57,10 @@ const Register = () => {
       return setError('Only standard email providers or Indian college domains (.ac.in, .edu.in) are allowed.');
     }
 
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
+      return setError('Please fill in all required fields.');
+    }
+
     if (!hasMinLength(password)) {
       return setError('Password must be at least 8 characters long.');
     }
@@ -99,27 +103,31 @@ const Register = () => {
   return (
     <div className="min-h-screen flex w-full bg-background selection:bg-primary/20">
       {/* Left Side: Brand Illustration (55%) */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-muted flex-col items-center justify-center p-12">
-        {/* Decorative Blobs */}
+      <div className="hidden lg:flex lg:w-[55%] h-screen sticky top-0 relative overflow-hidden bg-muted items-center justify-center">
+        {/* Abstract Background */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute -top-[20%] -left-[10%] w-[600px] h-[600px] rounded-full bg-primary opacity-60 blur-3xl mix-blend-multiply animate-pulse"></div>
-          <div className="absolute top-[40%] -right-[20%] w-[500px] h-[500px] rounded-full bg-blue-600 opacity-40 blur-3xl mix-blend-multiply animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 flex flex-col items-center text-center max-w-lg backdrop-blur-md bg-background/40 border p-12 rounded-[24px] shadow-2xl">
-          <div className="mb-8 p-6 bg-background rounded-3xl shadow-xl flex items-center justify-center relative">
+        {/* Glassmorphism Container for Illustration */}
+        <div className="relative z-10 w-full max-w-lg p-12 backdrop-blur-md bg-background/40 border rounded-[24px] shadow-2xl text-center">
+          <div className="flex items-center justify-center mb-8 relative">
             <Link 
               to="/" 
-              className="absolute -top-12 left-0 flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute -top-6 left-0 flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="mr-1 h-4 w-4" />
               Back to Home
             </Link>
-            <Logo className="w-16 h-16 text-primary" />
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+              <Logo className="h-12 w-12" />
+            </div>
           </div>
-          <h1 className="text-4xl font-bold text-foreground mb-4">LibraVault</h1>
-          <p className="text-lg text-muted-foreground max-w-md">The next generation library management workspace. Preserve the past, index the future.</p>
+          <h2 className="text-4xl font-bold tracking-tight mb-4">LibraVault</h2>
+          <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
+            The next generation library management workspace. Preserve the past, index the future.
+          </p>
         </div>
       </div>
 
@@ -163,7 +171,7 @@ const Register = () => {
           )}
 
           {/* Form */}
-          <form className="space-y-5" onSubmit={handleRegister}>
+          <form className="space-y-5" onSubmit={handleRegister} noValidate>
             {/* Full Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
@@ -312,6 +320,19 @@ const Register = () => {
                 value={formData.securityAnswer}
                 onChange={handleChange}
               />
+            </div>
+
+            {/* Terms and Conditions */}
+            <div className="flex items-start space-x-2 pt-2">
+              <input 
+                type="checkbox" 
+                id="terms" 
+                required
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground leading-snug">
+                I agree to the <a href="#" className="text-primary hover:underline">Terms of Service</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>.
+              </Label>
             </div>
 
             {/* Submit Button */}

@@ -45,9 +45,7 @@ const LandingPage = () => {
           
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <a className="hover:text-foreground transition-colors" href="#features">Features</a>
-            <a className="hover:text-foreground transition-colors" href="#solutions">Solutions</a>
-            <a className="hover:text-foreground transition-colors" href="#pricing">Pricing</a>
+            {/* Nav links removed for cleaner look */}
           </div>
           
           <div className="hidden md:flex items-center gap-4">
@@ -73,10 +71,6 @@ const LandingPage = () => {
       {mobileMenuOpen && (
         <div className="fixed inset-0 top-[72px] z-40 bg-background/95 backdrop-blur-sm md:hidden p-6 animate-in slide-in-from-top-4">
           <div className="flex flex-col gap-6 text-lg font-medium">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
-            <a href="#solutions" onClick={() => setMobileMenuOpen(false)}>Solutions</a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
-            <hr className="border-border" />
             <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
             <Button asChild size="lg" className="w-full">
               <Link to="/register" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
@@ -94,10 +88,7 @@ const LandingPage = () => {
         </div>
         
         <div className="max-w-5xl mx-auto relative z-10 text-center flex flex-col items-center">
-          <div className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 text-sm font-medium mb-8 backdrop-blur-sm">
-            <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
-            LibraVault 2.0 is now available
-          </div>
+
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tighter max-w-4xl mb-6">
             The Modern Standard for <br className="hidden md:block"/>
@@ -109,14 +100,8 @@ const LandingPage = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 mb-20 w-full sm:w-auto">
-            <Button asChild size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/25">
-              <Link to="/register">Start Free Trial</Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base">
-              <a href="#demo">
-                <PlayCircle className="mr-2 h-5 w-5" />
-                Watch Demo
-              </a>
+            <Button asChild size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/25 text-primary-foreground">
+              <Link to="/register">Get Started</Link>
             </Button>
           </div>
 
@@ -140,7 +125,7 @@ const LandingPage = () => {
               {/* Browser Content */}
               <div className="aspect-[16/9] md:aspect-[21/9] bg-muted/10 relative">
                  <img 
-                   src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=2070&auto=format&fit=crop" 
+                   src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2070&auto=format&fit=crop" 
                    alt="App Dashboard Preview" 
                    className="w-full h-full object-cover opacity-80 mix-blend-luminosity grayscale hover:grayscale-0 transition-all duration-700"
                  />
@@ -169,8 +154,8 @@ const LandingPage = () => {
               { icon: Zap, title: 'Lightning Fast', desc: 'Optimized architecture ensures sub-second query responses even with millions of records.' }
             ].map((feature, i) => (
               <div key={i} className="p-6 rounded-2xl bg-card border shadow-sm hover:shadow-md transition-all group">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary transition-colors">
-                  <feature.icon className="w-6 h-6 text-primary group-hover:text-primary-foreground transition-colors" />
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
+                  <feature.icon className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">{feature.desc}</p>
@@ -197,30 +182,10 @@ const LandingPage = () => {
           </div>
           
           <div>
-            <h4 className="font-semibold mb-4">Product</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Features</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Integrations</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Changelog</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold mb-4">Resources</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Documentation</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">API Reference</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Community</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
-            </ul>
-          </div>
-          
-          <div>
             <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li><a href="#" className="hover:text-foreground transition-colors">About</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Careers</a></li>
+              <li><a href="#" className="hover:text-foreground transition-colors">Contact</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
             </ul>

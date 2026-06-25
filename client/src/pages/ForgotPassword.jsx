@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import logo from '../assets/libravault-logo.png';
+import Logo from '../components/ui/Logo';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -205,28 +205,54 @@ const ForgotPassword = () => {
   };
 
   const pageWrapper = (children) => (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 selection:bg-primary/20">
-      {showOtpPopup && <OtpPopup otp={wrongAnswerOtp} onClose={handleOtpPopupClose} />}
-      
-      <div className="w-full max-w-md mx-auto relative z-10">
-        <div className="flex items-center justify-center gap-3 mb-10">
-          <img src={logo} alt="LibraVault Logo" className="w-10 h-10 object-contain mix-blend-multiply dark:mix-blend-normal dark:invert" />
-          <span className="font-bold text-2xl tracking-tight text-foreground">LibraVault</span>
+    <div className="min-h-screen flex w-full bg-background selection:bg-primary/20">
+      {/* Left Side: Brand Illustration (55%) */}
+      <div className="hidden lg:flex lg:w-[55%] h-screen sticky top-0 relative overflow-hidden bg-muted items-center justify-center">
+        {/* Abstract Background */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
-        <div className="bg-background/60 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-border/50">
-          {step < STEP.SUCCESS && <StepIndicator current={step} total={4} />}
-          {children}
-        </div>
-
-        {step < STEP.SUCCESS && (
-          <div className="mt-8 text-center">
-            <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
-              <ArrowLeft className="w-4 h-4" />
+        {/* Glassmorphism Container for Illustration */}
+        <div className="relative z-10 w-full max-w-lg p-12 backdrop-blur-md bg-background/40 border rounded-[24px] shadow-2xl text-center">
+          <div className="flex items-center justify-center mb-8 relative">
+            <Link 
+              to="/login" 
+              className="absolute -top-6 left-0 flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="mr-1 h-4 w-4" />
               Back to Login
             </Link>
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+              <Logo className="h-12 w-12" />
+            </div>
           </div>
-        )}
+          <h2 className="text-4xl font-bold tracking-tight mb-4">LibraVault</h2>
+          <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
+            Recover your account and regain access to the workspace.
+          </p>
+        </div>
+      </div>
+
+      {/* Right Side: Form (45%) */}
+      <div className="w-full lg:w-[45%] flex flex-col justify-center p-6 sm:p-12 md:p-24 bg-background relative z-10 shadow-2xl overflow-y-auto">
+        <div className="w-full max-w-md mx-auto relative z-10">
+          {showOtpPopup && <OtpPopup otp={wrongAnswerOtp} onClose={handleOtpPopupClose} />}
+          
+          <div className="flex lg:hidden items-center gap-2 mb-8">
+            <Logo className="h-8 w-8 text-primary" />
+            <span className="font-bold text-xl tracking-tight">LibraVault</span>
+          </div>
+
+          <div className="mb-6">
+            {step < STEP.SUCCESS && <StepIndicator current={step} total={4} />}
+          </div>
+          
+          {children}
+
+          {/* Removed duplicate Back to Login */}
+        </div>
       </div>
     </div>
   );

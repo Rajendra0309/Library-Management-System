@@ -26,6 +26,7 @@ const AdminDashboard = () => {
   const [report, setReport] = useState(null);
   const [recentBorrows, setRecentBorrows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState('1M');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,7 +93,7 @@ const AdminDashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="relative overflow-hidden group">
+        <Card className="relative overflow-hidden group border-border/40 shadow-sm bg-background/50 backdrop-blur-sm hover:shadow-md transition-shadow">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Books</CardTitle>
@@ -111,7 +112,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group">
+        <Card className="relative overflow-hidden group border-border/40 shadow-sm bg-background/50 backdrop-blur-sm hover:shadow-md transition-shadow">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Members</CardTitle>
@@ -130,7 +131,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group">
+        <Card className="relative overflow-hidden group border-border/40 shadow-sm bg-background/50 backdrop-blur-sm hover:shadow-md transition-shadow">
           <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Borrows</CardTitle>
@@ -149,7 +150,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group">
+        <Card className="relative overflow-hidden group border-border/40 shadow-sm bg-background/50 backdrop-blur-sm hover:shadow-md transition-shadow">
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Revenue (Fines)</CardTitle>
@@ -171,16 +172,16 @@ const AdminDashboard = () => {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <Card className="lg:col-span-8 flex flex-col">
+        <Card className="lg:col-span-8 flex flex-col border-border/40 shadow-sm bg-background/50 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-6">
             <div className="space-y-1">
               <CardTitle>Borrowing Activity</CardTitle>
               <CardDescription>Monthly borrowing trends across all categories</CardDescription>
             </div>
             <div className="flex items-center bg-muted rounded-md p-1">
-              <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground">1W</Button>
-              <Button variant="secondary" size="sm" className="h-7 text-xs px-2 shadow-sm">1M</Button>
-              <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground">1Y</Button>
+              <Button variant={timeRange === '1W' ? 'secondary' : 'ghost'} onClick={() => setTimeRange('1W')} size="sm" className={`h-7 text-xs px-2 ${timeRange === '1W' ? 'shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>1W</Button>
+              <Button variant={timeRange === '1M' ? 'secondary' : 'ghost'} onClick={() => setTimeRange('1M')} size="sm" className={`h-7 text-xs px-2 ${timeRange === '1M' ? 'shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>1M</Button>
+              <Button variant={timeRange === '1Y' ? 'secondary' : 'ghost'} onClick={() => setTimeRange('1Y')} size="sm" className={`h-7 text-xs px-2 ${timeRange === '1Y' ? 'shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>1Y</Button>
             </div>
           </CardHeader>
           <CardContent className="flex-1 pb-4">
@@ -212,7 +213,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-4 flex flex-col">
+        <Card className="lg:col-span-4 flex flex-col border-border/40 shadow-sm bg-background/50 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-6">
             <div className="space-y-1">
               <CardTitle>Genre Distribution</CardTitle>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import PdfViewer from '../../components/PdfViewer';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -22,6 +23,7 @@ import {
 const BookDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ebookUrl, setEbookUrl] = useState(null);
@@ -118,12 +120,16 @@ const BookDetail = () => {
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" asChild title="Edit Record">
-            <Link to={`/books/edit/${book.id}`}><Edit className="h-4 w-4" /></Link>
-          </Button>
-          <Button variant="destructive" size="icon" onClick={handleDelete} title="Delete Record">
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {user?.role !== 'member' && (
+            <>
+              <Button variant="outline" size="icon" asChild title="Edit Record">
+                <Link to={`/books/edit/${book.id}`}><Edit className="h-4 w-4" /></Link>
+              </Button>
+              <Button variant="destructive" size="icon" onClick={handleDelete} title="Delete Record">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -141,7 +147,7 @@ const BookDetail = () => {
                 </div>
               )}
               {book.coverImage ? (
-                <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src={book.coverImage} alt={`Cover for ${book.title}`} />
+                <img onContextMenu={(e) => e.preventDefault()} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src={book.coverImage} alt={`Cover for ${book.title}`} />
               ) : (
                 <BookOpen className="h-20 w-20 text-muted-foreground/30" />
               )}

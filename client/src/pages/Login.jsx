@@ -48,7 +48,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex selection:bg-primary/20">
       {/* Left: Brand Illustration (55%) */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-muted items-center justify-center">
+      <div className="hidden lg:flex lg:w-[55%] h-screen sticky top-0 relative overflow-hidden bg-muted items-center justify-center">
         {/* Abstract Background */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse"></div>

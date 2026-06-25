@@ -23,7 +23,7 @@ const Settings = () => {
   const { user } = useAuth();
   const isManagement = user?.role === 'admin' || user?.role === 'librarian';
 
-  const [activeTab, setActiveTab] = useState(isManagement ? 'libraryConfig' : 'profile');
+  const [activeTab, setActiveTab] = useState('profile');
 
   // Library Config State
   const [loanPeriod, setLoanPeriod] = useState(14);
