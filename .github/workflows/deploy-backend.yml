@@ -1,7 +1,21 @@
 name: CI/CD Pipeline for AWS ECS Fargate
 
 on:
-  workflow_dispatch: # Manual trigger button only
+  push:
+    branches:
+      - main
+    paths:
+      - 'server/**'
+      - 'ai-service/**'
+      - 'etl-pipeline/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'server/**'
+      - 'ai-service/**'
+      - 'etl-pipeline/**'
+  workflow_dispatch:
 
 jobs:
   test:
@@ -9,12 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install Server Dependencies
         working-directory: ./server
@@ -30,10 +44,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -41,27 +55,31 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push Node.js image to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: lms-server
           IMAGE_TAG: latest
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           cd server
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:$COMMIT_SHA .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$COMMIT_SHA
 
       - name: Build, tag, and push AI Service image to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: lms-ai-service
           IMAGE_TAG: latest
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           cd ai-service
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:$COMMIT_SHA .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$COMMIT_SHA
 
       - name: Force new deployment on ECS Fargate
         run: |

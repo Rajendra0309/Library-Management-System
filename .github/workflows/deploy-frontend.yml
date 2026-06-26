@@ -1,9 +1,17 @@
 name: Deploy React Frontend to S3
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
     paths:
-      - 'client/**' # Only run when frontend code changes
+      - 'client/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'client/**'
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
