@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link,useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import PdfViewer from '../../components/PdfViewer';
+import { useAuth } from '../../context/AuthContext';
+import ReserveBook from '../Reservations/ReserveBook';
 
 const BookDetail = () => {
   const { id } = useParams();
@@ -10,15 +12,37 @@ const BookDetail = () => {
   const [loading, setLoading] = useState(true);
   const [ebookUrl, setEbookUrl] = useState(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [reservationQueue, setReservationQueue] = useState([]);
+  const { user } = useAuth();
  
   useEffect(() => {
-    fetchBook();
-  }, [id]);
+    if (user) {
+      fetchBook();
+    }
+  }, [id, user]);
 
   const fetchBook = async () => {
     try {
+      // Fetch book details
       const res = await api.get(`/books/${id}`);
       setBook(res.data.data);
+
+      // Fetch reservation queue only for Admin/Librarian
+      if (
+        user?.role === "admin" ||
+        user?.role === "librarian"
+      ) {
+        try {
+          const queueRes = await api.get(
+            `/reservations/book/${id}`
+          );
+
+          setReservationQueue(queueRes.data.data || []);
+        } catch (err) {
+          console.log("Unable to fetch reservation queue.");
+        }
+      }
+
     } catch (error) {
       console.error("Error fetching book:", error);
     } finally {
@@ -206,34 +230,48 @@ const BookDetail = () => {
               <span className="material-symbols-outlined">library_add_check</span>
               {book.ebookUrl ? "Read Ebook" : "Ebook Not Available"}
             </button>
-            <button className="border border-border-default text-primary font-body-base text-body-base px-3xl py-md rounded-lg hover:bg-bg-hover transition-colors flex items-center gap-sm">
-              <span className="material-symbols-outlined">bookmark_add</span>
-              Reserve
-            </button>
+              {user?.role === "member" && (
+                <ReserveBook
+                  book={book}
+                  onReservationCreated={fetchBook}
+                />
+              )}
             <div className="flex-1"></div>
-            <Link
-              to={`/books/edit/${book.id}`}
-              className="p-sm text-text-secondary border border-border-default rounded-lg hover:bg-bg-hover hover:text-on-surface transition-colors"
-              title="Edit Record"
-            >
-              <span className="material-symbols-outlined">edit</span>
-            </Link>
-            <button
-              onClick={handleDelete}
-              className="p-sm text-error border border-error-container bg-error-container/20 rounded-lg hover:bg-error-container transition-colors"
-              title="Delete Record"
-            >
-              <span className="material-symbols-outlined">delete</span>
-            </button>
+            {user?.role !== 'member' && (
+              <>
+                <Link
+                  to={`/books/edit/${book.id}`}
+                  className="p-sm text-text-secondary border border-border-default rounded-lg hover:bg-bg-hover hover:text-on-surface transition-colors"
+                  title="Edit Record"
+                >
+                  <span className="material-symbols-outlined">
+                    edit
+                  </span>
+                </Link>
+
+                <button
+                  onClick={handleDelete}
+                  className="p-sm text-error border border-error-container bg-error-container/20 rounded-lg hover:bg-error-container transition-colors"
+                  title="Delete Record"
+                >
+                  <span className="material-symbols-outlined">
+                    delete
+                  </span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Reservation Queue Table */}
+      {user?.role !== "member" && (
       <div className="mt-4xl bg-surface rounded-xl shadow-sm border border-border-subtle overflow-hidden">
         <div className="p-card-padding border-b border-border-subtle flex justify-between items-center bg-surface-bright">
           <h2 className="font-headline-lg text-headline-lg text-on-surface">Reservation Queue</h2>
-          <span className="bg-surface-variant text-on-surface-variant font-label-xs text-label-xs px-md py-base rounded-full">1 Waiting</span>
+          <span className="bg-surface-variant text-on-surface-variant font-label-xs text-label-xs px-md py-base rounded-full">
+              {reservationQueue.length} Waiting
+          </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -246,22 +284,87 @@ const BookDetail = () => {
                 <th className="font-label-xs text-label-xs uppercase tracking-widest text-text-secondary px-card-padding py-md border-b border-border-subtle text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              <tr className="hover:bg-bg-hover transition-colors h-[48px] border-b border-border-subtle last:border-0">
-                <td className="px-card-padding py-sm font-body-sm text-body-sm text-on-surface">
-                  <span className="bg-primary-container text-on-primary-container w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                </td>
-                <td className="px-card-padding py-sm font-body-sm text-body-sm text-on-surface font-semibold">Eleanor Vance</td>
-                <td className="px-card-padding py-sm font-code-mono text-code-mono text-text-secondary">MBR-8492</td>
-                <td className="px-card-padding py-sm font-body-sm text-body-sm text-text-secondary">Oct 24, 2023</td>
-                <td className="px-card-padding py-sm text-right">
-                  <button className="text-primary hover:text-primary-container font-body-sm text-body-sm font-semibold">Notify</button>
-                </td>
+              <tbody>
+
+              {reservationQueue.length === 0 ? (
+
+              <tr>
+              <td
+              colSpan="5"
+              className="text-center py-8 text-text-secondary"
+              >
+              No reservations yet.
+              </td>
               </tr>
-            </tbody>
+
+              ) : (
+
+              reservationQueue.map((reservation, index) => (
+
+              <tr
+              key={reservation.id}
+              className="hover:bg-bg-hover transition-colors h-[48px] border-b border-border-subtle"
+              >
+
+              <td className="px-card-padding py-sm">
+
+              <span className="bg-primary-container text-on-primary-container w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+
+              {index + 1}
+
+              </span>
+
+              </td>
+
+              <td className="px-card-padding py-sm font-semibold">
+
+              {reservation.member.name}
+
+              </td>
+
+              <td className="px-card-padding py-sm font-code-mono">
+
+              {reservation.member.membershipId}
+
+              </td>
+
+              <td className="px-card-padding py-sm">
+
+              {new Date(
+              reservation.reservedAt
+              ).toLocaleDateString()}
+
+              </td>
+
+              <td className="px-card-padding py-sm text-right">
+
+              <span
+              className={`px-2 py-1 rounded-full text-xs ${
+              reservation.notified
+              ? "bg-green-100 text-green-700"
+              : "bg-yellow-100 text-yellow-700"
+              }`}
+              >
+
+              {reservation.notified
+              ? "Notified"
+              : "Waiting"}
+
+              </span>
+
+              </td>
+
+              </tr>
+
+              ))
+
+              )}
+
+              </tbody>
           </table>
         </div>
       </div>
+      )}
 
       {showPdfViewer && ebookUrl && (
         <PdfViewer url={ebookUrl} title={book.title} onClose={() => setShowPdfViewer(false)} />

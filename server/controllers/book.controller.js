@@ -29,6 +29,16 @@ exports.createBook = async (req, res) => {
       });
     }
 
+    // ISBN format validation (10 or 13 digits)
+    const cleanISBN = isbn.replace(/[-\s]/g, "");
+
+    if (!/^\d{10}(\d{3})?$/.test(cleanISBN)) {
+      return res.status(400).json({
+        success: false,
+        message: "ISBN must contain 10 or 13 digits.",
+      });
+    }
+
     // Duplicate ISBN validation
     const existingBook = await prisma.book.findUnique({
       where: { isbn },
@@ -292,6 +302,41 @@ exports.updateBook = async (req, res) => {
         message: "Book not found",
       });
     }
+
+    // Validate ISBN if it is being updated
+    if (req.body.isbn) {
+
+      const cleanISBN = req.body.isbn.replace(/[-\s]/g, "");
+
+      if (!/^\d{10}(\d{3})?$/.test(cleanISBN)) {
+        return res.status(400).json({
+          success: false,
+          message: "ISBN must contain 10 or 13 digits.",
+        });
+      }
+
+    }    
+
+    // Prevent duplicate ISBN while updating
+    if (req.body.isbn) {
+
+      const duplicateBook = await prisma.book.findFirst({
+        where: {
+          isbn: req.body.isbn,
+          NOT: {
+            id,
+          },
+        },
+      });
+
+      if (duplicateBook) {
+        return res.status(409).json({
+          success: false,
+          message: "ISBN already exists.",
+        });
+      }
+
+    }    
 
     let coverImage = existingBook.coverImage;
 

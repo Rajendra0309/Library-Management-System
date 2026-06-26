@@ -1,21 +1,28 @@
 import React, { useState, useEffect } from 'react';
-// import api from '../../services/axios';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import { Link } from 'react-router-dom';
 
 
 
 const BookCatalog = () => {
-  const [viewMode, setViewMode] = useState('grid');
+  // const [viewMode, setViewMode] = useState('grid');
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [availableOnly, setAvailableOnly] = useState(false);
-
+  const { user } = useAuth();
+const [viewMode, setViewMode] = useState(() => {
+  return localStorage.getItem("bookViewMode") || "grid";
+});
   useEffect(() => {
     fetchBooks();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("bookViewMode", viewMode);
+  }, [viewMode]);  
 
     const fetchBooks = async () => {
       try {
@@ -87,18 +94,20 @@ const BookCatalog = () => {
               <span className="material-symbols-outlined">view_list</span>
             </button>
           </div>
-            <Link
-              to="/books/add"
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-body-sm text-body-sm font-semibold hover:shadow-brand-glow active:scale-[0.97] transition-all"
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontVariationSettings: "'FILL' 1" }}
+            {user?.role !== 'member' && (
+              <Link
+                to="/books/add"
+                className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-body-sm text-body-sm font-semibold hover:shadow-brand-glow active:scale-[0.97] transition-all"
               >
-                add
-              </span>
-              Add Book
-            </Link>
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  add
+                </span>
+                Add Book
+              </Link>
+            )}
         </div>
       </div>
 
@@ -182,46 +191,190 @@ const BookCatalog = () => {
         </div>
       </div>
 
+      
+      {/* Books */}
       {/* Grid View */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-xl mb-4xl">
-        {filteredBooks.map((book) => (
-          <div key={book.id} className="bg-bg-surface rounded-[14px] border border-border-subtle overflow-hidden relative group hover:-translate-y-1 hover:border-border-default hover:shadow-md transition-all duration-300 flex flex-col h-full">
-            <div className={`aspect-[3/4] bg-surface-variant relative overflow-hidden ${!book.coverUrl ? 'flex items-center justify-center' : ''}`}>
-              {book.coverImage ? (
-                <img onContextMenu={(e) => e.preventDefault()} alt={`Book cover for ${book.title}`} className="w-full h-full object-cover" src={book.coverImage} />
-              ) : (
-                <span className="material-symbols-outlined text-outline-variant text-6xl">menu_book</span>
-              )}
-              <div className="absolute inset-0 bg-inverse-surface/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <Link to={`/books/${book.id}`} className="bg-surface text-primary font-body-sm text-body-sm font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-bg-hover transition-colors">
-                  View Details
-                </Link>
-              </div>
-            </div>
-            
-            <div className="p-card-padding flex-1 flex flex-col">
-              <div className="flex justify-between items-start mb-2 gap-2">
-                <span className="bg-surface-container-high text-on-surface font-label-xs text-label-xs px-2 py-1 rounded-full uppercase">{book.genre}</span>
-                <span 
-                  className={`w-2 h-2 rounded-full ${book.availableCopies > 0 ? 'bg-tertiary-fixed-dim' : 'bg-error'}`} 
-                  title={
-                    book.availableCopies > 0
-                      ? 'Available'
-                      : 'Unavailable'
-                  }
-                ></span>
-              </div>
-              <h3 className="font-headline-lg text-headline-lg text-on-surface mb-1 line-clamp-2">{book.title}</h3>
-              <p className="font-body-sm text-body-sm text-text-secondary mb-4 line-clamp-1">{book.author}</p>
-              
-              <div className="mt-auto flex justify-between items-center border-t border-border-subtle pt-3">
-                <span className="font-code-mono text-code-mono text-text-tertiary text-[12px]">ISBN {book.isbn}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {viewMode === "grid" ? (
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-xl mb-4xl">
+          {filteredBooks.map((book) => (
+            <div key={book.id} className="bg-bg-surface rounded-[14px] border border-border-subtle overflow-hidden relative group hover:-translate-y-1 hover:border-border-default hover:shadow-md transition-all duration-300 flex flex-col h-full">
+              <div className={`aspect-[3/4] bg-surface-variant relative overflow-hidden ${!book.coverUrl ? 'flex items-center justify-center' : ''}`}>
+                {book.coverImage ? (
+                  <img onContextMenu={(e) => e.preventDefault()} alt={`Book cover for ${book.title}`} className="w-full h-full object-cover" src={book.coverImage} />
+                ) : (
+                  <span className="material-symbols-outlined text-outline-variant text-6xl">menu_book</span>
+                )}
+                <div className="absolute inset-0 bg-inverse-surface/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <Link to={`/books/${book.id}`} className="bg-surface text-primary font-body-sm text-body-sm font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-bg-hover transition-colors">
+                    View Details
+                  </Link>
+                </div>
+              </div>
+              
+              <div className="p-card-padding flex-1 flex flex-col">
+                <div className="flex justify-between items-start mb-2 gap-2">
+                  <span className="bg-surface-container-high text-on-surface font-label-xs text-label-xs px-2 py-1 rounded-full uppercase">{book.genre}</span>
+                  <span 
+                    className={`w-2 h-2 rounded-full ${book.availableCopies > 0 ? 'bg-tertiary-fixed-dim' : 'bg-error'}`} 
+                    title={
+                      book.availableCopies > 0
+                        ? 'Available'
+                        : 'Unavailable'
+                    }
+                  ></span>
+                </div>
+                <h3 className="font-headline-lg text-headline-lg text-on-surface mb-1 line-clamp-2">{book.title}</h3>
+                <p className="font-body-sm text-body-sm text-text-secondary mb-4 line-clamp-1">{book.author}</p>
+                
+                <div className="mt-auto flex justify-between items-center border-t border-border-subtle pt-3">
+                  <span className="font-code-mono text-code-mono text-text-tertiary text-[12px]">ISBN {book.isbn}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+          ) : (
+
+          <div>
+
+          {/* List  View */}
+          <div className="bg-bg-surface rounded-xl border border-border-subtle overflow-hidden mb-4xl shadow-sm">
+
+            <table className="w-full border-collapse">
+
+              <thead className="bg-surface-bright border-b border-border-subtle">
+
+                <tr>
+
+                  <th className="px-6 py-4 text-left">Cover</th>
+
+                  <th className="px-6 py-4 text-left">Title</th>
+
+                  <th className="px-6 py-4 text-left">Author</th>
+
+                  <th className="px-6 py-4 text-left">Genre</th>
+
+                  <th className="px-6 py-4 text-center">Copies</th>
+
+                  <th className="px-6 py-4 text-center">Status</th>
+
+                  <th className="px-6 py-4 text-center">Action</th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {filteredBooks.length === 0 ? (
+
+                  <tr>
+
+                    <td
+                      colSpan="7"
+                      className="text-center py-10 text-text-secondary"
+                    >
+                      No books found.
+                    </td>
+
+                  </tr>
+
+                ) : (
+
+                  filteredBooks.map((book) => (
+
+                    <tr
+                      key={book.id}
+                      className="border-b border-border-subtle hover:bg-bg-hover transition-colors"
+                    >
+
+                      <td className="px-6 py-4">
+
+                        {book.coverImage ? (
+
+                          <img
+                            src={book.coverImage}
+                            alt={book.title}
+                            className="w-14 h-20 object-cover rounded"
+                          />
+
+                        ) : (
+
+                          <span className="material-symbols-outlined text-4xl text-outline-variant">
+                            menu_book
+                          </span>
+
+                        )}
+
+                      </td>
+
+                      <td className="px-6 py-4 font-semibold">
+
+                        {book.title}
+
+                      </td>
+
+                      <td className="px-6 py-4">
+
+                        {book.author}
+
+                      </td>
+
+                      <td className="px-6 py-4">
+
+                        {book.genre}
+
+                      </td>
+
+                      <td className="px-6 py-4 text-center">
+
+                        {book.availableCopies}/{book.totalCopies}
+
+                      </td>
+
+                      <td className="px-6 py-4 text-center">
+
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            book.availableCopies > 0
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {book.availableCopies > 0
+                            ? "Available"
+                            : "Unavailable"}
+                        </span>
+
+                      </td>
+
+                      <td className="px-6 py-4 text-center">
+
+                        <Link
+                          to={`/books/${book.id}`}
+                          className="bg-primary text-white px-3 py-2 rounded-lg text-sm hover:opacity-90 transition"
+                        >
+                          View
+                        </Link>
+
+                      </td>
+
+                    </tr>
+
+                  ))
+
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>          
+
+          </div>
+
+      )}
       {/* Pagination */}
       <div className="flex justify-center items-center gap-2 mt-4xl">
         <button className="p-2 rounded-lg border border-border-default text-text-secondary hover:bg-bg-hover disabled:opacity-50 transition-colors" disabled>
