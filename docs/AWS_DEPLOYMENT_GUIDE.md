@@ -104,12 +104,13 @@ Now that your images are in ECR, you can start the servers.
      - **Name:** `lms-server-container`
      - **Image URI:** `[Paste your ECR URI for lms-server]:latest`
      - **Port mappings:** 5000 (TCP)
-     - **Environment variables:** Add the following five variables:
+     - **Environment variables:** Add the following six variables:
        1. `DATABASE_URL` (Set to: `postgresql://postgres:[PASSWORD]@[RDS_ENDPOINT]:5432/postgres?schema=public`)
        2. `AWS_ACCESS_KEY_ID` (Your IAM User Access Key)
        3. `AWS_SECRET_ACCESS_KEY` (Your IAM User Secret Key)
        4. `AWS_REGION` (e.g., `us-east-1`)
        5. `AWS_BUCKET_NAME` (e.g., `lms-digital-assets`)
+       6. `JWT_SECRET` (e.g., `my_super_secret_key_123`)
    
    - **Container 2 (AI Service):**
      - Click **Add more containers**.
