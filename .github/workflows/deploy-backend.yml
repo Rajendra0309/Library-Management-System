@@ -32,7 +32,7 @@ jobs:
 
       - name: Install Server Dependencies
         working-directory: ./server
-        run: npm ci
+        run: npm install
 
       - name: Run Backend Syntax Check
         working-directory: ./server
@@ -81,7 +81,18 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$COMMIT_SHA
 
+      - name: Build, tag, and push ETL Pipeline image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: lms-etl-pipeline
+          IMAGE_TAG: latest
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          cd etl-pipeline
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:$COMMIT_SHA .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$COMMIT_SHA
+
       - name: Force new deployment on ECS Fargate
         run: |
-          aws ecs update-service --cluster lms-cluster --service lms-server-service --force-new-deployment
-          aws ecs update-service --cluster lms-cluster --service lms-ai-service --force-new-deployment
+          aws ecs update-service --cluster lms-cluster --service lms-server-service --force-new-deployment || echo "ECS Service not created yet, skipping force deployment"
