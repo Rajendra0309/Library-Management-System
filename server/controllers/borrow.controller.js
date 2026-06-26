@@ -96,6 +96,19 @@ exports.issueBook = async (req, res) => {
         dueDate.setDate(issueDate.getDate() + 14);
 
         const borrow = await prisma.$transaction(async (tx) => {
+            // Atomically check and update book availability
+            const updateResult = await tx.book.updateMany({
+                where: { id: bookId, availableCopies: { gt: 0 } },
+                data: {
+                    availableCopies: { decrement: 1 },
+                    timesBorrowed: { increment: 1 },
+                },
+            });
+
+            if (updateResult.count === 0) {
+                throw new Error("ConcurrencyError: Book is no longer available");
+            }
+
             // Create borrow record
             const newBorrow = await tx.borrow.create({
                 data: {
@@ -104,15 +117,6 @@ exports.issueBook = async (req, res) => {
                     issueDate,
                     dueDate,
                     status: "active",
-                },
-            });
-
-            // Update book availability
-            await tx.book.update({
-                where: { id: bookId },
-                data: {
-                    availableCopies: { decrement: 1 },
-                    timesBorrowed: { increment: 1 },
                 },
             });
 
@@ -126,6 +130,14 @@ exports.issueBook = async (req, res) => {
         });
     } catch (error) {
         console.error("Issue Book Error:", error);
+        
+        if (error.message && error.message.includes("ConcurrencyError")) {
+             return res.status(409).json({
+                 success: false,
+                 message: "Book is no longer available (borrowed by another user just now).",
+             });
+        }
+
         return res.status(500).json({
             success: false,
             message: "Internal server error",
@@ -319,10 +331,15 @@ GET /api/borrow/active
 */
 exports.getActiveBorrows = async (req, res) => {
     try {
+        const where = { status: "active" };
+        if (req.user && req.user.role === 'librarian' && req.user.city) {
+            where.book = { city: req.user.city };
+        }
+
         const borrows = await prisma.borrow.findMany({
-            where: { status: "active" },
+            where,
             include: {
-                book: { select: { title: true, author: true, isbn: true } },
+                book: { select: { title: true, author: true, isbn: true, city: true, libraryName: true } },
                 member: { select: { name: true, email: true, membershipId: true } },
             },
             orderBy: { dueDate: "asc" },
@@ -350,13 +367,19 @@ GET /api/borrow/overdue
 */
 exports.getOverdueBorrows = async (req, res) => {
     try {
+        const where = {
+            status: "active",
+            dueDate: { lt: new Date() },
+        };
+        
+        if (req.user && req.user.role === 'librarian' && req.user.city) {
+            where.book = { city: req.user.city };
+        }
+
         const borrows = await prisma.borrow.findMany({
-            where: {
-                status: "active",
-                dueDate: { lt: new Date() },
-            },
+            where,
             include: {
-                book: { select: { title: true, author: true, isbn: true } },
+                book: { select: { title: true, author: true, isbn: true, city: true, libraryName: true } },
                 member: { select: { name: true, email: true, membershipId: true } },
             },
             orderBy: { dueDate: "asc" },

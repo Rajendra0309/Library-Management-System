@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getMemberHistory, getMemberById } from '../../services/memberService';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, CheckCircle2, Clock, CalendarDays, Wallet, BookOpen, ArrowRight, MoreVertical } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAuth } from '../../context/AuthContext';
 
 const MemberDashboard = () => {
+  const { user: currentUser } = useAuth();
   const [member, setMember] = useState(null);
   const [borrowHistory, setBorrowHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const userJson = localStorage.getItem('user');
-  const currentUser = userJson ? JSON.parse(userJson) : null;
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -27,24 +25,35 @@ const MemberDashboard = () => {
 
       try {
         setLoading(true);
-        const [profileRes, historyRes] = await Promise.all([
-           getMemberById(currentUser.id),
-           getMemberHistory(currentUser.id)
-        ]);
+        // We'll fetch sequentially or handle errors individually so one failure doesn't crash everything
+        let m = null;
+        try {
+           const profileRes = await getMemberById(currentUser.id);
+           if (profileRes.success) m = profileRes.data;
+        } catch (err) {
+           console.error("Profile load error", err);
+        }
+        setMember(m);
 
-        if (profileRes.success) setMember(profileRes.data);
-        if (historyRes.success) setBorrowHistory(historyRes.data);
+        let h = [];
+        try {
+           const historyRes = await getMemberHistory(currentUser.id);
+           if (historyRes.success) h = historyRes.data;
+        } catch (err) {
+           console.error("History load error", err);
+           setError('Failed to load full borrowing history.');
+        }
+        setBorrowHistory(h);
+
       } catch (err) {
-         if (err.response?.status !== 404) {
-             setError(err.response?.data?.message || 'Failed to load dashboard.');
-         }
+        setError('Failed to load dashboard. Please try refreshing.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [currentUser]);
+  }, [currentUser?.id, currentUser?.role]);
 
   if (loading) {
     return (
@@ -66,26 +75,35 @@ const MemberDashboard = () => {
     );
   }
 
-  if (error && !member) {
-    return (
-      <div className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-8">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
+  // Allow showing dashboard even if there's a partial error, just show the banner.
+  
   const activeBorrows = borrowHistory.filter(item => item.status === 'active' || item.status === 'overdue' || !item.returnDate);
   const overdueBorrows = activeBorrows.filter(item => item.status === 'overdue' || new Date(item.dueDate) < new Date());
+
+  // Wait, member fines are inside `history` which we might not have. In a real system, the API would return `fines` inside `history`.
+  // If it's missing, default to 0.
+  const totalFines = borrowHistory.reduce((acc, borrow) => {
+    return acc + (borrow.fines ? borrow.fines.reduce((sum, f) => sum + (f.status === 'pending' ? f.amount : 0), 0) : 0);
+  }, 0);
+
+  const calculateDaysLeft = (dueDate) => {
+    const diff = new Date(dueDate) - new Date();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
 
   const memberName = member?.name || currentUser?.name || 'Member';
   const firstName = memberName.split(' ')[0];
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 pb-24">
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Notice</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Header / Welcome Banner */}
       <header className="mb-8">
         <p className="text-sm text-muted-foreground uppercase tracking-widest font-semibold mb-1">Member Dashboard</p>
@@ -93,7 +111,7 @@ const MemberDashboard = () => {
           Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {firstName} <span className="animate-bounce inline-block origin-bottom-right">👋</span>
         </h2>
         <p className="text-muted-foreground mt-2 max-w-2xl text-lg">
-          Here's a quick overview of your current loans and recommendations from the archive.
+          Here's a quick overview of your current loans and borrowing activity.
         </p>
       </header>
 
@@ -162,9 +180,9 @@ const MemberDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <span className="text-4xl font-bold text-foreground">Rs 0.00</span>
+            <span className="text-4xl font-bold text-foreground">Rs {totalFines.toFixed(2)}</span>
             <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5 font-medium">
-              <AlertCircle className="h-4 w-4" /> Clear account
+              <AlertCircle className="h-4 w-4" /> Please pay at the library counter.
             </p>
           </CardContent>
         </Card>
@@ -172,15 +190,15 @@ const MemberDashboard = () => {
 
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column (Borrows & Recommendations) */}
+        {/* Left Column (Borrows) */}
         <div className="lg:col-span-2 space-y-8">
           {/* Currently Borrowed */}
           <section>
             <div className="flex justify-between items-end mb-4">
               <h3 className="text-2xl font-semibold text-foreground tracking-tight">Currently Borrowed</h3>
               <Button variant="link" asChild className="px-0 h-auto font-medium text-primary hover:no-underline">
-                <Link to="/profile" className="flex items-center gap-1">
-                  View all <ArrowRight className="h-4 w-4" />
+                <Link to="/books" className="flex items-center gap-1">
+                  Browse Catalog <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
@@ -191,34 +209,37 @@ const MemberDashboard = () => {
                     <CardContent className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
                       <BookOpen className="h-8 w-8 opacity-20" />
                       <p>You don't have any active borrows right now.</p>
-                      <Button variant="outline" className="mt-2">Browse Catalog</Button>
+                      <Button variant="outline" className="mt-2" asChild><Link to="/books">Browse Catalog</Link></Button>
                     </CardContent>
                   </Card>
                ) : (
-                  activeBorrows.slice(0, 4).map(borrow => (
-                     <Card key={borrow._id} className="overflow-hidden hover:shadow-md transition-all group relative border-border/60">
+                  activeBorrows.map(borrow => (
+                     <Card key={borrow.id} className="overflow-hidden hover:shadow-md transition-all group relative border-border/60">
                        <CardContent className="p-3 flex gap-4 h-full">
                          <div className="w-[80px] h-[110px] rounded-md bg-secondary/50 flex-shrink-0 flex items-center justify-center text-primary/40 relative overflow-hidden">
-                           <BookOpen className="h-8 w-8" />
+                           {borrow.book?.coverImage ? (
+                             <img src={borrow.book.coverImage} className="w-full h-full object-cover" alt="Cover" />
+                           ) : (
+                             <BookOpen className="h-8 w-8" />
+                           )}
                          </div>
                          <div className="flex flex-col justify-between py-1 pr-1 flex-1">
                            <div>
                              <div className="flex justify-between items-start mb-1">
-                               <h4 className="font-semibold text-foreground line-clamp-2 leading-tight">{borrow.bookId?.title || 'Unknown Title'}</h4>
-                               <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground -mr-1">
-                                 <MoreVertical className="h-4 w-4" />
-                               </Button>
+                               <h4 className="font-semibold text-foreground line-clamp-2 leading-tight">{borrow.book?.title || 'Unknown Title'}</h4>
                              </div>
                            </div>
                            <div>
-                             <div className="flex items-center gap-1.5 mb-2">
-                               <span className={`w-2 h-2 rounded-full ${borrow.status === 'overdue' ? 'bg-destructive' : 'bg-green-500'}`}></span>
-                               <span className={`font-mono text-xs font-medium ${borrow.status === 'overdue' ? 'text-destructive' : 'text-green-600 dark:text-green-500'}`}>
-                                 Due {new Date(borrow.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                             <div className="flex items-center gap-1.5 mb-1">
+                               <span className={`w-2 h-2 rounded-full ${borrow.status === 'overdue' || calculateDaysLeft(borrow.dueDate) < 0 ? 'bg-destructive' : 'bg-green-500'}`}></span>
+                               <span className={`font-mono text-xs font-medium ${borrow.status === 'overdue' || calculateDaysLeft(borrow.dueDate) < 0 ? 'text-destructive' : 'text-green-600 dark:text-green-500'}`}>
+                                 {calculateDaysLeft(borrow.dueDate) < 0 ? `${Math.abs(calculateDaysLeft(borrow.dueDate))} days overdue` : `${calculateDaysLeft(borrow.dueDate)} days left`}
                                </span>
                              </div>
-                             <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-                               <div className={`h-full rounded-full w-[50%] ${borrow.status === 'overdue' ? 'bg-destructive' : 'bg-green-500'}`}></div>
+                             <div className="text-[10px] text-muted-foreground mb-2 line-clamp-1">
+                               {borrow.book?.libraryName && borrow.book?.city 
+                                  ? `${borrow.book.libraryName}, ${borrow.book.city}` 
+                                  : borrow.book?.libraryName || borrow.book?.city || 'Central Library'}
                              </div>
                            </div>
                          </div>
@@ -226,49 +247,6 @@ const MemberDashboard = () => {
                      </Card>
                   ))
                )}
-            </div>
-          </section>
-
-          {/* Recommended For You */}
-          <section>
-            <div className="mb-4">
-              <h3 className="text-2xl font-semibold text-foreground tracking-tight">Recommended For You</h3>
-              <p className="text-sm text-muted-foreground">Based on recent catalog additions</p>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 pt-1 px-1 -mx-1 snap-x">
-                {/* Mock Recommendations */}
-                <div className="w-[140px] flex-shrink-0 group cursor-pointer snap-start">
-                  <div className="w-[140px] h-[190px] rounded-lg bg-secondary/30 overflow-hidden mb-3 border border-border/50 relative flex items-center justify-center text-primary/20 hover:shadow-md transition-all">
-                    <BookOpen className="h-10 w-10" />
-                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button size="sm" variant="secondary" className="shadow-lg font-semibold tracking-wide rounded-full px-4">Reserve</Button>
-                    </div>
-                  </div>
-                  <h4 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">Atomic Habits</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">James Clear</p>
-                </div>
-                
-                <div className="w-[140px] flex-shrink-0 group cursor-pointer snap-start">
-                  <div className="w-[140px] h-[190px] rounded-lg bg-secondary/30 overflow-hidden mb-3 border border-border/50 relative flex items-center justify-center text-primary/20 hover:shadow-md transition-all">
-                    <BookOpen className="h-10 w-10" />
-                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button size="sm" variant="secondary" className="shadow-lg font-semibold tracking-wide rounded-full px-4">Reserve</Button>
-                    </div>
-                  </div>
-                  <h4 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">The Lean Startup</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">Eric Ries</p>
-                </div>
-                
-                <div className="w-[140px] flex-shrink-0 group cursor-pointer snap-start">
-                  <div className="w-[140px] h-[190px] rounded-lg bg-secondary/30 overflow-hidden mb-3 border border-border/50 relative flex items-center justify-center text-primary/20 hover:shadow-md transition-all">
-                    <BookOpen className="h-10 w-10" />
-                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button size="sm" variant="secondary" className="shadow-lg font-semibold tracking-wide rounded-full px-4">Reserve</Button>
-                    </div>
-                  </div>
-                  <h4 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">Clean Code</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">Robert C. Martin</p>
-                </div>
             </div>
           </section>
         </div>
@@ -285,11 +263,11 @@ const MemberDashboard = () => {
                   No recent activity found.
                 </div>
               ) : (
-                <div className="relative before:absolute before:inset-0 before:ml-[15px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-border before:to-transparent space-y-6 pl-10 md:pl-0">
-                  {borrowHistory.slice(0, 5).map((history, i) => (
-                    <div key={history._id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                <div className="relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-border before:to-transparent space-y-6 pl-10">
+                  {borrowHistory.slice(0, 10).map((history, i) => (
+                    <div key={history.id} className="relative flex items-center justify-between group">
                       {/* Icon */}
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-background bg-secondary text-secondary-foreground shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm absolute left-[-40px] md:left-1/2">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-background bg-secondary text-secondary-foreground shrink-0 shadow-sm absolute -left-10">
                         {history.returnDate ? (
                           <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
                         ) : (
@@ -298,7 +276,7 @@ const MemberDashboard = () => {
                       </div>
                       
                       {/* Content */}
-                      <div className="w-full md:w-[calc(50%-2rem)] bg-card border border-border/50 rounded-lg p-3 shadow-sm group-hover:border-border transition-colors">
+                      <div className="w-full bg-card border border-border/50 rounded-lg p-3 shadow-sm group-hover:border-border transition-colors">
                         <div className="flex justify-between items-center mb-1">
                           <span className={`text-xs font-semibold uppercase tracking-wider ${history.returnDate ? 'text-green-600 dark:text-green-500' : 'text-primary'}`}>
                             {history.returnDate ? 'Returned' : 'Borrowed'}
@@ -307,7 +285,7 @@ const MemberDashboard = () => {
                             {new Date(history.returnDate || history.issueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </span>
                         </div>
-                        <p className="text-sm font-medium text-foreground line-clamp-1">{history.bookId?.title || 'Unknown Book'}</p>
+                        <p className="text-sm font-medium text-foreground line-clamp-1">{history.book?.title || 'Unknown Book'}</p>
                       </div>
                     </div>
                   ))}

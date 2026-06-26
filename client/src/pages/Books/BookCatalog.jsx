@@ -6,6 +6,8 @@ import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
+import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import { 
   Search, 
   Plus, 
@@ -19,21 +21,52 @@ import {
 } from 'lucide-react';
 
 const BookCatalog = () => {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState('grid');
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [availableOnly, setAvailableOnly] = useState(false);
+  const [city, setCity] = useState(user?.city || '');
+  const [libraryName, setLibraryName] = useState('');
+  const [format, setFormat] = useState('');
+  
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalBooks, setTotalBooks] = useState(0);
 
   useEffect(() => {
-    fetchBooks();
-  }, []);
+    // Reset to page 1 on filter changes
+    setPage(1);
+  }, [searchTerm, selectedGenre, availableOnly, city, libraryName, format]);
+
+  useEffect(() => {
+    // Debounce fetch by 300ms
+    const delayDebounceFn = setTimeout(() => {
+      fetchBooks();
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [page, searchTerm, selectedGenre, availableOnly, city, libraryName, format]);
 
   const fetchBooks = async () => {
+    setLoading(true);
     try {
-      const res = await api.get('/books');
+      const params = {
+        page,
+        limit: 12,
+        q: searchTerm || undefined,
+        genre: selectedGenre || undefined,
+        available: availableOnly ? 'true' : undefined,
+        city: city || undefined,
+        libraryName: libraryName || undefined,
+        format: format || undefined,
+      };
+      
+      const res = await api.get('/books', { params });
       setBooks(res.data.data || []);
+      setTotalPages(res.data.pages || 1);
+      setTotalBooks(res.data.total || 0);
     } catch (error) {
       console.error('Error fetching books:', error);
     } finally {
@@ -41,58 +74,28 @@ const BookCatalog = () => {
     }
   };
 
-  const filteredBooks = books.filter((book) => {
-    const matchesSearch =
-      book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.isbn?.includes(searchTerm);
-
-    const matchesGenre = !selectedGenre || book.genre === selectedGenre;
-    const matchesAvailability = !availableOnly || book.availableCopies > 0;
-
-    return matchesSearch && matchesGenre && matchesAvailability;
-  });
+  // Filtering is now done server-side
+  const filteredBooks = books;
 
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedGenre('');
     setAvailableOnly(false);
+    setCity('');
+    setLibraryName('');
+    setFormat('');
+    setPage(1);
   };
 
   const genres = ['Programming', 'Technology', 'Science', 'History', 'Business', 'Education', 'Fiction', 'Non-Fiction'];
 
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-in fade-in pb-10">
-        <PageHeader 
-          title="Book Catalog" 
-          description="Manage and browse items in the collection."
-        />
-        <div className="flex flex-col md:flex-row gap-4">
-          <Skeleton className="h-10 w-full md:w-1/3" />
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[1,2,3,4,5,6,7,8].map(i => (
-            <div key={i} className="flex flex-col space-y-3">
-              <Skeleton className="h-[300px] w-full rounded-xl" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-[250px]" />
-                <Skeleton className="h-4 w-[200px]" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <PageHeader 
         title="Book Catalog" 
-        description={`Manage and browse ${filteredBooks.length} items in the collection.`}
+        description={`Manage and browse ${totalBooks} items in the collection.`}
         actions={
           <div className="flex items-center gap-2">
             <div className="hidden md:flex bg-muted p-1 rounded-lg">
@@ -113,59 +116,103 @@ const BookCatalog = () => {
                 <ListIcon className="h-4 w-4" />
               </Button>
             </div>
-            <Button asChild>
-              <Link to="/books/add">
-                <Plus className="mr-2 h-4 w-4" /> Add Book
-              </Link>
-            </Button>
+            {user?.role !== 'member' && (
+              <Button asChild>
+                <Link to="/books/add">
+                  <Plus className="mr-2 h-4 w-4" /> Add Book
+                </Link>
+              </Button>
+            )}
           </div>
         }
       />
 
       {/* Filter Bar */}
-      <div className="bg-card p-4 rounded-xl shadow-sm border flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-9 bg-muted/50 border-transparent focus-visible:bg-transparent"
-            placeholder="Search by title, author, or ISBN..."
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <select
-            value={selectedGenre}
-            onChange={(e) => setSelectedGenre(e.target.value)}
-            className="flex h-10 w-[140px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="">All Genres</option>
-            {genres.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-          
-          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium hover:text-primary transition-colors h-10 px-3 rounded-md hover:bg-muted">
-            <input
-              type="checkbox"
-              checked={availableOnly}
-              onChange={(e) => setAvailableOnly(e.target.checked)}
-              className="rounded border-input text-primary focus:ring-primary w-4 h-4"
+      <div className="bg-card p-4 rounded-xl shadow-sm border flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9 bg-muted/50 border-transparent focus-visible:bg-transparent"
+              placeholder="Search by title, author, or ISBN..."
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            Available Only
-          </label>
+          </div>
           
-          {(searchTerm || selectedGenre || availableOnly) && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground ml-auto md:ml-0">
-              <FilterX className="h-4 w-4 mr-2" />
-              Clear
-            </Button>
-          )}
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <select
+              value={selectedGenre}
+              onChange={(e) => setSelectedGenre(e.target.value)}
+              className="flex h-10 w-[140px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">All Genres</option>
+              {genres.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+
+            <select
+              value={format}
+              onChange={(e) => setFormat(e.target.value)}
+              className="flex h-10 w-[140px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">All Formats</option>
+              <option value="physical">Physical Only</option>
+              <option value="ebook">E-Book Available</option>
+            </select>
+            
+            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium hover:text-primary transition-colors h-10 px-3 rounded-md hover:bg-muted">
+              <input
+                type="checkbox"
+                checked={availableOnly}
+                onChange={(e) => setAvailableOnly(e.target.checked)}
+                className="rounded border-input text-primary focus:ring-primary w-4 h-4"
+              />
+              Available
+            </label>
+            
+            {(searchTerm || selectedGenre || availableOnly || city || libraryName || format) && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground ml-auto md:ml-0">
+                <FilterX className="h-4 w-4 mr-2" />
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Location Filters */}
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          <Input
+            className="flex-1 bg-muted/50 border-transparent focus-visible:bg-transparent"
+            placeholder="Filter by City..."
+            type="text"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+          />
+          <Input
+            className="flex-1 bg-muted/50 border-transparent focus-visible:bg-transparent"
+            placeholder="Filter by Library Name..."
+            type="text"
+            value={libraryName}
+            onChange={(e) => setLibraryName(e.target.value)}
+          />
         </div>
       </div>
 
       {/* Content View */}
-      {filteredBooks.length === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[1,2,3,4,5,6,7,8].map(i => (
+            <div key={i} className="flex flex-col space-y-3">
+              <Skeleton className="h-[300px] w-full rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filteredBooks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center bg-card rounded-xl border border-dashed">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
             <BookOpen className="h-8 w-8 text-muted-foreground" />
@@ -178,8 +225,14 @@ const BookCatalog = () => {
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredBooks.map((book) => (
-            <div key={book.id} className="group bg-card rounded-xl border overflow-hidden flex flex-col hover:shadow-md hover:border-primary/20 transition-all duration-300">
+          {filteredBooks.map((book, index) => (
+            <motion.div 
+              key={book.id} 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="group bg-card rounded-xl border overflow-hidden flex flex-col hover:shadow-md hover:border-primary/20 transition-all duration-300"
+            >
               <div className="relative aspect-[3/4] bg-muted flex items-center justify-center overflow-hidden">
                 {book.coverImage ? (
                   <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -211,13 +264,13 @@ const BookCatalog = () => {
                 <p className="text-sm text-muted-foreground line-clamp-1 mb-4">{book.author}</p>
                 
                 <div className="mt-auto pt-3 border-t flex flex-wrap gap-2 justify-between items-center text-xs text-muted-foreground font-mono">
-                  <span className="truncate max-w-[120px]" title={book.isbn}>ISBN {book.isbn}</span>
+                  <span className="shrink-0" title={book.isbn}>ISBN {book.isbn}</span>
                   <span className={`whitespace-nowrap ${book.availableCopies > 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-rose-600 dark:text-rose-400 font-medium'}`}>
                     {book.availableCopies} available
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       ) : (
@@ -234,8 +287,14 @@ const BookCatalog = () => {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filteredBooks.map((book) => (
-                  <tr key={book.id} className="hover:bg-muted/50 transition-colors group">
+                {filteredBooks.map((book, index) => (
+                  <motion.tr 
+                    key={book.id} 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="hover:bg-muted/50 transition-colors group"
+                  >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-14 bg-muted rounded flex items-center justify-center shrink-0 overflow-hidden">
@@ -275,7 +334,7 @@ const BookCatalog = () => {
                         <Link to={`/books/${book.id}`}>Details</Link>
                       </Button>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
@@ -283,7 +342,30 @@ const BookCatalog = () => {
         </div>
       )}
 
-      {/* Pagination removed as requested */}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+          </Button>
+          <span className="text-sm font-medium text-muted-foreground px-4">
+            Page {page} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+          >
+            Next <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -12,6 +12,13 @@ exports.getFines = async (req, res) => {
         const filters = {};
         if (status) filters.status = status;
 
+        // If librarian, only show fines for members in their city
+        if (req.user && req.user.role === 'librarian' && req.user.city) {
+            filters.member = {
+                city: req.user.city
+            };
+        }
+
         const fines = await prisma.fine.findMany({
             where: filters,
             include: {

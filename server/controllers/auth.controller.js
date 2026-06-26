@@ -35,7 +35,7 @@ const register = async (req, res) => {
       });
     }
 
-    const { name, email, password, phone, securityQuestion, securityAnswer } = req.body;
+    const { name, email, password, phone, securityQuestion, securityAnswer, city } = req.body;
 
     // Security question is required
     if (!securityQuestion || !securityAnswer) {
@@ -77,7 +77,8 @@ const register = async (req, res) => {
         status: 'active',
         membershipId,
         securityQuestion: securityQuestion.trim(),
-        securityAnswer: hashedAnswer
+        securityAnswer: hashedAnswer,
+        city: city ? city.trim() : null
       },
       select: {
         id: true,
@@ -86,6 +87,7 @@ const register = async (req, res) => {
         phone: true,
         role: true,
         membershipId: true,
+        city: true,
         status: true,
         createdAt: true
       }
@@ -137,6 +139,7 @@ const login = async (req, res) => {
         phone: true,
         role: true,
         membershipId: true,
+        city: true,
         status: true,
         password: true,
         loginAttempts: true,

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'sonner';
 import api from '../../api/axios';
 import PdfViewer from '../../components/PdfViewer';
+import Barcode from 'react-barcode';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -28,10 +30,26 @@ const BookDetail = () => {
   const [loading, setLoading] = useState(true);
   const [ebookUrl, setEbookUrl] = useState(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
- 
+  const [reservationQueue, setReservationQueue] = useState([]);
+
   useEffect(() => {
     fetchBook();
   }, [id]);
+
+  useEffect(() => {
+    if (user?.role !== 'member' && id) {
+      fetchQueue();
+    }
+  }, [user, id]);
+
+  const fetchQueue = async () => {
+    try {
+      const res = await api.get(`/reservations/book/${id}`);
+      setReservationQueue(res.data.data);
+    } catch (error) {
+      console.error("Error fetching reservation queue:", error);
+    }
+  };
 
   const fetchBook = async () => {
     try {
@@ -50,7 +68,18 @@ const BookDetail = () => {
       setEbookUrl(res.data.ebookUrl);
       setShowPdfViewer(true);
     } catch (error) {
-      alert("Ebook not available");
+      toast.error("Ebook not available");
+    }
+  };
+
+  const handleReserve = async () => {
+    try {
+      const res = await api.post('/reservations', { bookId: id });
+      if (res.data.success) {
+        toast.success("Book reserved successfully");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to reserve book");
     }
   };
 
@@ -61,12 +90,13 @@ const BookDetail = () => {
     try {
       const res = await api.delete(`/books/${id}`);
       if (res.data.success) {
+        toast.success("Book deleted successfully");
         navigate("/books");
         return;
       }
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.message || "Failed to delete book");
+      toast.error(error.response?.data?.message || "Failed to delete book");
     }
   };
 
@@ -158,7 +188,11 @@ const BookDetail = () => {
           <Card>
             <CardContent className="p-6 flex flex-col items-center justify-center gap-4">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Inventory Barcode</span>
-              <div className="w-full h-16 bg-[repeating-linear-gradient(90deg,currentColor_0,currentColor_2px,transparent_2px,transparent_6px,currentColor_6px,currentColor_10px,transparent_10px,transparent_14px)] opacity-20"></div>
+              <div className="w-full flex justify-center py-2" style={{ maxWidth: '100%' }}>
+                <div style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
+                  <Barcode value={book.isbn} width={1.8} height={50} displayValue={false} background="transparent" />
+                </div>
+              </div>
               <span className="font-mono font-medium tracking-widest">{book.isbn}</span>
             </CardContent>
           </Card>
@@ -240,51 +274,66 @@ const BookDetail = () => {
                   {book.ebookUrl ? "Read E-Book" : "E-Book Not Available"}
                 </Button>
                 
-                <Button variant="outline" className="font-semibold h-12 px-6 rounded-lg">
+                <Button variant="outline" className="font-semibold h-12 px-6 rounded-lg" onClick={handleReserve}>
                   <BookmarkPlus className="mr-2 h-5 w-5" /> Reserve
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Reservation Queue Table */}
-          <Card>
-            <CardHeader className="bg-muted/30 border-b pb-4 flex flex-row justify-between items-center space-y-0">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Reservation Queue
-              </CardTitle>
-              <Badge variant="secondary">1 Waiting</Badge>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="bg-muted/20 border-b">
-                      <th className="font-medium text-muted-foreground px-6 py-3">Position</th>
-                      <th className="font-medium text-muted-foreground px-6 py-3">Member Name</th>
-                      <th className="font-medium text-muted-foreground px-6 py-3">Member ID</th>
-                      <th className="font-medium text-muted-foreground px-6 py-3">Date Requested</th>
-                      <th className="font-medium text-muted-foreground px-6 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <span className="bg-primary/10 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                      </td>
-                      <td className="px-6 py-4 font-semibold">Eleanor Vance</td>
-                      <td className="px-6 py-4 font-mono text-muted-foreground text-xs">MBR-8492</td>
-                      <td className="px-6 py-4 text-muted-foreground">Oct 24, 2023</td>
-                      <td className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="sm" className="text-primary font-semibold">Notify</Button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Reservation Queue Table - Hidden for Members */}
+          {user?.role !== 'member' && (
+            <Card>
+              <CardHeader className="bg-muted/30 border-b pb-4 flex flex-row justify-between items-center space-y-0">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Reservation Queue
+                </CardTitle>
+                <Badge variant="secondary">{reservationQueue.length} Waiting</Badge>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="bg-muted/20 border-b">
+                        <th className="font-medium text-muted-foreground px-6 py-3">Position</th>
+                        <th className="font-medium text-muted-foreground px-6 py-3">Member Name</th>
+                        <th className="font-medium text-muted-foreground px-6 py-3">Member ID</th>
+                        <th className="font-medium text-muted-foreground px-6 py-3">Date Requested</th>
+                        <th className="font-medium text-muted-foreground px-6 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {reservationQueue.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-8 text-center text-muted-foreground">
+                            No reservations for this book.
+                          </td>
+                        </tr>
+                      ) : (
+                        reservationQueue.map((res, idx) => (
+                          <tr key={res.id} className="hover:bg-muted/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <span className="bg-primary/10 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">{idx + 1}</span>
+                            </td>
+                            <td className="px-6 py-4 font-semibold">{res.member?.name || 'Unknown'}</td>
+                            <td className="px-6 py-4 font-mono text-muted-foreground text-xs">{res.member?.membershipId || 'Unknown'}</td>
+                            <td className="px-6 py-4 text-muted-foreground">{new Date(res.reservedAt).toLocaleDateString()}</td>
+                            <td className="px-6 py-4 text-right">
+                              {/* TODO: Implement real notification / action */}
+                              <Button variant="ghost" size="sm" className="text-primary font-semibold" disabled={res.notified}>
+                                {res.notified ? 'Notified' : 'Notify'}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

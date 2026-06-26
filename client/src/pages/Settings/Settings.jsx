@@ -194,25 +194,28 @@ const Settings = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               {[
-                { title: 'New Member Registrations', desc: 'Get notified when a new user signs up.' },
-                { title: 'Overdue Alerts', desc: 'Receive daily summaries of items that are overdue.' },
-                { title: 'System Updates', desc: 'Announcements about new features and maintenance.' }
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0 last:pb-0">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">{item.title}</Label>
-                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                { title: 'New Member Registrations', desc: 'Get notified when a new user signs up.', mgmt: true },
+                { title: 'Overdue Alerts', desc: 'Receive daily summaries of items that are overdue.', mgmt: true },
+                { title: 'System Updates', desc: 'Announcements about new features and maintenance.', mgmt: false }
+              ].map((item, idx) => {
+                if (item.mgmt && !isManagement) return null;
+                return (
+                  <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0 last:pb-0">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">{item.title}</Label>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    </div>
+                    <Switch 
+                      checked={notifications[idx]} 
+                      onCheckedChange={(checked) => {
+                        const newN = [...notifications];
+                        newN[idx] = checked;
+                        setNotifications(newN);
+                      }}
+                    />
                   </div>
-                  <Switch 
-                    checked={notifications[idx]} 
-                    onCheckedChange={(checked) => {
-                      const newN = [...notifications];
-                      newN[idx] = checked;
-                      setNotifications(newN);
-                    }}
-                  />
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         )}

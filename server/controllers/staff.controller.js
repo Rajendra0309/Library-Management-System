@@ -38,6 +38,8 @@ const getStaff = async (req, res) => {
           role: true,
           department: true,
           employeeId: true,
+          city: true,
+          libraryName: true,
           status: true,
           createdAt: true
         },
@@ -86,6 +88,8 @@ const getStaffById = async (req, res) => {
         role: true,
         department: true,
         employeeId: true,
+        city: true,
+        libraryName: true,
         status: true,
         securityQuestion: true,
         createdAt: true,
@@ -132,7 +136,7 @@ const createStaff = async (req, res) => {
       });
     }
 
-    const { name, email, password, phone, role, department, employeeId, securityQuestion, securityAnswer } = req.body;
+    const { name, email, password, phone, role, department, securityQuestion, securityAnswer, city, libraryName } = req.body;
 
     // Security question is required for staff too
     if (!securityQuestion || !securityAnswer) {
@@ -153,16 +157,14 @@ const createStaff = async (req, res) => {
       });
     }
 
-    // Check duplicate employeeId if provided
-    if (employeeId) {
-      const existingEmpId = await prisma.user.findUnique({ where: { employeeId } });
-      if (existingEmpId) {
-        return res.status(409).json({
-          success: false,
-          message: 'A staff member with this Employee ID already exists.',
-          error: 'Duplicate employeeId'
-        });
-      }
+    // Generate unique Employee ID
+    const year = new Date().getFullYear();
+    let generatedEmpId;
+    let isUnique = false;
+    while (!isUnique) {
+      generatedEmpId = `EMP-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const existingEmp = await prisma.user.findUnique({ where: { employeeId: generatedEmpId } });
+      if (!existingEmp) isUnique = true;
     }
 
     // Hash password & security answer
@@ -178,7 +180,9 @@ const createStaff = async (req, res) => {
         phone: phone || null,
         role: role || 'librarian',
         department: department || null,
-        employeeId: employeeId || null,
+        employeeId: generatedEmpId,
+        city: city ? city.trim() : null,
+        libraryName: libraryName ? libraryName.trim() : null,
         status: 'active',
         securityQuestion: securityQuestion.trim(),
         securityAnswer: hashedAnswer
@@ -191,6 +195,8 @@ const createStaff = async (req, res) => {
         role: true,
         department: true,
         employeeId: true,
+        city: true,
+        libraryName: true,
         status: true,
         createdAt: true
       }
@@ -251,21 +257,9 @@ const updateStaff = async (req, res) => {
       });
     }
 
-    const { name, phone, role, department, employeeId, status, securityQuestion, securityAnswer } = req.body;
+    const { name, phone, role, department, status, securityQuestion, securityAnswer, city, libraryName } = req.body;
 
-    // Check duplicate employeeId (if changing and not own record)
-    if (employeeId && employeeId !== existing.employeeId) {
-      const empIdConflict = await prisma.user.findFirst({
-        where: { employeeId, NOT: { id: req.params.id } }
-      });
-      if (empIdConflict) {
-        return res.status(409).json({
-          success: false,
-          message: 'Another staff member with this Employee ID already exists.',
-          error: 'Duplicate employeeId'
-        });
-      }
-    }
+
 
     let hashedAnswer;
     if (securityAnswer) {
@@ -279,7 +273,8 @@ const updateStaff = async (req, res) => {
         ...(phone !== undefined && { phone }),
         ...(role && { role }),
         ...(department !== undefined && { department }),
-        ...(employeeId !== undefined && { employeeId }),
+        ...(city !== undefined && { city }),
+        ...(libraryName !== undefined && { libraryName }),
         ...(status && { status }),
         ...(securityQuestion && { securityQuestion: securityQuestion.trim() }),
         ...(hashedAnswer && { securityAnswer: hashedAnswer })
@@ -292,6 +287,8 @@ const updateStaff = async (req, res) => {
         role: true,
         department: true,
         employeeId: true,
+        city: true,
+        libraryName: true,
         status: true,
         updatedAt: true
       }

@@ -5,13 +5,12 @@ import Logo from '../components/ui/Logo';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { Loader2, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { login, isAuthenticated } = useAuth();
@@ -27,19 +26,17 @@ const Login = () => {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    if (error) setError(''); // clear error on new input
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
     try {
       await login(formData.email, formData.password);
       navigate(from, { replace: true });
     } catch (err) {
       const msg = err.response?.data?.message || 'Login failed. Please try again.';
-      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -92,14 +89,6 @@ const Login = () => {
             <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back</h1>
             <p className="text-muted-foreground">Please enter your credentials to access your workspace.</p>
           </div>
-
-          {/* Error Banner */}
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
 
           <form className="space-y-6" onSubmit={handleLogin}>
             <div className="space-y-2">

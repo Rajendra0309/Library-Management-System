@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ArrowLeft, UserPlus, Shield, Lock, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, UserPlus, Shield, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 const hasMinLength = (p) => p.length >= 8;
 const hasNumber = (p) => /\d/.test(p);
@@ -24,13 +24,13 @@ const AddStaff = () => {
     phone: '',
     role: 'librarian',
     department: '',
-    employeeId: '',
+    city: '',
+    libraryName: '',
     securityQuestion: '',
     securityAnswer: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
 
   const password = formData.password;
@@ -41,7 +41,6 @@ const AddStaff = () => {
     if (fieldErrors[name]) {
       setFieldErrors((prev) => { const next = { ...prev }; delete next[name]; return next; });
     }
-    if (error) setError('');
   };
 
   const handleSelectChange = (name, value) => {
@@ -56,6 +55,8 @@ const AddStaff = () => {
     else if (!hasNumber(password)) errs.password = 'Password must contain at least one number.';
     else if (!hasSpecial(password)) errs.password = 'Password must contain at least one special character.';
     if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
+    if (!formData.city?.trim()) errs.city = 'City is required.';
+    if (!formData.libraryName?.trim()) errs.libraryName = 'Library name is required.';
     if (!formData.securityQuestion?.trim()) errs.securityQuestion = 'Security question is required.';
     if (!formData.securityAnswer?.trim()) errs.securityAnswer = 'Answer is required.';
     return errs;
@@ -70,7 +71,6 @@ const AddStaff = () => {
     }
 
     setLoading(true);
-    setError('');
     try {
       await api.post('/staff', {
         name: formData.name,
@@ -79,13 +79,15 @@ const AddStaff = () => {
         phone: formData.phone || undefined,
         role: formData.role,
         department: formData.department || undefined,
-        employeeId: formData.employeeId || undefined,
+        city: formData.city,
+        libraryName: formData.libraryName,
         securityQuestion: formData.securityQuestion,
         securityAnswer: formData.securityAnswer
       });
-      navigate('/staff', { state: { successMsg: `Staff member "${formData.name}" added successfully.` } });
+      toast.success('Staff member created successfully');
+      navigate('/staff');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create staff member. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to create staff member. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -103,14 +105,6 @@ const AddStaff = () => {
           <p className="text-muted-foreground mt-1">Create a new admin or librarian account.</p>
         </div>
       </div>
-
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
@@ -201,15 +195,29 @@ const AddStaff = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="employeeId">Employee ID</Label>
+              <Label htmlFor="city">City <span className="text-destructive">*</span></Label>
               <Input
-                id="employeeId"
-                name="employeeId"
-                placeholder="EMP-2026-001"
-                value={formData.employeeId}
+                id="city"
+                name="city"
+                placeholder="New Delhi"
+                value={formData.city}
                 onChange={handleChange}
+                className={fieldErrors.city ? "border-destructive" : ""}
               />
-              <p className="text-xs text-muted-foreground mt-1">Must be unique across all staff.</p>
+              {fieldErrors.city && <p className="text-xs text-destructive">{fieldErrors.city}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="libraryName">Library Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="libraryName"
+                name="libraryName"
+                placeholder="Delhi Central Library"
+                value={formData.libraryName}
+                onChange={handleChange}
+                className={fieldErrors.libraryName ? "border-destructive" : ""}
+              />
+              {fieldErrors.libraryName && <p className="text-xs text-destructive">{fieldErrors.libraryName}</p>}
             </div>
           </CardContent>
         </Card>

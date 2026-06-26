@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, UserPlus, Shield, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const EditStaff = () => {
   const { id } = useParams();
@@ -18,7 +19,8 @@ const EditStaff = () => {
     phone: '',
     role: 'librarian',
     department: '',
-    employeeId: '',
+    city: '',
+    libraryName: '',
     status: 'active',
     securityQuestion: '',
     securityAnswer: ''
@@ -27,7 +29,6 @@ const EditStaff = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
@@ -41,7 +42,8 @@ const EditStaff = () => {
           phone: s.phone || '',
           role: s.role || 'librarian',
           department: s.department || '',
-          employeeId: s.employeeId || '',
+          city: s.city || '',
+          libraryName: s.libraryName || '',
           status: s.status || 'active',
           securityQuestion: s.securityQuestion || '',
           securityAnswer: ''
@@ -62,7 +64,6 @@ const EditStaff = () => {
     if (fieldErrors[name]) {
       setFieldErrors((prev) => { const next = { ...prev }; delete next[name]; return next; });
     }
-    if (error) setError('');
   };
 
   const handleSelectChange = (name, value) => {
@@ -72,6 +73,8 @@ const EditStaff = () => {
   const validate = () => {
     const errs = {};
     if (!formData.name.trim()) errs.name = 'Full name is required.';
+    if (!formData.city?.trim()) errs.city = 'City is required.';
+    if (!formData.libraryName?.trim()) errs.libraryName = 'Library name is required.';
     if (!formData.securityQuestion?.trim()) errs.securityQuestion = 'Security question is required.';
     return errs;
   };
@@ -85,21 +88,22 @@ const EditStaff = () => {
     }
 
     setLoading(true);
-    setError('');
     try {
       await api.put(`/staff/${id}`, {
         name: formData.name,
         phone: formData.phone || undefined,
         role: formData.role,
         department: formData.department || undefined,
-        employeeId: formData.employeeId || undefined,
+        city: formData.city,
+        libraryName: formData.libraryName,
         status: formData.status,
         securityQuestion: formData.securityQuestion || undefined,
         securityAnswer: formData.securityAnswer || undefined
       });
-      navigate('/staff', { state: { successMsg: `"${formData.name}" updated successfully.` } });
+      toast.success('Staff details updated successfully');
+      navigate('/staff');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update staff member. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to update staff member. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -134,18 +138,15 @@ const EditStaff = () => {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit Staff Member</h1>
-          <p className="text-muted-foreground mt-1">Editing: <span className="font-medium text-primary">{originalEmail}</span></p>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit Staff Profile</h1>
+            <Badge variant={formData.status === 'active' ? 'default' : 'secondary'} className="uppercase">
+              {formData.status}
+            </Badge>
+          </div>
+          <p className="text-muted-foreground mt-1">Update personal info and access privileges.</p>
         </div>
       </div>
-
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
@@ -244,14 +245,29 @@ const EditStaff = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="employeeId">Employee ID</Label>
+              <Label htmlFor="city">City <span className="text-destructive">*</span></Label>
               <Input
-                id="employeeId"
-                name="employeeId"
-                placeholder="EMP-2026-001"
-                value={formData.employeeId}
+                id="city"
+                name="city"
+                placeholder="New Delhi"
+                value={formData.city}
                 onChange={handleChange}
+                className={fieldErrors.city ? "border-destructive" : ""}
               />
+              {fieldErrors.city && <p className="text-xs text-destructive">{fieldErrors.city}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="libraryName">Library Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="libraryName"
+                name="libraryName"
+                placeholder="Delhi Central Library"
+                value={formData.libraryName}
+                onChange={handleChange}
+                className={fieldErrors.libraryName ? "border-destructive" : ""}
+              />
+              {fieldErrors.libraryName && <p className="text-xs text-destructive">{fieldErrors.libraryName}</p>}
             </div>
           </CardContent>
         </Card>

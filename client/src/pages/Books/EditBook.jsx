@@ -326,7 +326,11 @@ const EditBook = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
+              <Label htmlFor="description" className={fieldErrors.description ? "text-destructive" : ""}>
+                Description <span className="text-destructive">*</span>
+              </Label>
               <textarea
+                id="description"
                 rows="5"
                 name="description"
                 value={formData.description}

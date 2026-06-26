@@ -38,6 +38,7 @@ const protect = async (req, res, next) => {
         role: true,
         phone: true,
         membershipId: true,
+        city: true,
         status: true,
         passwordChangedAt: true,
         createdAt: true,

@@ -11,16 +11,36 @@ const getMembers = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
+    const city = req.query.city || '';
+    const libraryName = req.query.libraryName || '';
 
-    const where = {
-      role: 'member',
-      ...(search && {
+    const andConditions = [];
+    
+    if (search) {
+      andConditions.push({
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
           { membershipId: { contains: search, mode: 'insensitive' } }
         ]
-      })
+      });
+    }
+
+    if (city) andConditions.push({ city });
+    if (libraryName) andConditions.push({ borrows: { some: { book: { libraryName } } } });
+
+    if (req.user.role === 'librarian') {
+      andConditions.push({
+        OR: [
+          { city: req.user.city },
+          { borrows: { some: { book: { OR: [ { libraryName: req.user.libraryName }, { city: req.user.city } ] } } } }
+        ]
+      });
+    }
+
+    const where = {
+      role: 'member',
+      ...(andConditions.length > 0 && { AND: andConditions })
     };
 
     const [total, members] = await Promise.all([
@@ -34,6 +54,7 @@ const getMembers = async (req, res) => {
           phone: true,
           membershipId: true,
           status: true,
+          city: true,
           createdAt: true,
           updatedAt: true
         },
@@ -288,7 +309,9 @@ const getMemberHistory = async (req, res) => {
             title: true,
             author: true,
             coverImage: true,
-            isbn: true
+            isbn: true,
+            city: true,
+            libraryName: true
           }
         }
       },

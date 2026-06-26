@@ -12,8 +12,8 @@ app.use(cors());
 
 // Rate Limiting (100 requests per 15 minutes per IP)
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per `window`
   standardHeaders: true,
   legacyHeaders: false,
 });

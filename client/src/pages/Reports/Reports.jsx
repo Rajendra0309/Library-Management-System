@@ -60,7 +60,22 @@ const Reports = () => {
               <SelectItem value="all-time">All Time</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="w-full sm:w-auto gap-2">
+          <Button variant="outline" className="w-full sm:w-auto gap-2" onClick={() => {
+            if (!report) return;
+            const csvContent = "data:text/csv;charset=utf-8,Metric,Value\n"
+              + `Total Books,${report.totalBooks}\n`
+              + `Active Members,${report.totalMembers}\n`
+              + `Active Borrows,${report.activeBorrows}\n`
+              + `Overdue Borrows,${report.overdueBorrows}\n`
+              + `Total Fines (Rs),${report.totalFines}\n`;
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Library_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}>
             <Download className="h-4 w-4" /> Export Report
           </Button>
         </div>

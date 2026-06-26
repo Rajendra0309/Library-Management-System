@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Loader2, Eye, EyeOff, AlertCircle, ArrowLeft, CheckCircle2, Circle } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Password validation helpers
 const hasMinLength = (p) => p.length >= 8;
@@ -22,7 +23,8 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     securityQuestion: '',
-    securityAnswer: ''
+    securityAnswer: '',
+    city: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -42,42 +44,39 @@ const Register = () => {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    if (error) setError('');
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     // Client-side validation
     const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
     const emailDomain = formData.email.split('@')[1]?.toLowerCase();
     if (emailDomain && !allowedDomains.includes(emailDomain) && !emailDomain.endsWith('.ac.in') && !emailDomain.endsWith('.edu.in')) {
-      return setError('Only standard email providers or Indian college domains (.ac.in, .edu.in) are allowed.');
+      return toast.error('Only standard email providers or Indian college domains (.ac.in, .edu.in) are allowed.');
     }
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
-      return setError('Please fill in all required fields.');
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim() || !formData.city.trim()) {
+      return toast.error('Please fill in all required fields (including City).');
     }
 
     if (!hasMinLength(password)) {
-      return setError('Password must be at least 8 characters long.');
+      return toast.error('Password must be at least 8 characters long.');
     }
     if (!hasNumber(password)) {
-      return setError('Password must contain at least one number.');
+      return toast.error('Password must contain at least one number.');
     }
     if (!hasSpecial(password)) {
-      return setError('Password must contain at least one special character.');
+      return toast.error('Password must contain at least one special character.');
     }
     if (formData.password !== formData.confirmPassword) {
-      return setError('Passwords do not match.');
+      return toast.error('Passwords do not match.');
     }
     if (!formData.securityQuestion.trim()) {
-      return setError('Please enter a security question.');
+      return toast.error('Please enter a security question.');
     }
     if (!formData.securityAnswer.trim()) {
-      return setError('Please enter an answer to your security question.');
+      return toast.error('Please enter an answer to your security question.');
     }
 
     setLoading(true);
@@ -88,13 +87,14 @@ const Register = () => {
         password: formData.password,
         phone: formData.phone.trim() === '+91' ? undefined : formData.phone.replace(/\s+/g, ''),
         securityQuestion: formData.securityQuestion.trim(),
-        securityAnswer: formData.securityAnswer.trim()
+        securityAnswer: formData.securityAnswer.trim(),
+        city: formData.city.trim()
       });
-      setSuccess('Account created successfully! Redirecting to login…');
+      toast.success('Account created successfully! Redirecting to login…');
       setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed. Please try again.';
-      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -154,22 +154,6 @@ const Register = () => {
             <p className="text-muted-foreground">Join LibraVault and streamline your catalog.</p>
           </div>
 
-          {/* Error Banner */}
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Success Banner */}
-          {success && (
-            <Alert className="mb-6 bg-green-50 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <AlertDescription>{success}</AlertDescription>
-            </Alert>
-          )}
-
           {/* Form */}
           <form className="space-y-5" onSubmit={handleRegister} noValidate>
             {/* Full Name */}
@@ -199,6 +183,21 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleChange}
                 autoComplete="email"
+              />
+            </div>
+
+            {/* City */}
+            <div className="space-y-2">
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                name="city"
+                placeholder="Mumbai"
+                required
+                type="text"
+                value={formData.city}
+                onChange={handleChange}
+                autoComplete="address-level2"
               />
             </div>
 

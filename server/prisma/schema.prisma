@@ -19,6 +19,9 @@ model User {
   // Staff-specific fields
   department     String?
   employeeId     String?   @unique
+  // Location filtering fields
+  city           String?
+  libraryName    String?
   // Account lockout fields
   loginAttempts    Int       @default(0)
   lockUntil        DateTime?
@@ -64,6 +67,11 @@ model Book {
   // Digital Assets (AWS S3)
   coverImage String?
   ebookUrl   String?
+
+  // Location & Format Filtering
+  format      String? @default("physical") // "physical", "ebook", "both"
+  city        String?
+  libraryName String?
 
   // Barcode
   barcode String?

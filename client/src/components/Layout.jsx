@@ -3,6 +3,7 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import { GlobalCommandMenu } from './GlobalCommandMenu';
 import { LayoutDashboard, BookOpen, ArrowRightLeft, Receipt, User } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -26,6 +27,7 @@ const MobileNavItem = ({ path, icon: Icon, label }) => (
 const Layout = () => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
   
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/20">
@@ -34,7 +36,8 @@ const Layout = () => {
         "flex-1 min-w-0 pb-[64px] md:pb-0 flex flex-col transition-all duration-300",
         isCollapsed ? "md:pl-[80px]" : "md:pl-[260px]"
       )}>
-        <TopBar />
+        <TopBar setCommandOpen={setIsCommandOpen} />
+        <GlobalCommandMenu open={isCommandOpen} setOpen={setIsCommandOpen} />
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0, y: 5 }}

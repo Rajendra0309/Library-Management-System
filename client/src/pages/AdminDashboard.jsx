@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { getDashboardData } from '../services/reportService';
-import { getActiveBorrows } from '../services/borrowService';
+import { getActiveBorrows, getOverdueBorrows } from '../services/borrowService';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
@@ -25,18 +25,21 @@ const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
 const AdminDashboard = () => {
   const [report, setReport] = useState(null);
   const [recentBorrows, setRecentBorrows] = useState([]);
+  const [overdueBorrows, setOverdueBorrows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('1M');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [reportRes, borrowsRes] = await Promise.all([
+        const [reportRes, borrowsRes, overdueRes] = await Promise.all([
           getDashboardData().catch(() => ({ data: null })),
-          getActiveBorrows().catch(() => ({ data: [] }))
+          getActiveBorrows().catch(() => ({ data: [] })),
+          getOverdueBorrows().catch(() => ({ data: [] }))
         ]);
         setReport(reportRes.data);
         setRecentBorrows(borrowsRes.data.slice(0, 5));
+        setOverdueBorrows(overdueRes.data.slice(0, 5));
       } catch (error) {
         console.error("Fetch error", error);
       } finally {
@@ -335,19 +338,27 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent className="flex-1 flex flex-col">
             <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-              {/* Dummy alert to show styling */}
-              <div className="flex items-start gap-3 p-3 rounded-lg border border-rose-200 dark:border-rose-800/50 bg-white dark:bg-rose-950/30 hover:border-rose-300 dark:hover:border-rose-700/50 transition-colors">
-                <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
-                  <AlertTriangle className="w-4 h-4" />
+              {overdueBorrows.length > 0 ? overdueBorrows.map(ob => {
+                const daysLate = Math.floor((new Date() - new Date(ob.dueDate)) / (1000 * 60 * 60 * 24));
+                return (
+                  <div key={ob.id} className="flex items-start gap-3 p-3 rounded-lg border border-rose-200 dark:border-rose-800/50 bg-white dark:bg-rose-950/30 hover:border-rose-300 dark:hover:border-rose-700/50 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
+                      <AlertTriangle className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-foreground truncate">{ob.book?.title}</p>
+                      <p className="text-xs text-muted-foreground">{ob.member?.membershipId} · {ob.book?.author}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-bold text-rose-600 dark:text-rose-400">{daysLate > 0 ? `${daysLate} Days Late` : 'Due Today'}</p>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="text-center text-muted-foreground text-sm mt-4">
+                  No overdue books right now.
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-foreground truncate">1984</p>
-                  <p className="text-xs text-muted-foreground">MBR-2210 · George Orwell</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-xs font-bold text-rose-600 dark:text-rose-400">14 Days Late</p>
-                </div>
-              </div>
+              )}
             </div>
             <Button variant="outline" className="w-full mt-4 border-rose-200 text-rose-700 hover:bg-rose-100 dark:border-rose-800/50 dark:text-rose-400 dark:hover:bg-rose-900/30">
               Notify All Overdue

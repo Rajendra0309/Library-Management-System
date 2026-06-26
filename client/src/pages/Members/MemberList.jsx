@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getMembers, createMember, updateMemberStatus } from '../../services/memberService';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, User, MoreVertical, Eye, Ban, CheckCircle2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Search, Plus, MoreVertical, Eye, Ban, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const MemberList = () => {
   const navigate = useNavigate();
@@ -22,6 +25,8 @@ const MemberList = () => {
   const [error, setError] = useState('');
 
   const [search, setSearch] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [libraryNameFilter, setLibraryNameFilter] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
@@ -36,13 +41,14 @@ const MemberList = () => {
     try {
       setLoading(true);
       setError('');
-      const data = await getMembers(page + 1, rowsPerPage, search);
-      if (data.success) {
-        setMembers(data.data);
-        setTotalCount(data.total);
+      const res = await getMembers(page + 1, rowsPerPage, search, cityFilter, libraryNameFilter);
+      if (res.success) {
+        setMembers(res.data || []);
+        setTotalCount(res.total || 0);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch members list.');
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to fetch members list.');
     } finally {
       setLoading(false);
     }
@@ -51,7 +57,7 @@ const MemberList = () => {
   useEffect(() => {
     fetchMembers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, rowsPerPage, search]);
+  }, [page, rowsPerPage, search, cityFilter, libraryNameFilter]);
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -59,16 +65,17 @@ const MemberList = () => {
   };
 
   // ─── Toggle Member Status ──────────────────────────────────────────────────
-  const handleToggleStatus = async (id, currentStatus) => {
+  const handleToggleStatus = async (memberId, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
     try {
-      setError('');
-      const data = await updateMemberStatus(id, newStatus);
-      if (data.success) {
-        setMembers(members.map(m => m.id === id ? { ...m, status: newStatus } : m));
+      const res = await updateMemberStatus(memberId, newStatus);
+      if (res.success) {
+        setMembers(members.map(m => m.id === memberId ? res.data : m));
+        toast.success(`Member status updated to ${newStatus}`);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update member status.');
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to update member status.');
     }
   };
 
@@ -203,10 +210,24 @@ const MemberList = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              className="pl-9 w-full md:max-w-md"
+              className="pl-9 w-full"
               placeholder="Search by name, email, or Membership ID..."
               value={search}
               onChange={handleSearchChange}
+            />
+          </div>
+          <div className="flex flex-1 gap-4">
+            <Input
+              className="w-full"
+              placeholder="Filter by City..."
+              value={cityFilter}
+              onChange={(e) => { setCityFilter(e.target.value); setPage(0); }}
+            />
+            <Input
+              className="w-full"
+              placeholder="Filter by Library Name..."
+              value={libraryNameFilter}
+              onChange={(e) => { setLibraryNameFilter(e.target.value); setPage(0); }}
             />
           </div>
         </CardContent>
@@ -219,6 +240,7 @@ const MemberList = () => {
             <TableRow>
               <TableHead className="w-[300px] font-semibold text-xs uppercase tracking-wider">Member</TableHead>
               <TableHead className="font-semibold text-xs uppercase tracking-wider hidden md:table-cell">Membership ID</TableHead>
+              <TableHead className="font-semibold text-xs uppercase tracking-wider hidden sm:table-cell">City</TableHead>
               <TableHead className="font-semibold text-xs uppercase tracking-wider">Status</TableHead>
               <TableHead className="font-semibold text-xs uppercase tracking-wider hidden lg:table-cell">Joined</TableHead>
               <TableHead className="text-right"></TableHead>
@@ -226,37 +248,48 @@ const MemberList = () => {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  Loading members...
-                </TableCell>
-              </TableRow>
+              [1, 2, 3, 4, 5].map((i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-10 w-full" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                  <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                </TableRow>
+              ))
             ) : members.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No members found.
                 </TableCell>
               </TableRow>
             ) : (
-              members.map((member) => (
-                <TableRow
+              members.map((member, index) => (
+                <motion.tr
                   key={member.id}
-                  className="cursor-pointer group"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="hover:bg-muted/50 cursor-pointer"
                   onClick={() => navigate(`/members/${member.id}`)}
                 >
                   <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary font-bold shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-semibold shadow-sm">
                         {member.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground">{member.name}</p>
-                        <p className="text-muted-foreground text-sm">{member.email}</p>
+                        <div className="font-medium text-foreground">{member.name}</div>
+                        <div className="text-xs text-muted-foreground hidden sm:block">{member.email}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell font-mono text-sm">
                     {member.membershipId || '—'}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-muted-foreground">
+                    {member.city || '—'}
                   </TableCell>
                   <TableCell>
                     <Badge variant={member.status === 'active' ? 'default' : member.status === 'suspended' ? 'destructive' : 'secondary'}>
@@ -292,7 +325,7 @@ const MemberList = () => {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                </TableRow>
+                </motion.tr>
               ))
             )}
           </TableBody>

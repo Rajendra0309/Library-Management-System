@@ -9,9 +9,9 @@ import api from '../api/axios';
  * @param {string} search - Search query for name, email, or membership ID
  * @returns {Promise<Object>} API response containing members list and total counts
  */
-export const getMembers = async (page = 1, limit = 10, search = '') => {
+export const getMembers = async (page = 1, limit = 10, search = '', city = '', libraryName = '') => {
   const response = await api.get('/members', {
-    params: { page, limit, search }
+    params: { page, limit, search, city, libraryName }
   });
   return response.data;
 };

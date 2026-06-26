@@ -116,7 +116,21 @@ const FineManagement = () => {
             className="mb-0"
         />
         {!isMember && (
-          <Button variant="outline" className="shadow-sm">
+          <Button variant="outline" className="shadow-sm" onClick={() => {
+            if (!fines || fines.length === 0) return;
+            const csvRows = ["ID,Member ID,Member Name,Book Title,Amount,Status,Created At"];
+            fines.forEach(f => {
+              csvRows.push(`${f.id},${f.member?.membershipId},"${f.member?.name}","${f.borrow?.book?.title}",${f.amount},${f.status},${new Date(f.createdAt).toLocaleDateString()}`);
+            });
+            const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Fines_Export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}>
             <Download className="h-4 w-4 mr-2" /> Export
           </Button>
         )}

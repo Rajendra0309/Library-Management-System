@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import { Toaster } from './components/ui/sonner';
 
 // ─── Auth Pages ───────────────────────────────────────────────────────────────
 import Login from './pages/Login';
@@ -90,6 +91,7 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      <Toaster position="bottom-right" richColors />
     </AuthProvider>
   );
 }

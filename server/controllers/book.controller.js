@@ -19,6 +19,7 @@ exports.createBook = async (req, res) => {
     publishYear,
     description,
     totalCopies,
+    format,
   } = req.body;
 
     // Required field validation
@@ -132,6 +133,9 @@ exports.createBook = async (req, res) => {
       ebookUrl: ebookUrl,
 
       barcode: isbn.trim(),
+      format: format || "physical",
+      city: req.user?.city || null,
+      libraryName: req.user?.libraryName || null,
     },
   });
 
@@ -171,9 +175,24 @@ exports.getBooks = async (req, res) => {
       publishYear,
       available,
       sort,
+      format,
+      city,
+      libraryName,
+      page,
+      limit,
+      q,
     } = req.query;
 
     const filters = {};
+
+    // Search query
+    if (q) {
+      filters.OR = [
+        { title: { contains: q, mode: "insensitive" } },
+        { author: { contains: q, mode: "insensitive" } },
+        { isbn: { contains: q, mode: "insensitive" } },
+      ];
+    }
 
     // Filters
     if (genre) {
@@ -193,6 +212,25 @@ exports.getBooks = async (req, res) => {
         gt: 0,
       };
     }
+
+    if (format) {
+      filters.format = format;
+    }
+
+    if (req.user && req.user.role === 'librarian' && req.user.city) {
+      filters.city = req.user.city;
+    } else if (city) {
+      filters.city = { contains: city, mode: "insensitive" };
+    }
+
+    if (libraryName) {
+      filters.libraryName = { contains: libraryName, mode: "insensitive" };
+    }
+
+    // Pagination
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
 
     // Sorting
     let orderBy = {
@@ -217,14 +255,22 @@ exports.getBooks = async (req, res) => {
       };
     }
 
-    const books = await prisma.book.findMany({
-      where: filters,
-      orderBy,
-    });
+    const [total, books] = await Promise.all([
+      prisma.book.count({ where: filters }),
+      prisma.book.findMany({
+        where: filters,
+        orderBy,
+        skip,
+        take: limitNum,
+      })
+    ]);
 
     return res.status(200).json({
       success: true,
       count: books.length,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
       data: books,
     });
   } catch (error) {
@@ -299,14 +345,18 @@ exports.updateBook = async (req, res) => {
       const coverFile = req.files.cover[0];
 
       if (existingBook.coverImage) {
-        const oldCoverKey = decodeURIComponent(
-          new URL(existingBook.coverImage).pathname.substring(1)
-        ).replace(/\+/g, " ");
+        try {
+          const oldCoverKey = decodeURIComponent(
+            new URL(existingBook.coverImage).pathname.substring(1)
+          ).replace(/\+/g, " ");
 
-        await s3.deleteObject({
-          Bucket: process.env.AWS_BUCKET_NAME,
-          Key: oldCoverKey,
-        }).promise();
+          await s3.deleteObject({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: oldCoverKey,
+          }).promise();
+        } catch (err) {
+          console.error("Error deleting old cover:", err.message);
+        }
       }
 
       const safeFileName =
@@ -328,14 +378,18 @@ exports.updateBook = async (req, res) => {
       const ebookFile = req.files.ebook[0];
 
       if (existingBook.ebookUrl) {
-        const oldEbookKey = decodeURIComponent(
-          new URL(existingBook.ebookUrl).pathname.substring(1)
-        ).replace(/\+/g, " ");
+        try {
+          const oldEbookKey = decodeURIComponent(
+            new URL(existingBook.ebookUrl).pathname.substring(1)
+          ).replace(/\+/g, " ");
 
-        await s3.deleteObject({
-          Bucket: process.env.AWS_BUCKET_NAME,
-          Key: oldEbookKey,
-        }).promise();
+          await s3.deleteObject({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: oldEbookKey,
+          }).promise();
+        } catch (err) {
+          console.error("Error deleting old ebook:", err.message);
+        }
       }
 
       const safeFileName =
@@ -573,10 +627,13 @@ GET /api/books/search?q=
 */
 exports.searchBooks = async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, page, limit } = req.query;
 
-    const books = await prisma.book.findMany({
-      where: {
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const where = {
         OR: [
           {
             title: {
@@ -603,15 +660,30 @@ exports.searchBooks = async (req, res) => {
             },
           },
         ],
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    };
+
+    if (req.user && req.user.role === 'librarian' && req.user.city) {
+      where.city = req.user.city;
+    }
+
+    const [total, books] = await Promise.all([
+      prisma.book.count({ where }),
+      prisma.book.findMany({
+        where,
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: limitNum,
+      })
+    ]);
 
     return res.status(200).json({
       success: true,
       count: books.length,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
       data: books,
     });
   } catch (error) {

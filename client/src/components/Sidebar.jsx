@@ -4,6 +4,17 @@ import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
 import Logo from './ui/Logo';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   LayoutDashboard,
   BookOpen,
   Users,
@@ -163,17 +174,32 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
       {/* Bottom Actions */}
       <div className="p-4 border-t border-border/40 grid gap-1 mt-auto">
-        <button
-          onClick={logout}
-          title={isCollapsed ? "Log Out" : undefined}
-          className={cn(
-            "flex w-full items-center rounded-md py-2 text-sm font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors",
-            isCollapsed ? "justify-center px-0" : "gap-3 px-3"
-          )}
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          {!isCollapsed && <span>Log Out</span>}
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              title={isCollapsed ? "Log Out" : undefined}
+              className={cn(
+                "flex w-full items-center rounded-md py-2 text-sm font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors",
+                isCollapsed ? "justify-center px-0" : "gap-3 px-3"
+              )}
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              {!isCollapsed && <span>Log Out</span>}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You will need to log back in to access your account.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={logout}>Log Out</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </aside>
   );
