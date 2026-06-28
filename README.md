@@ -28,16 +28,20 @@ The project has reached 100% completion across all planned development phases.
 
 ---
 
-## 2. Technical Architecture
+## 2. Technical Architecture & System Design
 
-The application is built using a modern microservices approach:
+The application is built using a modern microservices approach, decoupling the frontend, core backend, AI capabilities, and background data processing.
 
-- **Frontend:** React.js, Vite, Material-UI, Recharts
+### System Architecture Diagram
+![System Architecture](docs/system_architecture.png)
+
+### Core Technologies
+- **Frontend:** React.js, Vite, TailwindCSS, Chart.js, Recharts, Lucide-React
 - **Backend (Core API):** Node.js, Express.js, PostgreSQL (Prisma ORM)
 - **AI Recommendation Service:** Python, Flask, Scikit-learn (TF-IDF Vectorization)
-- **ETL Data Pipeline:** Python, Pandas
-- **Cloud Infrastructure:** AWS ECS Fargate, AWS Lambda, AWS EventBridge, AWS S3, CloudFront
-- **Security:** JWT Authentication, bcrypt password hashing, helmet HTTP headers, rate limiting
+- **ETL Data Pipeline:** Python, Pandas, SQLAlchemy
+- **Security:** OTP Verification, JWT Authentication, bcrypt password hashing, helmet HTTP headers
+- **Cloud Infrastructure:** AWS ECS Fargate, AWS Lambda, AWS EventBridge, AWS S3, AWS CloudFront
 
 ---
 
@@ -70,4 +74,4 @@ Ensure PostgreSQL is installed and running locally. Create an empty database nam
 
 The system is configured for automated CI/CD deployment via GitHub Actions to an AWS Enterprise Architecture. All static assets and media uploads are routed through Amazon S3 and CloudFront. 
 
-For comprehensive deployment instructions, AWS configuration steps, and serverless Lambda scheduling, please refer to the `docs/Deployment_Guide.md` file.
+For comprehensive deployment instructions, AWS configuration steps, and serverless Lambda scheduling, please refer to the `docs/AWS_DEPLOYMENT_GUIDE.md` file.

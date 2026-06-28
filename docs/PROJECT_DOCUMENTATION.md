@@ -77,13 +77,14 @@ The system is fully containerized and orchestrated for cloud deployment:
   - **Amazon ECS (Fargate):** Runs the Backend and AI-Service containers in a serverless, highly-available environment.
   - **Amazon S3 & CloudFront:** Hosts the compiled React static files and delivers them globally with low latency.
 - **Security:** Secrets are injected dynamically via GitHub Actions, never stored in source code.
+- **Automated Jobs (Cron):** AWS EventBridge schedules an AWS Lambda function daily to trigger the Node.js API to process overdue books and issue fines automatically.
+- **Notifications:** Integrated `Nodemailer` securely via Gmail SMTP to dispatch Registration OTPs, Security Alerts, and Overdue Warnings automatically.
 
 ---
 
 ## 6. Future Enhancements (Roadmap)
 
-While the current MVP is highly robust, the following features are planned for "Version 2.0":
-1. **Automated Email Notifications:** Integrating `Nodemailer` to automatically email members 24 hours before a book is due, and send receipts when fines are paid.
-2. **Payment Gateway Integration:** Adding Stripe to allow members to pay their late fines directly through the web portal using a credit card.
-3. **Mobile Application:** Building a React Native companion app for members so they can browse the catalog and view their digital library card barcode on their phones.
-4. **Advanced Search (Elasticsearch):** Implementing full-text fuzzy search for extremely fast queries across millions of books and authors.
+While the current version is highly robust and fully complete per our initial requirements, the following features are ideas for "Version 2.0":
+1. **Payment Gateway Integration:** Adding Stripe to allow members to pay their late fines directly through the web portal using a credit card.
+2. **Mobile Application:** Building a React Native companion app for members so they can browse the catalog and view their digital library card barcode on their phones.
+3. **Advanced Search (Elasticsearch):** Implementing full-text fuzzy search for extremely fast queries across millions of books and authors.

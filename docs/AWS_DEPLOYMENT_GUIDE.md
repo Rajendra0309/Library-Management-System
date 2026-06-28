@@ -104,13 +104,17 @@ Now that your images are in ECR, you can start the servers.
      - **Name:** `lms-server-container`
      - **Image URI:** `[Paste your ECR URI for lms-server]:latest`
      - **Port mappings:** 5000 (TCP)
-     - **Environment variables:** Add the following six variables:
-       1. `DATABASE_URL` (Set to: `postgresql://postgres:[PASSWORD]@[RDS_ENDPOINT]:5432/postgres?schema=public`)
-       2. `AWS_ACCESS_KEY_ID` (Your IAM User Access Key)
-       3. `AWS_SECRET_ACCESS_KEY` (Your IAM User Secret Key)
-       4. `AWS_REGION` (e.g., `us-east-1`)
-       5. `AWS_BUCKET_NAME` (e.g., `lms-digital-assets`)
-       6. `JWT_SECRET` (e.g., `my_super_secret_key_123`)
+     - **Environment variables:** Add the following:
+       - `DATABASE_URL`: `postgresql://postgres:password@lms-database.xyz.us-east-1.rds.amazonaws.com:5432/library_db?schema=public`
+       - `JWT_SECRET`: `your_secure_secret_string`
+       - `AWS_REGION`: `us-east-1`
+       - `AWS_BUCKET_NAME`: `lms-digital-assets`
+       - `AWS_ACCESS_KEY_ID`: `your_iam_access_key`
+       - `AWS_SECRET_ACCESS_KEY`: `your_iam_secret_key`
+       - `EMAIL_USER`: `your-library-email@gmail.com`
+       - `EMAIL_PASS`: `16_character_app_password_without_spaces`
+       - `CRON_SECRET_KEY`: `your_secure_cron_secret`
+     - Click **Create** to save the Task Definition.
    
    - **Container 2 (AI Service):**
      - Click **Add more containers**.
@@ -145,33 +149,21 @@ Now that your images are in ECR, you can start the servers.
 4. The frontend will rebuild with the correct API URL and upload to S3! You can now access your site through CloudFront or the S3 URL.
 
 ---
+## Phase 5: Setup Automated Cron Jobs (EventBridge & Lambda)
 
-## Phase 5: Additional Services (Email & CRON)
+To automatically calculate late fines and send overdue emails every day at midnight:
 
-### 📧 1. Nodemailer Configuration (Bypassing AWS Port 25 Block)
-If you wish to enable the automated email system later, AWS blocks Port 25. We will use a standard Gmail account on **Port 465**, which AWS fully allows.
-1. Go to your Google Account Settings -> **Security**.
-2. Enable **2-Step Verification**.
-3. Search for **App Passwords** and generate a new one (Name: "LMS App").
-4. Copy the 16-character password.
-5. In your ECS Task Definition for the `lms-server-container`, add these Environment Variables:
-   - `EMAIL_HOST`: `smtp.gmail.com`
-   - `EMAIL_PORT`: `465`
-   - `EMAIL_SECURE`: `true`
-   - `EMAIL_USER`: `your-email@gmail.com`
-   - `EMAIL_PASS`: `the-16-character-app-password`
-
-### ⏰ 2. Serverless Fine Calculation (AWS Lambda + EventBridge)
-We recommend running your Python **ETL Pipeline** as a Docker container on ECS (as outlined in Phase 3) because Data Science libraries (Pandas/Scikit-learn) are very heavy and often exceed Lambda's 250MB size limit. 
-However, for lightweight triggers like telling the backend to calculate daily late fines, AWS Lambda is perfect.
-1. Navigate to **Lambda** -> **Create function**.
-2. Name it `lms-fine-trigger`. Select **Node.js 20.x** runtime.
-3. Replace the default code with the contents of your `lambda-fine-trigger.js` file.
-4. Click **Deploy**.
-5. Go to the **Configuration** tab -> **Environment variables**.
-   - Add `API_URL`: Your backend URL (e.g., `http://[YOUR_ECS_IP]:5000/api/fines/trigger-cron`).
-   - Add `CRON_SECRET_KEY`: A random password (add this to your ECS server environment variables too!).
-6. Go to **EventBridge** -> **Create Rule** -> Set schedule to `cron(0 0 * * ? *)` (Midnight daily) to trigger the Lambda automatically.
+1. Go to **AWS Lambda** and create a new function (Node.js 20+ runtime).
+2. Name it `lms-cron-job`.
+3. In the Configuration -> **Environment variables**, add:
+   - `API_URL`: `http://<your-ecs-public-ip>:5000/api/fines/trigger-cron`
+   - `CRON_SECRET_KEY`: `your_secure_cron_secret` (MUST MATCH the one in ECS).
+4. Paste the fetch logic into the Lambda `index.mjs` to hit your `/api/cron/process-overdue` endpoint using a POST request with the `Authorization: Bearer <CRON_SECRET_KEY>` header.
+5. Go to **Amazon EventBridge** -> Rules -> **Create rule**.
+6. Rule type: **Schedule**.
+7. Cron expression: `0 0 * * ? *` (Runs every day at midnight UTC).
+8. Target: Your `lms-cron-job` Lambda function.
+9. Save. The system will now automatically process fines daily!
 
 ---
 ---
