@@ -31,6 +31,7 @@ const BookDetail = () => {
   const [ebookUrl, setEbookUrl] = useState(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [reservationQueue, setReservationQueue] = useState([]);
+  const [hasReserved, setHasReserved] = useState(false);
 
   useEffect(() => {
     fetchBook();
@@ -39,8 +40,24 @@ const BookDetail = () => {
   useEffect(() => {
     if (user?.role !== 'member' && id) {
       fetchQueue();
+    } else if (user?.role === 'member' && id) {
+      checkReservationStatus();
     }
   }, [user, id]);
+
+  const checkReservationStatus = async () => {
+    try {
+      const res = await api.get(`/reservations/${user.id}`);
+      if (res.data.success) {
+        const activeRes = res.data.data.find(r => r.bookId === id && r.status === 'pending');
+        if (activeRes) {
+          setHasReserved(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching reservations:", error);
+    }
+  };
 
   const fetchQueue = async () => {
     try {
@@ -77,6 +94,7 @@ const BookDetail = () => {
       const res = await api.post('/reservations', { bookId: id });
       if (res.data.success) {
         toast.success("Book reserved successfully");
+        setHasReserved(true);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to reserve book");
@@ -254,12 +272,12 @@ const BookDetail = () => {
               <div className="mt-8 pt-8 border-t">
                 <div className="flex justify-between items-end mb-2">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Circulation Status</span>
-                  <span className="text-sm font-medium">{book.availableCopies} of {book.totalCopies} Copies Available</span>
+                  <span className="text-sm font-medium">{Math.max(0, book.availableCopies)} of {book.totalCopies} Copies Available</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ${book.availableCopies > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} 
-                    style={{ width: `${(book.availableCopies / book.totalCopies) * 100}%` }}
+                    style={{ width: `${Math.max(0, (book.availableCopies / book.totalCopies) * 100)}%` }}
                   ></div>
                 </div>
               </div>
@@ -274,8 +292,14 @@ const BookDetail = () => {
                   {book.ebookUrl ? "Read E-Book" : "E-Book Not Available"}
                 </Button>
                 
-                <Button variant="outline" className="font-semibold h-12 px-6 rounded-lg" onClick={handleReserve}>
-                  <BookmarkPlus className="mr-2 h-5 w-5" /> Reserve
+                <Button 
+                  variant="outline" 
+                  className={`font-semibold h-12 px-6 rounded-lg ${hasReserved ? 'bg-muted text-muted-foreground' : ''}`} 
+                  onClick={handleReserve}
+                  disabled={hasReserved}
+                >
+                  <BookmarkPlus className="mr-2 h-5 w-5" /> 
+                  {hasReserved ? 'Reserved' : 'Reserve'}
                 </Button>
               </div>
             </CardContent>

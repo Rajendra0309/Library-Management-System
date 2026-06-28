@@ -1,5 +1,6 @@
 const prisma = require("../prisma/client");
 const { calculateFineAmount } = require("../utils/fineCalculator");
+const { sendBorrowEmail, sendReturnEmail, sendOverdueFineEmail } = require("../utils/mailer");
 
 /*
 =====================================
@@ -120,8 +121,21 @@ exports.issueBook = async (req, res) => {
                 },
             });
 
+            // Create notification
+            await tx.notification.create({
+                data: {
+                    userId: memberId,
+                    type: "BORROW",
+                    title: "Book Borrowed",
+                    message: `You have successfully borrowed "${book.title}". It is due on ${dueDate.toLocaleDateString()}.`
+                }
+            });
+
             return newBorrow;
         });
+
+        // Send email asynchronously
+        sendBorrowEmail(member.email, member.name, book.title, dueDate).catch(console.error);
 
         return res.status(201).json({
             success: true,
@@ -217,8 +231,24 @@ exports.returnBook = async (req, res) => {
                 await tx.fine.create({ data: fine });
             }
 
+            // Create notification
+            await tx.notification.create({
+                data: {
+                    userId: borrow.memberId,
+                    type: fine ? "FINE" : "RETURN",
+                    title: "Book Returned",
+                    message: fine ? `You returned "${borrow.book.title}" late. A fine of Rs ${fine.amount} has been added.` : `You have successfully returned "${borrow.book.title}".`
+                }
+            });
+
             return result;
         });
+
+        // Send Emails asynchronously
+        sendReturnEmail(borrow.member.email, borrow.member.name, borrow.book.title).catch(console.error);
+        if (fine) {
+            sendOverdueFineEmail(borrow.member.email, borrow.member.name, borrow.book.title, fine.amount, borrow.dueDate).catch(console.error);
+        }
 
         return res.status(200).json({
             success: true,

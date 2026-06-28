@@ -249,9 +249,16 @@ const BookCatalog = () => {
 
                 {/* Status Badges */}
                 <div className="absolute top-3 left-3 right-3 flex justify-between items-start pointer-events-none">
-                  <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm hover:bg-background border-transparent uppercase text-[10px] shadow-sm">
-                    {book.genre}
-                  </Badge>
+                  <div className="flex flex-col gap-1 items-start">
+                    <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm hover:bg-background border-transparent uppercase text-[10px] shadow-sm">
+                      {book.genre}
+                    </Badge>
+                    {book.city && (
+                      <Badge variant="secondary" className="bg-primary/90 text-primary-foreground backdrop-blur-sm hover:bg-primary border-transparent uppercase text-[10px] shadow-sm">
+                        {book.city}
+                      </Badge>
+                    )}
+                  </div>
                   <div 
                     className={`w-3 h-3 rounded-full border-2 border-background shadow-sm ${book.availableCopies > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
                     title={book.availableCopies > 0 ? 'Available' : 'Unavailable'}
@@ -311,7 +318,12 @@ const BookCatalog = () => {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <Badge variant="outline" className="uppercase text-[10px]">{book.genre}</Badge>
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge variant="outline" className="uppercase text-[10px]">{book.genre}</Badge>
+                        {book.city && (
+                          <Badge variant="outline" className="uppercase text-[10px] bg-primary/10 text-primary border-primary/20">{book.city}</Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4 font-mono text-muted-foreground">
                       {book.isbn}

@@ -1,7 +1,19 @@
 const express = require('express');
 const { body } = require('express-validator');
 const router = express.Router();
-const { register, login, getMe, changePassword, getSecurityQuestion, verifySecurityAnswer, verifyOtp, resetPassword } = require('../controllers/auth.controller');
+const { 
+  register, 
+  login, 
+  getMe, 
+  changePassword, 
+  getSecurityQuestion, 
+  verifySecurityAnswer, 
+  verifyOtp, 
+  resetPassword,
+  sendRegistrationOtp,
+  verifyRegistrationOtp,
+  forgotPasswordSendOtp
+} = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth.middleware');
 
 // Password validation rule (reusable)
@@ -9,6 +21,20 @@ const passwordRules = body('password')
   .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.')
   .matches(/\d/).withMessage('Password must contain at least one number.')
   .matches(/[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/).withMessage('Password must contain at least one special character.');
+
+/**
+ * @route   POST /api/auth/send-verification-otp
+ * @desc    Send OTP to email during registration
+ * @access  Public
+ */
+router.post('/send-verification-otp', sendRegistrationOtp);
+
+/**
+ * @route   POST /api/auth/verify-registration-otp
+ * @desc    Verify OTP during registration
+ * @access  Public
+ */
+router.post('/verify-registration-otp', verifyRegistrationOtp);
 
 /**
  * @route   POST /api/auth/register
@@ -19,7 +45,7 @@ router.post(
   '/register',
   [
     body('name').trim().notEmpty().withMessage('Name is required.'),
-    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.')
+    body('email').isEmail().withMessage('Please provide a valid email address.').toLowerCase().trim()
       .custom((value) => {
         const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
         const domain = value.split('@')[1]?.toLowerCase();
@@ -29,7 +55,7 @@ router.post(
         throw new Error('Only standard email providers or Indian college domains (.ac.in, .edu.in) are allowed.');
       }),
     passwordRules,
-    body('phone').optional().matches(/^\+[1-9]\d{1,14}$/).withMessage('Please provide a valid phone number with country code (e.g., +91).')
+    body('phone').trim().notEmpty().withMessage('Phone number is required.').matches(/^\+[1-9]\d{1,14}$/).withMessage('Please provide a valid phone number with country code (e.g., +91).')
   ],
   register
 );
@@ -42,7 +68,7 @@ router.post(
 router.post(
   '/login',
   [
-    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.'),
+    body('email').isEmail().withMessage('Please provide a valid email address.').toLowerCase().trim(),
     body('password').notEmpty().withMessage('Password is required.')
   ],
   login
@@ -77,6 +103,20 @@ router.put(
 // ─── Forgot Password Flow ─────────────────────────────────────────────────────
 
 /**
+ * @route   POST /api/auth/forgot-password/send-otp
+ * @desc    Send OTP to email for password reset
+ * @access  Public
+ */
+router.post('/forgot-password/send-otp', forgotPasswordSendOtp);
+
+/**
+ * @route   POST /api/auth/forgot-password/verify-otp
+ * @desc    Verify OTP for password reset
+ * @access  Public
+ */
+router.post('/forgot-password/verify-otp', verifyOtp);
+
+/**
  * @route   POST /api/auth/forgot-password/question
  * @desc    Fetch security question for a given email
  * @access  Public
@@ -85,7 +125,7 @@ router.post('/forgot-password/question', getSecurityQuestion);
 
 /**
  * @route   POST /api/auth/forgot-password/verify-answer
- * @desc    Verify security answer. Returns resetToken on success, OTP on failure.
+ * @desc    Verify security answer. Returns resetToken on success
  * @access  Public
  */
 router.post(
@@ -98,22 +138,8 @@ router.post(
 );
 
 /**
- * @route   POST /api/auth/forgot-password/verify-otp
- * @desc    Verify the on-screen OTP. Returns resetToken on success.
- * @access  Public
- */
-router.post(
-  '/forgot-password/verify-otp',
-  [
-    body('email').isEmail().normalizeEmail().withMessage('Valid email required.'),
-    body('otp').trim().isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits.')
-  ],
-  verifyOtp
-);
-
-/**
  * @route   POST /api/auth/forgot-password/reset
- * @desc    Reset password using a valid resetToken
+ * @desc    Reset password using reset token
  * @access  Public
  */
 router.post(
@@ -121,9 +147,9 @@ router.post(
   [
     body('resetToken').notEmpty().withMessage('Reset token is required.'),
     body('newPassword')
-      .isLength({ min: 8 }).withMessage('Password must be at least 8 characters.')
-      .matches(/\d/).withMessage('Password must contain at least one number.')
-      .matches(/[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/).withMessage('Password must contain at least one special character.')
+      .isLength({ min: 8 }).withMessage('New password must be at least 8 characters long.')
+      .matches(/\d/).withMessage('New password must contain at least one number.')
+      .matches(/[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/).withMessage('New password must contain at least one special character.')
   ],
   resetPassword
 );

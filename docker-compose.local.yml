@@ -1,6 +1,25 @@
 version: '3.8'
 
+# ==============================================================================
+# LOCAL TESTING & ENVIRONMENT VARIABLES GUIDE
+# ==============================================================================
+# By default, the services below (server, ai-service, etl-pipeline) are set to 
+# use `env_file: .env` from their respective directories. 
+# This means they will read the `DATABASE_URL` (which currently points to AWS RDS)
+# directly from `server/.env`.
+#
+# If you want to use the LOCAL postgres container (defined below) instead of AWS,
+# change the `DATABASE_URL` inside `server/.env` to:
+# DATABASE_URL="postgresql://postgres:postgres@db:5432/library_db?schema=public"
+#
+# Previously, we hardcoded `DATABASE_URL` here under the `environment` section, 
+# but doing so overrides your `.env` files and can cause connection issues if the 
+# local db is empty while you expect cloud data. Relying on `env_file` is much safer!
+# ==============================================================================
+
 services:
+  # LOCAL POSTGRESQL DATABASE
+  # Only used if you change your DATABASE_URL in your .env files to point to `db:5432`
   db:
     image: postgres:15
     container_name: lms-postgres
@@ -23,8 +42,11 @@ services:
     build:
       context: ./server
     container_name: lms-server
+    env_file:
+      - ./server/.env
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-library_db}?schema=public
+      # Uncomment the line below to explicitly use the local database, overriding the .env file
+      # DATABASE_URL: postgresql://postgres:postgres@db:5432/library_db?schema=public
       PORT: 5000
       JWT_SECRET: ${JWT_SECRET:-supersecret}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
@@ -52,8 +74,12 @@ services:
     build:
       context: ./ai-service
     container_name: lms-ai-service
+    env_file:
+      - ./ai-service/.env
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-library_db}?schema=public
+      # Uncomment the line below to explicitly use the local database, overriding the .env file
+      # DATABASE_URL: postgresql://postgres:postgres@db:5432/library_db?schema=public
+      PORT: 5001
     ports:
       - "5001:5001"
     depends_on:
@@ -64,8 +90,12 @@ services:
     build:
       context: ./etl-pipeline
     container_name: lms-etl
+    env_file:
+      - ./etl-pipeline/.env
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-library_db}?schema=public
+      # Uncomment the line below to explicitly use the local database, overriding the .env file
+      # DATABASE_URL: postgresql://postgres:postgres@db:5432/library_db?schema=public
+      NODE_ENV: development
     depends_on:
       db:
         condition: service_healthy

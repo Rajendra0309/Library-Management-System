@@ -1,4 +1,5 @@
 const prisma = require("../prisma/client");
+const { sendDueSoonEmail, sendOverdueFineEmail } = require("../utils/mailer");
 
 /*
 =====================================
@@ -239,6 +240,10 @@ exports.triggerCron = async (req, res) => {
             where: {
                 status: 'active',
                 dueDate: { lt: today }
+            },
+            include: {
+                member: true,
+                book: true
             }
         });
 
@@ -279,14 +284,75 @@ exports.triggerCron = async (req, res) => {
                         }
                     });
                     created++;
+                    
+                    // Send notification and email for newly generated fine (first day overdue)
+                    await prisma.notification.create({
+                        data: {
+                            userId: borrow.memberId,
+                            type: "FINE",
+                            title: "Overdue Book Fine",
+                            message: `Your borrowed book "${borrow.book.title}" is overdue by ${daysOverdue} day(s). A fine of Rs ${fineAmount} has been applied.`
+                        }
+                    });
+                    sendOverdueFineEmail(borrow.member.email, borrow.member.name, borrow.book.title, fineAmount, borrow.dueDate).catch(console.error);
                 }
+            }
+        }
+
+        // --- Handle Due Soon (Due tomorrow) ---
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStart = new Date(tomorrow.setHours(0,0,0,0));
+        const tomorrowEnd = new Date(tomorrow.setHours(23,59,59,999));
+
+        const dueSoonBorrows = await prisma.borrow.findMany({
+            where: {
+                status: 'active',
+                dueDate: {
+                    gte: tomorrowStart,
+                    lte: tomorrowEnd
+                }
+            },
+            include: {
+                member: true,
+                book: true
+            }
+        });
+
+        let dueSoonCount = 0;
+        for (const borrow of dueSoonBorrows) {
+            // Check if notification already sent to avoid duplicates if cron runs multiple times a day
+            const existingNotification = await prisma.notification.findFirst({
+                where: {
+                    userId: borrow.memberId,
+                    type: "REMINDER",
+                    message: {
+                        contains: borrow.book.title
+                    },
+                    createdAt: {
+                        gte: new Date(today.setHours(0,0,0,0))
+                    }
+                }
+            });
+
+            if (!existingNotification) {
+                await prisma.notification.create({
+                    data: {
+                        userId: borrow.memberId,
+                        type: "REMINDER",
+                        title: "Book Due Soon",
+                        message: `Reminder: The book "${borrow.book.title}" is due tomorrow.`
+                    }
+                });
+                sendDueSoonEmail(borrow.member.email, borrow.member.name, borrow.book.title, borrow.dueDate).catch(console.error);
+                dueSoonCount++;
             }
         }
 
         return res.status(200).json({
             success: true,
-            message: "Fines processed successfully via Webhook",
-            stats: { overdueBorrows: overdueBorrows.length, finesCreated: created, finesUpdated: updated }
+            message: "Fines and reminders processed successfully via Webhook",
+            stats: { overdueBorrows: overdueBorrows.length, finesCreated: created, finesUpdated: updated, dueSoonRemindersSent: dueSoonCount }
         });
 
     } catch (error) {

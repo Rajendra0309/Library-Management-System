@@ -257,6 +257,7 @@ const AddBook = () => {
             <InputField
               label="Publisher"
               name="publisher"
+              required
               value={formData.publisher}
               onChange={handleChange}
               error={fieldErrors.publisher}

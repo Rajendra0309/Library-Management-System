@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Logo from '../components/ui/Logo';
@@ -15,12 +15,9 @@ import {
   CheckCircle2, 
   Circle,
   Mail,
-  HelpCircle,
-  Info,
-  Check,
-  Copy,
-  Lock
+  Check
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Password validation helpers
 const hasMinLength = (p) => p.length >= 8;
@@ -29,8 +26,8 @@ const hasSpecial = (p) => /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;'/]/.test(p);
 
 const STEP = {
   EMAIL: 1,
-  SECURITY_Q: 2,
-  OTP: 3,
+  OTP: 2,
+  SECURITY_Q: 3, // Fallback
   NEW_PASSWORD: 4,
   SUCCESS: 5
 };
@@ -56,65 +53,26 @@ const StepIndicator = ({ current, total }) => (
   </div>
 );
 
-const OtpPopup = ({ otp, onClose }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(otp);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-background rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-border">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Lock className="text-primary w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Your Recovery OTP</h3>
-            <p className="text-sm text-muted-foreground">Valid for 10 minutes</p>
-          </div>
-        </div>
-
-        <div className="bg-muted rounded-xl p-4 mb-4 flex items-center justify-between border border-border">
-          <span className="font-mono text-3xl font-bold tracking-[0.3em] text-foreground select-all">
-            {otp}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopy}
-            className={`flex items-center gap-1.5 ${copied ? 'bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400' : ''}`}
-          >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copied ? 'Copied!' : 'Copy'}
-          </Button>
-        </div>
-
-        <p className="text-sm text-muted-foreground mb-5">
-          Copy this OTP and enter it in the verification field. Do not share it with anyone.
-        </p>
-
-        <Button className="w-full" onClick={onClose}>
-          I've noted the OTP — Continue
-        </Button>
-      </div>
-    </div>
-  );
-};
-
 const ForgotPassword = () => {
   const navigate = useNavigate();
 
   const [step, setStep] = useState(STEP.EMAIL);
   const [email, setEmail] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (resendTimer > 0) {
+      interval = setInterval(() => setResendTimer((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+  
+  // Security Question Fallback
   const [securityQuestion, setSecurityQuestion] = useState('');
   const [securityAnswer, setSecurityAnswer] = useState('');
-  const [wrongAnswerOtp, setWrongAnswerOtp] = useState('');
-  const [showOtpPopup, setShowOtpPopup] = useState(false);
-  const [otpInput, setOtpInput] = useState('');
+  
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -122,52 +80,23 @@ const ForgotPassword = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [wrongAnswer, setWrongAnswer] = useState(false);
 
-  const clearError = () => { setError(''); setWrongAnswer(false); };
+  const clearError = () => setError('');
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     clearError();
     try {
-      const res = await api.post('/auth/forgot-password/question', { email });
-      setSecurityQuestion(res.data.data.securityQuestion);
-      setStep(STEP.SECURITY_Q);
+      await api.post('/auth/forgot-password/send-otp', { email });
+      setStep(STEP.OTP);
+      setResendTimer(60);
+      toast.success('An OTP has been sent to your email.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not find an account with that email.');
+      setError(err.response?.data?.message || 'Failed to send OTP.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAnswerSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    clearError();
-    try {
-      const res = await api.post('/auth/forgot-password/verify-answer', { email, securityAnswer });
-
-      if (res.data.data?.resetToken) {
-        setResetToken(res.data.data.resetToken);
-        setStep(STEP.NEW_PASSWORD);
-      } else if (res.data.data?.otp) {
-        setWrongAnswerOtp(res.data.data.otp);
-        setWrongAnswer(true);
-        setError('Incorrect security answer. Please try again or use the OTP fallback.');
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleShowOtp = () => setShowOtpPopup(true);
-
-  const handleOtpPopupClose = () => {
-    setShowOtpPopup(false);
-    setStep(STEP.OTP);
   };
 
   const handleOtpSubmit = async (e) => {
@@ -178,332 +107,291 @@ const ForgotPassword = () => {
       const res = await api.post('/auth/forgot-password/verify-otp', { email, otp: otpInput });
       setResetToken(res.data.data.resetToken);
       setStep(STEP.NEW_PASSWORD);
+      toast.success('OTP verified successfully.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid OTP. Please try again.');
+      setError(err.response?.data?.message || 'Invalid OTP.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResetSubmit = async (e) => {
+  const handleFallbackToSecurityQuestion = async () => {
+    setLoading(true);
+    clearError();
+    try {
+      const res = await api.post('/auth/forgot-password/question', { email });
+      setSecurityQuestion(res.data.data.securityQuestion);
+      setStep(STEP.SECURITY_Q);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch security question.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSecurityAnswerSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    clearError();
+    try {
+      const res = await api.post('/auth/forgot-password/verify-answer', { email, securityAnswer });
+      setResetToken(res.data.data.resetToken);
+      setStep(STEP.NEW_PASSWORD);
+      toast.success('Security answer verified.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Incorrect security answer.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     clearError();
-    if (!hasMinLength(newPassword)) return setError('Password must be at least 8 characters.');
-    if (!hasNumber(newPassword)) return setError('Password must contain at least one number.');
-    if (!hasSpecial(newPassword)) return setError('Password must contain at least one special character.');
-    if (newPassword !== confirmPassword) return setError('Passwords do not match.');
+
+    if (!hasMinLength(newPassword) || !hasNumber(newPassword) || !hasSpecial(newPassword)) {
+      return setError('Password does not meet the requirements.');
+    }
+    if (newPassword !== confirmPassword) {
+      return setError('Passwords do not match.');
+    }
 
     setLoading(true);
     try {
       await api.post('/auth/forgot-password/reset', { resetToken, newPassword });
       setStep(STEP.SUCCESS);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password. Please restart the process.');
+      setError(err.response?.data?.message || 'Failed to reset password.');
     } finally {
       setLoading(false);
     }
   };
 
-  const pageWrapper = (children) => (
-    <div className="min-h-screen flex w-full bg-background selection:bg-primary/20">
-      {/* Left Side: Brand Illustration (55%) */}
-      <div className="hidden lg:flex lg:w-[55%] h-screen sticky top-0 relative overflow-hidden bg-muted items-center justify-center">
-        {/* Abstract Background */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse"></div>
-          <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
+  // Utility to determine visual progress step (1 to 4)
+  const getProgressStep = () => {
+    if (step === STEP.EMAIL) return 1;
+    if (step === STEP.OTP || step === STEP.SECURITY_Q) return 2;
+    if (step === STEP.NEW_PASSWORD) return 3;
+    return 4;
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-muted p-4 sm:p-8">
+      <div className="w-full max-w-md bg-background rounded-[24px] shadow-2xl p-8 border">
+        
+        <div className="flex items-center justify-between mb-8">
+          <Link to="/login" className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Back to login
+          </Link>
+          <Logo className="h-8 w-8 text-primary" />
         </div>
 
-        {/* Glassmorphism Container for Illustration */}
-        <div className="relative z-10 w-full max-w-lg p-12 backdrop-blur-md bg-background/40 border rounded-[24px] shadow-2xl text-center">
-          <div className="flex items-center justify-center mb-8 relative">
-            <Link 
-              to="/login" 
-              className="absolute -top-6 left-0 flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              Back to Login
-            </Link>
-            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
-              <Logo className="h-12 w-12" />
+        <StepIndicator current={getProgressStep()} total={4} />
+
+        <h2 className="text-2xl font-bold tracking-tight mb-2 text-foreground">
+          {step === STEP.EMAIL && 'Reset your password'}
+          {step === STEP.OTP && 'Verify your email'}
+          {step === STEP.SECURITY_Q && 'Answer Security Question'}
+          {step === STEP.NEW_PASSWORD && 'Create new password'}
+          {step === STEP.SUCCESS && 'Password reset complete!'}
+        </h2>
+
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* STEP 1: EMAIL */}
+        {step === STEP.EMAIL && (
+          <>
+            <p className="text-muted-foreground text-sm mb-6">Enter your registered email address to receive an OTP.</p>
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Send OTP
+              </Button>
+            </form>
+          </>
+        )}
+
+        {/* STEP 2: OTP */}
+        {step === STEP.OTP && (
+          <>
+            <p className="text-muted-foreground text-sm mb-6">
+              An OTP has been sent to <strong>{email}</strong>.
+            </p>
+            <form onSubmit={handleOtpSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="otp">Enter OTP</Label>
+                <Input
+                  id="otp"
+                  type="text"
+                  required
+                  placeholder="Enter 6-digit OTP"
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value)}
+                  maxLength={6}
+                  autoFocus
+                  className="tracking-widest text-center text-lg"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-3">
+                <Button type="submit" className="w-full" disabled={loading || !otpInput}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Verify OTP
+                </Button>
+                <div className="text-center text-sm mt-2 mb-2">
+                  <span className="text-muted-foreground mr-2">Didn't receive code?</span>
+                  {resendTimer > 0 ? (
+                    <span className="text-primary font-medium">Resend in {resendTimer}s</span>
+                  ) : (
+                    <button type="button" onClick={handleEmailSubmit} className="text-primary hover:underline font-medium">
+                      Resend OTP
+                    </button>
+                  )}
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleFallbackToSecurityQuestion}
+                >
+                  I cannot access my email
+                </Button>
+              </div>
+            </form>
+          </>
+        )}
+
+        {/* STEP 3: SECURITY QUESTION (FALLBACK) */}
+        {step === STEP.SECURITY_Q && (
+          <>
+            <p className="text-muted-foreground text-sm mb-6">
+              Answer your custom security question to recover your account.
+            </p>
+            <form onSubmit={handleSecurityAnswerSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label>Security Question</Label>
+                <div className="p-3 bg-muted rounded-md text-sm font-medium border">
+                  {securityQuestion}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="securityAnswer">Your Answer</Label>
+                <Input
+                  id="securityAnswer"
+                  type="text"
+                  required
+                  placeholder="Type your answer"
+                  value={securityAnswer}
+                  onChange={(e) => setSecurityAnswer(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading || !securityAnswer}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Verify Answer
+              </Button>
+            </form>
+          </>
+        )}
+
+        {/* STEP 4: NEW PASSWORD */}
+        {step === STEP.NEW_PASSWORD && (
+          <form onSubmit={handlePasswordSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="pr-10"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              </div>
+
+              <ul className="text-xs text-muted-foreground space-y-2 mt-3 p-3 bg-muted rounded-md">
+                <li className="flex items-center gap-2">
+                  {hasMinLength(newPassword) ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Circle className="h-4 w-4" />}
+                  At least 8 characters
+                </li>
+                <li className="flex items-center gap-2">
+                  {hasNumber(newPassword) ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Circle className="h-4 w-4" />}
+                  At least 1 number
+                </li>
+                <li className="flex items-center gap-2">
+                  {hasSpecial(newPassword) ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Circle className="h-4 w-4" />}
+                  At least 1 special character
+                </li>
+              </ul>
             </div>
-          </div>
-          <h2 className="text-4xl font-bold tracking-tight mb-4">LibraVault</h2>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-            Recover your account and regain access to the workspace.
-          </p>
-        </div>
-      </div>
 
-      {/* Right Side: Form (45%) */}
-      <div className="w-full lg:w-[45%] flex flex-col justify-center p-6 sm:p-12 md:p-24 bg-background relative z-10 shadow-2xl overflow-y-auto">
-        <div className="w-full max-w-md mx-auto relative z-10">
-          {showOtpPopup && <OtpPopup otp={wrongAnswerOtp} onClose={handleOtpPopupClose} />}
-          
-          <div className="flex lg:hidden items-center gap-2 mb-8">
-            <Logo className="h-8 w-8 text-primary" />
-            <span className="font-bold text-xl tracking-tight">LibraVault</span>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
 
-          <div className="mb-6">
-            {step < STEP.SUCCESS && <StepIndicator current={step} total={4} />}
-          </div>
-          
-          {children}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Reset Password
+            </Button>
+          </form>
+        )}
 
-          {/* Removed duplicate Back to Login */}
-        </div>
+        {/* STEP 5: SUCCESS */}
+        {step === STEP.SUCCESS && (
+          <div className="text-center py-6">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <p className="text-muted-foreground mb-8">
+              Your password has been successfully reset. You can now log in with your new password.
+            </p>
+            <Button className="w-full" onClick={() => navigate('/login')}>
+              Return to Login
+            </Button>
+          </div>
+        )}
+
       </div>
     </div>
   );
-
-  // ── STEP 1: Email ──────────────────────────────────────────────────────────
-  if (step === STEP.EMAIL) {
-    return pageWrapper(
-      <>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Forgot Password?</h1>
-        <p className="text-muted-foreground text-sm mb-6">Enter your registered email address to begin.</p>
-        
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <form onSubmit={handleEmailSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="fp-email">Email Address</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="fp-email"
-                type="email"
-                required
-                autoFocus
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); clearError(); }}
-                placeholder="name@institution.edu"
-                className="pl-9"
-              />
-            </div>
-          </div>
-          
-          <Button type="submit" className="w-full h-11" disabled={loading}>
-            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Checking…</> : 'Continue'}
-          </Button>
-        </form>
-      </>
-    );
-  }
-
-  // ── STEP 2: Security Question ──────────────────────────────────────────────
-  if (step === STEP.SECURITY_Q) {
-    return pageWrapper(
-      <>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Security Question</h1>
-        <p className="text-muted-foreground text-sm mb-6">Answer your security question to verify your identity.</p>
-
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <div className="flex flex-col">
-              <AlertDescription>{error}</AlertDescription>
-              {wrongAnswer && (
-                <button
-                  type="button"
-                  className="text-xs font-semibold mt-2 text-left hover:underline"
-                  onClick={handleShowOtp}
-                >
-                  Try another way? (Use OTP)
-                </button>
-              )}
-            </div>
-          </Alert>
-        )}
-
-        <form onSubmit={handleAnswerSubmit} className="space-y-5">
-          <div className="bg-muted rounded-xl p-4 border border-border flex items-start gap-3">
-            <HelpCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <p className="text-sm font-medium text-foreground">{securityQuestion}</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="sec-answer">Your Answer</Label>
-            <Input
-              id="sec-answer"
-              type="text"
-              required
-              autoFocus
-              value={securityAnswer}
-              onChange={(e) => { setSecurityAnswer(e.target.value); clearError(); }}
-              placeholder="Type your answer…"
-            />
-            <p className="text-xs text-muted-foreground">Casing doesn't matter.</p>
-          </div>
-
-          <Button type="submit" className="w-full h-11" disabled={loading}>
-            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying…</> : 'Verify Answer'}
-          </Button>
-        </form>
-      </>
-    );
-  }
-
-  // ── STEP 3: OTP ────────────────────────────────────────────────────────────
-  if (step === STEP.OTP) {
-    return pageWrapper(
-      <>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Enter Your OTP</h1>
-        <p className="text-muted-foreground text-sm mb-6">Enter the 6-digit OTP that was shown in the popup.</p>
-
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={handleOtpSubmit} className="space-y-5">
-          <Alert className="bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
-            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <AlertDescription>The OTP expires in 10 minutes.</AlertDescription>
-          </Alert>
-
-          <div className="space-y-2">
-            <Label htmlFor="otp-input">OTP Code</Label>
-            <Input
-              id="otp-input"
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              required
-              autoFocus
-              value={otpInput}
-              onChange={(e) => { setOtpInput(e.target.value.replace(/\D/g, '')); clearError(); }}
-              placeholder="000000"
-              className="text-center text-2xl font-mono tracking-[0.3em] h-14"
-            />
-          </div>
-
-          <Button type="submit" className="w-full h-11" disabled={loading || otpInput.length !== 6}>
-            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying…</> : 'Verify OTP'}
-          </Button>
-        </form>
-      </>
-    );
-  }
-
-  // ── STEP 4: New Password ───────────────────────────────────────────────────
-  if (step === STEP.NEW_PASSWORD) {
-    const strength = [hasMinLength(newPassword), hasNumber(newPassword), hasSpecial(newPassword)].filter(Boolean).length;
-    const strengthColors = ['bg-muted', 'bg-red-500', 'bg-yellow-500', 'bg-green-500'];
-
-    return pageWrapper(
-      <>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Set New Password</h1>
-        <p className="text-muted-foreground text-sm mb-6">Choose a strong password for your account.</p>
-
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={handleResetSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="new-pass">New Password</Label>
-            <div className="relative">
-              <Input
-                id="new-pass"
-                name="new-pass"
-                type={showPassword ? 'text' : 'password'}
-                required
-                autoFocus
-                value={newPassword}
-                onChange={(e) => { setNewPassword(e.target.value); clearError(); }}
-                placeholder="••••••••"
-                autoComplete="new-password"
-                className="pr-10"
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
-                onClick={() => setShowPassword((p) => !p)}
-              >
-                {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              </button>
-            </div>
-
-            {newPassword.length > 0 && (
-              <>
-                <div className="flex gap-1.5 mt-2 mb-1">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= strength ? strengthColors[strength] : 'bg-muted'}`} />
-                  ))}
-                </div>
-                <ul className="space-y-1 mt-2 text-xs text-muted-foreground">
-                  {[
-                    [hasMinLength(newPassword), 'At least 8 characters'],
-                    [hasNumber(newPassword), 'Contains a number'],
-                    [hasSpecial(newPassword), 'Contains a special character']
-                  ].map(([ok, label]) => (
-                    <li key={label} className="flex items-center gap-1.5">
-                      {ok ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Circle className="h-4 w-4" />}
-                      {label}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirm-pass">Confirm Password</Label>
-            <Input
-              id="confirm-pass"
-              name="confirm-pass"
-              type={showPassword ? 'text' : 'password'}
-              required
-              value={confirmPassword}
-              onChange={(e) => { setConfirmPassword(e.target.value); clearError(); }}
-              placeholder="••••••••"
-              autoComplete="new-password"
-              className={confirmPassword && confirmPassword !== newPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}
-            />
-            {confirmPassword && confirmPassword !== newPassword && (
-              <p className="text-xs text-red-500 mt-1">Passwords do not match.</p>
-            )}
-          </div>
-
-          <Button type="submit" className="w-full h-11 mt-2" disabled={loading}>
-            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resetting…</> : 'Reset Password'}
-          </Button>
-        </form>
-      </>
-    );
-  }
-
-  // ── STEP 5: Success ────────────────────────────────────────────────────────
-  if (step === STEP.SUCCESS) {
-    return pageWrapper(
-      <div className="text-center py-6">
-        <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
-          <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Password Reset!</h1>
-        <p className="text-muted-foreground text-sm mb-8">
-          Your password has been updated. You can now log in with your new password.
-        </p>
-        <Button className="w-full h-11" onClick={() => navigate('/login')}>
-          Go to Login
-        </Button>
-      </div>
-    );
-  }
-
-  return null;
 };
 
 export default ForgotPassword;

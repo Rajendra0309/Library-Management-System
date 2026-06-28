@@ -59,7 +59,7 @@ const IssueBook = () => {
         if (!memberSearch.trim()) return;
         try {
             setSearchingMembers(true);
-            const response = await api.get(`/members?q=${memberSearch}`);
+            const response = await api.get(`/members?search=${memberSearch}`);
             setMembers(response.data.data);
             if (response.data.data.length === 0) setError('No members found matching your search.');
             else setError('');
