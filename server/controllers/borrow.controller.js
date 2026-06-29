@@ -38,7 +38,13 @@ exports.issueBook = async (req, res) => {
             });
         }
 
-        // 2. Check active borrow limit (Max 5)
+        // Get system config
+        let config = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
+        if (!config) {
+            config = { maxBorrows: 5, loanPeriod: 14 };
+        }
+
+        // 2. Check active borrow limit
         const activeBorrowsCount = await prisma.borrow.count({
             where: {
                 memberId,
@@ -46,10 +52,10 @@ exports.issueBook = async (req, res) => {
             },
         });
 
-        if (activeBorrowsCount >= 5) {
+        if (activeBorrowsCount >= config.maxBorrows) {
             return res.status(400).json({
                 success: false,
-                message: "Maximum borrow limit reached (5 books)",
+                message: `Maximum borrow limit reached (${config.maxBorrows} books)`,
             });
         }
 
@@ -94,7 +100,7 @@ exports.issueBook = async (req, res) => {
         // 5. Issue book (Transaction)
         const issueDate = new Date();
         const dueDate = new Date();
-        dueDate.setDate(issueDate.getDate() + 14);
+        dueDate.setDate(issueDate.getDate() + (config.loanPeriod || 14));
 
         const borrow = await prisma.$transaction(async (tx) => {
             // Atomically check and update book availability

@@ -102,7 +102,7 @@ def format_books(df):
             'title': row['title'],
             'author': row['author'],
             'genre': genre_list,
-            'description': row['description'],
-            'coverImage': row['coverImage']
+            'description': None if pd.isna(row['description']) else row['description'],
+            'coverImage': None if pd.isna(row['coverImage']) else row['coverImage']
         })
     return books

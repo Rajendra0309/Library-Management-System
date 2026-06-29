@@ -8,13 +8,45 @@ const getDashboardData = async (req, res) => {
     if (req.user && req.user.role === 'librarian' && req.user.city) {
       const city = req.user.city;
       
-      const [totalBooks, totalMembers, activeBorrows, overdueBorrows, totalFinesAgg] = await Promise.all([
+      const [totalBooks, totalMembers, activeBorrows, overdueBorrows, totalFinesAgg, allCityBooks] = await Promise.all([
         prisma.book.count({ where: { city } }),
         prisma.user.count({ where: { role: 'member', city } }),
         prisma.borrow.count({ where: { status: 'active', book: { city } } }),
         prisma.borrow.count({ where: { status: 'active', dueDate: { lt: new Date() }, book: { city } } }),
-        prisma.fine.aggregate({ _sum: { amount: true }, where: { borrow: { book: { city } } } })
+        prisma.fine.aggregate({ _sum: { amount: true }, where: { borrow: { book: { city } } } }),
+        prisma.book.findMany({ where: { city }, select: { genre: true } })
       ]);
+
+      const genreStats = {};
+      allCityBooks.forEach(b => {
+        if (b.genre) {
+          const g = b.genre;
+          genreStats[g] = (genreStats[g] || 0) + 1;
+        }
+      });
+
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const recentBorrows = await prisma.borrow.findMany({
+        where: { book: { city }, issueDate: { gte: sevenDaysAgo } },
+        select: { issueDate: true }
+      });
+
+      const trendsMap = {};
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        trendsMap[dateStr] = 0;
+      }
+      recentBorrows.forEach(b => {
+        const dateStr = new Date(b.issueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (trendsMap[dateStr] !== undefined) trendsMap[dateStr]++;
+      });
+      const borrowingTrends = Object.keys(trendsMap).map(date => ({
+        date,
+        borrows: trendsMap[date]
+      }));
 
       const data = {
         totalBooks,
@@ -22,8 +54,8 @@ const getDashboardData = async (req, res) => {
         activeBorrows,
         overdueBorrows,
         totalFines: totalFinesAgg._sum.amount || 0,
-        genreStats: {},
-        borrowingTrends: []
+        genreStats,
+        borrowingTrends
       };
 
       return res.status(200).json({

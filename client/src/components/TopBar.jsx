@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Search, Bell, Plus, BellOff } from 'lucide-react';
+import { Search, Bell, Plus, BellOff, Check } from 'lucide-react';
+import api from '../api/axios';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,40 @@ import {
 const TopBar = ({ setCommandOpen }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user) fetchNotifications();
+  }, [user]);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/notifications');
+      if (res.data.success) {
+        setNotifications(res.data.data);
+        setUnreadCount(res.data.data.filter(n => !n.isRead).length);
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  };
+
+  const markAsRead = async (id) => {
+    try {
+      await api.put(`/notifications/${id}/read`);
+      setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {}
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await api.put('/notifications/mark-all-read');
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (err) {}
+  };
   
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/40 bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -35,20 +70,46 @@ const TopBar = ({ setCommandOpen }) => {
       <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+            <button className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
               <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-500"></span>
+              )}
               <span className="sr-only">Notifications</span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-80">
+            <div className="flex items-center justify-between px-4 py-2">
+              <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+              {unreadCount > 0 && (
+                <button onClick={markAllAsRead} className="text-xs text-primary hover:underline">Mark all read</button>
+              )}
+            </div>
             <DropdownMenuSeparator />
-            <div className="flex flex-col items-center justify-center py-6 text-center">
-              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-3">
-                <BellOff className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <p className="text-sm font-medium">No new notifications</p>
-              <p className="text-xs text-muted-foreground mt-1">You're all caught up!</p>
+            <div className="max-h-80 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <BellOff className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium">No new notifications</p>
+                  <p className="text-xs text-muted-foreground mt-1">You're all caught up!</p>
+                </div>
+              ) : (
+                notifications.map((notif) => (
+                  <div 
+                    key={notif.id} 
+                    className={`px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/50 transition-colors cursor-pointer ${notif.isRead ? 'opacity-70' : 'bg-primary/5'}`}
+                    onClick={() => !notif.isRead && markAsRead(notif.id)}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <p className={`text-sm ${notif.isRead ? 'font-medium' : 'font-semibold text-foreground'}`}>{notif.title}</p>
+                      <span className="text-[10px] text-muted-foreground">{new Date(notif.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{notif.message}</p>
+                  </div>
+                ))
+              )}
             </div>
           </DropdownMenuContent>
         </DropdownMenu>

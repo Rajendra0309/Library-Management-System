@@ -92,7 +92,7 @@ const Settings = () => {
     { id: 'notifications', icon: Bell, label: 'Notifications' },
     { id: 'appearance', icon: Palette, label: 'Appearance' },
   ];
-  if (isManagement) tabs.push({ id: 'libraryConfig', icon: SettingsIcon, label: 'Library Config' });
+  if (user?.role === 'admin') tabs.push({ id: 'libraryConfig', icon: SettingsIcon, label: 'Library Config' });
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 w-full flex flex-col md:flex-row gap-8">
@@ -264,7 +264,7 @@ const Settings = () => {
         )}
 
         {/* Library Config Tab */}
-        {activeTab === 'libraryConfig' && isManagement && (
+        {activeTab === 'libraryConfig' && user?.role === 'admin' && (
           <div className="space-y-6">
             <Card>
               <CardHeader>

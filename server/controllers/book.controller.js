@@ -42,8 +42,8 @@ exports.createBook = async (req, res) => {
       });
     }
 
-    // Validate copies
-    const copies = Math.max(Number(totalCopies) || 1, 1);
+    // Validate copies (allow 0 for digital-only books)
+    const copies = totalCopies !== undefined ? Math.max(0, Number(totalCopies)) : 1;
 
     // Validate publish year
     if (
@@ -208,9 +208,13 @@ exports.getBooks = async (req, res) => {
     }
 
     if (available === "true") {
-      filters.availableCopies = {
-        gt: 0,
-      };
+      filters.AND = filters.AND || [];
+      filters.AND.push({
+        OR: [
+          { availableCopies: { gt: 0 } },
+          { ebookUrl: { not: null } }
+        ]
+      });
     }
 
     if (format) {

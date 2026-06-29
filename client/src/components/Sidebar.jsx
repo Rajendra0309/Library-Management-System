@@ -78,6 +78,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const { user, logout } = useAuth();
   const isManagement = user?.role === 'admin' || user?.role === 'librarian';
   const isAdmin = user?.role === 'admin';
+  const isLibrarian = user?.role === 'librarian';
 
   return (
     <aside className={cn(
@@ -151,7 +152,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           )}
           {isCollapsed && <div className="h-4" />}
           {sharedNavItems.map((item) => {
-            if (item.path === '/reports' && !isAdmin) return null;
+            if (item.path === '/reports' && !isAdmin && !isLibrarian) return null;
             if (item.path === '/fines' && !isManagement) return null;
             return <NavItem key={item.path} {...item} isCollapsed={isCollapsed} />;
           })}

@@ -68,6 +68,7 @@ function App() {
                 <Route path="books/add" element={<AddBook />} />
                 <Route path="books/edit/:id" element={<EditBook />} />
                 <Route path="member-dashboard" element={<MemberDashboard />} />
+                <Route path="reports" element={<Reports />} />
                 <Route path="members" element={<MemberList />} />
                 <Route path="members/:id" element={<MemberProfile />} />
                 <Route path="reservations" element={<ReservationList />} />
@@ -83,7 +84,6 @@ function App() {
                 <Route path="staff" element={<StaffList />} />
                 <Route path="staff/add" element={<AddStaff />} />
                 <Route path="staff/edit/:id" element={<EditStaff />} />
-                <Route path="reports" element={<Reports />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

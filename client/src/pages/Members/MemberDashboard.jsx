@@ -9,6 +9,7 @@ import { AlertCircle, CheckCircle2, Clock, CalendarDays, Wallet, BookOpen, Arrow
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '../../context/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import api from '../../api/axios';
 
 const MemberDashboard = () => {
   const { user: currentUser } = useAuth();
@@ -17,6 +18,7 @@ const MemberDashboard = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [maxBorrows, setMaxBorrows] = useState(5);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -47,11 +49,20 @@ const MemberDashboard = () => {
         }
         setBorrowHistory(h);
 
+        // Load recommendations asynchronously without blocking the main dashboard render
+        getMemberRecommendations(currentUser.id)
+           .then(recRes => {
+              if (recRes.success) setRecommendations(recRes.data);
+           })
+           .catch(err => console.error("Recommendations load error", err));
+
         try {
-           const recRes = await getMemberRecommendations(currentUser.id);
-           if (recRes.success) setRecommendations(recRes.data);
+          const configRes = await api.get('/config');
+          if (configRes.data && configRes.data.maxBorrows) {
+            setMaxBorrows(configRes.data.maxBorrows);
+          }
         } catch (err) {
-           console.error("Recommendations load error", err);
+          console.error("Config load error", err);
         }
 
       } catch (err) {
@@ -127,7 +138,7 @@ const MemberDashboard = () => {
           <CardContent>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold tracking-tight text-foreground">{activeBorrows.length}</span>
-              <span className="text-sm text-muted-foreground">/ 5 Limit</span>
+              <span className="text-sm text-muted-foreground">/ {maxBorrows} Limit</span>
             </div>
             {overdueBorrows.length > 0 ? (
                 <div className="flex items-center gap-2 mt-2">
