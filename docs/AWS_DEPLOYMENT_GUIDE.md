@@ -121,6 +121,7 @@ Now that your images are in ECR, you can start the servers.
      - **Name:** `lms-ai-container`
      - **Image URI:** `[Paste your ECR URI for lms-ai-service]:latest`
      - **Port mappings:** 5001 (TCP)
+     - **Environment variables:** Add `DATABASE_URL` (Set to the same connection string as the server).
      
    - **Container 3 (ETL Pipeline):**
      - Click **Add more containers**.
