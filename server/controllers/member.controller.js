@@ -1,5 +1,6 @@
 const prisma = require('../prisma/client');
 const bcrypt = require('bcryptjs');
+const axios = require('axios');
 
 /**
  * Get all members (Paginated, Searchable)
@@ -320,7 +321,32 @@ const getMemberHistory = async (req, res) => {
 
     res.status(200).json({ success: true, data: history });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Get AI book recommendations for a member by proxying to AI service
+ * Access: Self, Librarian, Admin
+ */
+const getMemberRecommendations = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Authorization check
+    if (req.user.role === 'member' && req.user.id !== id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view these recommendations' });
+    }
+
+    // In AWS ECS, containers in the same task share localhost.
+    // In local docker-compose, we override this via the AI_SERVICE_URL env var.
+    const aiServiceHost = process.env.AI_SERVICE_URL || 'http://localhost:5001';
+    const response = await axios.post(`${aiServiceHost}/api/ai/recommend`, { memberId: id });
+    
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.error("AI Proxy Error:", error.message);
+    res.status(500).json({ success: false, message: 'Failed to fetch recommendations from AI service' });
   }
 };
 
@@ -331,5 +357,6 @@ module.exports = {
   updateMember,
   deleteMember,
   updateMemberStatus,
-  getMemberHistory
+  getMemberHistory,
+  getMemberRecommendations
 };

@@ -86,12 +86,6 @@ export const getMemberHistory = async (id) => {
  * @returns {Promise<Object>} API response containing recommendations
  */
 export const getMemberRecommendations = async (memberId) => {
-  // Using direct fetch/axios to the AI service (port 5001)
-  const host = window.location.hostname;
-  const response = await fetch(`http://${host}:5001/api/ai/recommend`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ memberId })
-  });
-  return await response.json();
+  const response = await api.get(`/members/${memberId}/recommendations`);
+  return response.data;
 };

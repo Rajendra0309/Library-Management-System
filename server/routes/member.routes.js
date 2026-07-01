@@ -7,7 +7,8 @@ const {
   updateMember,
   deleteMember,
   updateMemberStatus,
-  getMemberHistory
+  getMemberHistory,
+  getMemberRecommendations
 } = require('../controllers/member.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 
@@ -30,5 +31,8 @@ router.put('/:id/status', authorize('admin', 'librarian'), updateMemberStatus);
 
 // Borrowing history (Self or Librarian/Admin)
 router.get('/:id/history', getMemberHistory);
+
+// AI Recommendations Proxy (Self or Librarian/Admin)
+router.get('/:id/recommendations', getMemberRecommendations);
 
 module.exports = router;
