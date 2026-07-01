@@ -338,9 +338,9 @@ const getMemberRecommendations = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to view these recommendations' });
     }
 
-    // In AWS ECS, containers in the same task share localhost.
-    // In local docker-compose, we override this via the AI_SERVICE_URL env var.
-    const aiServiceHost = process.env.AI_SERVICE_URL || 'http://localhost:5001';
+    // In AWS ECS, containers in the same task share localhost, but Node 17+ defaults to IPv6 (::1).
+    // The Python AI service binds to IPv4 (0.0.0.0), so we explicitly use 127.0.0.1 to avoid connection refused errors.
+    const aiServiceHost = process.env.AI_SERVICE_URL || 'http://127.0.0.1:5001';
     const response = await axios.post(`${aiServiceHost}/api/ai/recommend`, { memberId: id });
     
     return res.status(200).json(response.data);
